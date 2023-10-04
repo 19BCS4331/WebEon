@@ -1,0 +1,50 @@
+.NavButtons{
+    border:none;
+    border-radius: 50px;
+    height: 100px;
+    width: 120px;
+    background-color: #edf2f4;
+    transition: 0.4s;
+    cursor: pointer;
+}
+
+.NavButtons:hover{
+    background-color:#2b2d42;
+    color:white;
+}
+.DropDownContainer{
+    transition: 0.4s;
+}
+
+.DropDownContainer:hover{
+    background-color: #2b2d42;
+    color: #edf2f4;
+}
+
+.ProfileInfo{
+    user-select: none;
+    
+}
+
+.ProfileIcon{
+    color: white;
+    cursor: pointer;
+}
+
+.ProfileIcon:hover{
+    color: #2b2d42;
+    transition: 0.4s;
+}
+
+.ItemBox{
+    background-color: #edf2f4;
+    border: solid 1px #8d99ae;
+    transition: 0.3s;
+}
+
+.ItemBox:hover{
+    background-color: #8d99ae;
+    color: white;
+    
+
+}
