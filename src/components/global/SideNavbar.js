@@ -44,11 +44,11 @@ const SideNavbar = () => {
       role: "Admin",
       subMenu: [
         {
-          text: "Other Transactions",
+          text: "Options",
           subMenu: [{ text: "AD1 Transactions" }, { text: "Insurance Sales" }],
         },
         {
-          text: "Accounting Transactions",
+          text: "Opening Balances",
           subMenu: [{ text: "Debit / Credit Transact" }, { text: "Receipt" }],
         },
       ],

@@ -5,10 +5,10 @@ import MainBackBox from "../components/global/MainBackBox";
 import MainContentBox from "../components/global/MainContentBox";
 import MainContentLayout from "../components/global/MainContentLayout";
 
-const TestPage = ({ handleLogoutAuth }) => {
+const TestPage = () => {
   return (
     <MainBackBox>
-      <Topbar title={"Master Profiles"} handleLogoutAuth={handleLogoutAuth} />
+      <Topbar title={"Master Profiles"} />
       <MainContentLayout>
         <SideNavbar />
         <MainContentBox></MainContentBox>
