@@ -23,7 +23,10 @@ async function login(req, res) {
       return res.status(401).json({ msg: "Invalid credentials" });
     }
 
-    await User.update({ last_login: new Date() }, { where: { username } });
+    await User.update(
+      { last_login: new Date(), isLoggedIn: true },
+      { where: { username } }
+    );
 
     const payload = {
       user: {
@@ -53,7 +56,10 @@ const logout = async (req, res) => {
 
   try {
     // Update the last_logout column with the current timestamp
-    await User.update({ last_logout: new Date() }, { where: { userid } });
+    await User.update(
+      { last_logout: new Date(), isLoggedIn: false },
+      { where: { userid } }
+    );
 
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {

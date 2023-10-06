@@ -17,12 +17,12 @@ const Dropdown = ({ MenuText, DropDownItems, handleItemNav }) => {
   };
 
   const handleItemClick = (item) => {
-    const validPageNames = ["master-profiles", "party-profiles"];
+    // const validPageNames = ["master-profiles", "party-profiles"];
     const pageName = item.toLowerCase().replace(/ /g, "-");
     const targetLocation = `/${pageName}`;
     if (
-      location.pathname !== targetLocation &&
-      validPageNames.includes(pageName.toLowerCase())
+      location.pathname !== targetLocation
+      // validPageNames.includes(pageName.toLowerCase())
     ) {
       navigate(targetLocation);
     }
@@ -75,10 +75,11 @@ const Dropdown = ({ MenuText, DropDownItems, handleItemNav }) => {
             mt={1}
             pl={0}
             pt={1}
+            pb={1.5}
             component={motion.div}
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "50vh", opacity: 1 }}
-            exit={{ height: 0, opacity: 0, transition: 0.2 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0, transition: 0.1 }}
             transition={{ duration: 0.4 }}
             display={"flex"}
             justifyContent={"center"}
@@ -86,11 +87,18 @@ const Dropdown = ({ MenuText, DropDownItems, handleItemNav }) => {
             <Box>
               {DropDownItems.map((item) => (
                 <Box
+                  component={motion.div}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: 0.4 }}
+                  exit={{ opacity: 0 }}
                   width={"13vw"}
-                  mt={2}
+                  mt={1}
                   pl={2}
                   borderRadius={2}
-                  sx={{ cursor: "pointer", userSelect: "none" }}
+                  sx={{
+                    cursor: "pointer",
+                    userSelect: "none",
+                  }}
                   onClick={() => handleItemClick(item)}
                   className="ItemBox"
                 >

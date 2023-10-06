@@ -153,13 +153,13 @@ const Topbar = ({ title }) => {
               exit={{ y: -20, opacity: 0 }}
               flexDirection={"column"}
               alignItems={"center"}
+              height={"30vh"}
               sx={{
                 border: "solid",
                 borderWidth: "2px",
                 borderColor: "white",
                 backgroundColor: COLORS.background,
-                height: "28vh",
-                width: "12vw",
+                width: "auto",
                 position: "absolute",
                 top: 80,
                 right: 10,
@@ -171,7 +171,7 @@ const Topbar = ({ title }) => {
               }}
             >
               <p className="ProfileInfo" style={{ fontWeight: "bold" }}>
-                {userData?.username}
+                {userData?.username || "User"}
               </p>
               <hr style={{ width: 100 }} />
               <p className="ProfileInfo">
