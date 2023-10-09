@@ -4,6 +4,7 @@ import { useToast } from "../contexts/ToastContext";
 import { COLORS } from "../assets/colors/COLORS";
 import { AnimatePresence, motion } from "framer-motion";
 import CancelIcon from "@mui/icons-material/Cancel";
+import Backdrop from "@mui/material/Backdrop";
 
 export default function CustomAlertModal({ handleAction }) {
   const { alertModal, hideAlertDialog } = useToast();
@@ -13,23 +14,24 @@ export default function CustomAlertModal({ handleAction }) {
 
   return (
     <AnimatePresence>
-      {open && (
+      {/* {open && (
         <Box
           component={motion.div}
           display={"flex"}
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           sx={{ backgroundColor: "black" }}
           height={"100vh"}
-          //   mt={-13}
           width={"100%"}
           position={"absolute"}
           top={0}
           zIndex={999}
           alignItems={"center"}
           justifyContent={"center"}
-        >
+        > */}
+      <Backdrop open={open} style={{ zIndex: 99999 }}>
+        {open && (
           <Box
             component={motion.div}
             initial={{ y: -100 }}
@@ -38,7 +40,8 @@ export default function CustomAlertModal({ handleAction }) {
             display={"flex"}
             flexDirection={"column"}
             sx={{ backgroundColor: COLORS.secondaryBG }}
-            width={"20vw"}
+            width={"auto"}
+            p={2}
             height={"20vh"}
             alignItems={"center"}
             justifyContent={"center"}
@@ -90,8 +93,9 @@ export default function CustomAlertModal({ handleAction }) {
               </button>
             </Box>
           </Box>
-        </Box>
-      )}
+        )}
+        {/* </Box> */}
+      </Backdrop>
     </AnimatePresence>
   );
 }

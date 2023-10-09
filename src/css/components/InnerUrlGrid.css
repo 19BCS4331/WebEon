@@ -1,0 +1,11 @@
+.InnerUrlGridBox{
+    scale: 1;
+    transition: 0.3s;
+    user-select: none;
+}
+
+.InnerUrlGridBox:hover{
+    scale: 1.2;
+    background-color: #2b2d42;
+    color: #edf2f4;
+}

@@ -13,6 +13,7 @@ const MainContentBox = ({ children }) => {
       display={"flex"}
       flexDirection={"column"}
       alignItems={"center"}
+      justifyContent={"center"}
       gap={5}
     >
       {children}

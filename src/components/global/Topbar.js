@@ -46,7 +46,7 @@ const Topbar = ({ title }) => {
       }
     };
     fetchUserData();
-  }, []);
+  }, [setUserRole]);
 
   useEffect(() => {
     const closeProfileDropdown = (e) => {
