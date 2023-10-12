@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import "../css/pages/Dashboard.css";
 import Marquee from "react-fast-marquee";
 import SideNavbar from "../components/global/SideNavbar";
@@ -21,7 +21,6 @@ const Dashboard = () => {
             pauseOnHover={true}
             style={{
               color: "#edf2f4",
-              marginTop: 10,
               userSelect: "none",
             }}
           >

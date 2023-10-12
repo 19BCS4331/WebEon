@@ -25,6 +25,9 @@ const AuthProvider = ({ children }) => {
         setUserId(userid);
         setIsAuthenticated(true);
       }
+      if (!userid) {
+        setIsAuthenticated(false);
+      }
     };
 
     getTokenFromLocalStorage();

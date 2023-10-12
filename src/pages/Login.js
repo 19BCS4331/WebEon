@@ -249,7 +249,7 @@ const Login = () => {
               disablePortal
               id="BranchSelect"
               options={branches.map((branch) => branch.name)}
-              value={branch} // Set the value to the selectedBranch state
+              value={branch || ""} // Set the value to the selectedBranch state
               onChange={(event, newValue) => {
                 setBranch(newValue); // Update the selectedBranch state
               }}
@@ -262,7 +262,7 @@ const Login = () => {
               disablePortal
               id="CounterSelect"
               options={counters.map((counter) => counter.name)}
-              value={counter} // Set the value to the selectedBranch state
+              value={counter || ""} // Set the value to the selectedBranch state
               onChange={(event, newValue) => {
                 setCounter(newValue); // Update the selectedBranch state
               }}
@@ -285,6 +285,7 @@ const Login = () => {
               disablePortal
               id="PurposeSelect"
               options={counters.map((counter) => counter.name)}
+              value={counter || ""}
               sx={{ width: "25vw" }}
               renderInput={(params) => (
                 <TextField {...params} label="Purpose" />

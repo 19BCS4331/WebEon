@@ -27,28 +27,45 @@ const InnerUrlGrid = ({ InnerUrlGridData }) => {
       flexDirection={"column"}
       gap={5}
     >
-      <Box mt={-10} color={COLORS.text} fontSize={20}>
-        Select from below
+      <Box
+        mt={-10}
+        color={COLORS.text}
+        fontSize={25}
+        sx={{ userSelect: "none" }}
+      >
+        Masters
       </Box>
-
-      <Box display={"flex"} gap={3}>
-        {InnerUrlGridData.map((item) => (
-          <Box
-            className="InnerUrlGridBox"
-            display={"flex"}
-            flexDirection={"row"}
-            alignItems={"center"}
-            borderRadius={"20px"}
-            height={"5vh"}
-            width={"auto"}
-            sx={{ backgroundColor: COLORS.text, cursor: "pointer" }}
-            p={2}
-            onClick={() => handleItemClick(item.text)}
-            boxShadow={"0px 10px 15px -3px rgba(0,0,0,0.1)"}
-          >
-            {item.text}
-          </Box>
-        ))}
+      <Box
+        sx={{
+          backgroundColor: COLORS.text,
+          boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
+        }}
+        borderRadius={"40px"}
+        p={3}
+      >
+        <Box
+          display="grid"
+          gridTemplateColumns="repeat(3, 1fr)"
+          gridTemplateRows="repeat(2, 1fr)"
+          columnGap="40px"
+          rowGap="40px"
+        >
+          {InnerUrlGridData.map((item) => (
+            <Box
+              key={item.text}
+              className="InnerUrlGridBox"
+              borderRadius="20px"
+              sx={{
+                backgroundColor: COLORS.secondaryBG,
+                cursor: "pointer",
+              }}
+              p={2}
+              onClick={() => handleItemClick(item.text)}
+            >
+              {item.text}
+            </Box>
+          ))}
+        </Box>
       </Box>
     </Box>
   );

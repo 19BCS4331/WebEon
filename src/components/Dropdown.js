@@ -6,9 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { COLORS } from "../assets/colors/COLORS";
 
-const Dropdown = ({ MenuText, DropDownItems, handleItemNav }) => {
+const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const shouldShowDropdown = searchResults.some(
+    (item) => item.text === MenuText || item.subMenu.includes(MenuText)
+  );
 
   const [isDropdownVis, setIsDropdownVis] = useState(false);
 
@@ -44,30 +48,37 @@ const Dropdown = ({ MenuText, DropDownItems, handleItemNav }) => {
       >
         <p style={{ marginLeft: 20, userSelect: "none" }}>{MenuText}</p>
 
-        {!isDropdownVis && (
-          <Box
-            component={motion.div}
-            initial={{ rotateX: 0 }}
-            animate={{ rotateX: 360 }}
-            transition={0.4}
-          >
-            <KeyboardArrowDownIcon style={{ marginRight: 20 }} />
-          </Box>
-        )}
+        {shouldShowDropdown && (
+          <>
+            {!isDropdownVis && (
+              <Box
+                component={motion.div}
+                initial={{ rotateX: 0 }}
+                animate={{ rotateX: 360 }}
+                transition={0.4}
+              >
+                <KeyboardArrowDownIcon style={{ marginRight: 20 }} />
+              </Box>
+            )}
 
-        {isDropdownVis && (
-          <Box
-            component={motion.div}
-            initial={{ rotateX: 360 }}
-            animate={{ rotateX: 0 }}
-            transition={0.4}
-          >
-            <KeyboardControlKeyIcon style={{ marginRight: 20, marginTop: 5 }} />
-          </Box>
+            {isDropdownVis && (
+              <Box
+                component={motion.div}
+                initial={{ rotateX: 360 }}
+                animate={{ rotateX: 0 }}
+                transition={0.4}
+              >
+                <KeyboardControlKeyIcon
+                  style={{ marginRight: 20, marginTop: 5 }}
+                />
+              </Box>
+            )}
+          </>
         )}
       </Box>
       <AnimatePresence>
-        {isDropdownVis && (
+        {shouldShowDropdown && isDropdownVis && (
+          // {isDropdownVis && (
           <Box
             sx={{ backgroundColor: COLORS.text }}
             height={"50vh"}
