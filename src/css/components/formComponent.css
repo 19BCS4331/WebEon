@@ -1,6 +1,6 @@
 .FormFooterButton{
     border: none;
-    width: 10vw;
+    width: 200px;
     height: 5vh;
     border-radius: 20px;
     background-color: #8d99ae;
@@ -12,4 +12,18 @@
 
 .FormFooterButton:hover{
     background-color: #2b2d42;
+}
+
+@media only screen and (max-width: 600px) {
+    .FormFooterButton{
+        border: none;
+        width: 100px;
+        height: 5vh;
+        border-radius: 20px;
+        background-color: #8d99ae;
+        cursor: pointer;
+        color: #edf2f4;
+        font-size: 15px;
+        transition: 0.3s;
+    }
 }

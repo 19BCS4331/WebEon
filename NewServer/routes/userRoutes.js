@@ -3,6 +3,15 @@ const router = express.Router();
 const authenticate = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const { where } = require("sequelize");
+const Pool = require("pg").Pool;
+
+const pool = new Pool({
+  user: "postgres",
+  host: "localhost",
+  database: "TestDB",
+  password: "J1c2m@raekat",
+  port: 5432,
+});
 
 // @route    GET api/users
 // @desc     Get all users

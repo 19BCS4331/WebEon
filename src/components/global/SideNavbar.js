@@ -98,14 +98,14 @@ const SideNavbar = () => {
       flexDirection={"column"}
     >
       <Box>
-        <SearchIcon
+        {/* <SearchIcon
           style={{
             position: "absolute",
             marginLeft: "1.5rem",
             marginTop: "2rem",
           }}
           fontSize="small"
-        />
+        /> */}
         <TextField
           placeholder="Search.."
           value={searchKeyword}
