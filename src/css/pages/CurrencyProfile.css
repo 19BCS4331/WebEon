@@ -1,0 +1,30 @@
+.ActionsButtonsEdit{
+    border: none;
+    cursor: pointer;
+    width: 80px;
+    height: 30px;
+    border-radius: 20px;
+    background-color: #8d99ae;
+    color: white;
+    transition: 0.3s;
+}
+
+.ActionsButtonsEdit:hover{
+    background-color: #2b2d42;
+    
+}
+
+.ActionsButtonsDelete{
+    border: none;
+    cursor: pointer;
+    width: 80px;
+    height: 30px;
+    border-radius: 20px;
+    background-color: #8d99ae;
+    color: white;
+    transition: 0.3s;
+}
+
+.ActionsButtonsDelete:hover{
+    background-color: red;
+}

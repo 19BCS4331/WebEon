@@ -11,6 +11,12 @@ export const ToastProvider = ({ children }) => {
     dialogMsg: "",
   });
 
+  const [alertModalCurrency, setAlertModalCurrency] = useState({
+    open: false,
+    title: "",
+    dialogMsg: "",
+  });
+
   const showToast = (message, type) => {
     setToast({ show: true, message, type });
   };
@@ -27,6 +33,14 @@ export const ToastProvider = ({ children }) => {
     setAlertModal({ open: false, title: "", dialogMsg: "" });
   };
 
+  const showAlertDialogCurrency = (title, dialogMsg) => {
+    setAlertModalCurrency({ open: true, title, dialogMsg });
+  };
+
+  const hideAlertDialogCurrency = () => {
+    setAlertModalCurrency({ open: false, title: "", dialogMsg: "" });
+  };
+
   return (
     <ToastContext.Provider
       value={{
@@ -34,8 +48,11 @@ export const ToastProvider = ({ children }) => {
         hideToast,
         showAlertDialog,
         hideAlertDialog,
+        showAlertDialogCurrency,
+        hideAlertDialogCurrency,
         toast,
         alertModal,
+        alertModalCurrency,
       }}
     >
       {children}
