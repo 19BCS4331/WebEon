@@ -25,8 +25,9 @@ const AuthProvider = ({ children }) => {
         setUserId(userid);
         setIsAuthenticated(true);
       }
-      if (!userid) {
+      if (!userid || !token) {
         setIsAuthenticated(false);
+        localStorage.removeItem("isAuth");
       }
     };
 

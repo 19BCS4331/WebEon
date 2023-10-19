@@ -227,16 +227,6 @@ const Login = () => {
             />
           </Box>
 
-          <Box mt={5}>
-            <button className="loginButton" onClick={loginUser}>
-              {isLoading ? (
-                <CircularProgress size="25px" style={{ color: COLORS.text }} />
-              ) : (
-                "Login"
-              )}
-            </button>
-          </Box>
-
           <Box
             display={"flex"}
             gap={5}
@@ -306,6 +296,16 @@ const Login = () => {
                 <TextField {...params} label="Financial Year" />
               )}
             />
+          </Box>
+
+          <Box mt={8}>
+            <button className="loginButton" onClick={loginUser}>
+              {isLoading ? (
+                <CircularProgress size="25px" style={{ color: COLORS.text }} />
+              ) : (
+                "Login"
+              )}
+            </button>
           </Box>
 
           {/* <Box mt={5}>

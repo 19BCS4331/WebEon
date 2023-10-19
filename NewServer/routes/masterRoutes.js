@@ -49,47 +49,25 @@ router.get("/CurrencyMasterOne", authenticate, async (req, res) => {
 
 router.post("/CurrencyMasterCreate", authenticate, async (req, res) => {
   const {
-    currencyid,
     currency_code,
     currency_name,
-    rateper,
-    calculationmethod,
     priority,
-    countryid,
-    openratepremium,
-    gulfdiscfactor,
-    productallowed,
-    issuerallowed,
-    currencygroupid,
-    isactive,
-    tradedcurrency,
+    rateper,
     defaultminrate,
     defaultmaxrate,
-    branchCode,
-    isverified,
-    verifiedby,
-    verifieddate,
-    createdby,
-    creationdate,
-    lastupdateby,
-    lastupdatedate,
-    trackingid,
-    lasttransaction,
-    deletedby,
-    isdeleted,
-    deleteddate,
+    calculationmethod,
+    openratepremium,
+    gulfdiscfactor,
+    isactive,
   } = req.body;
 
   const query = `
     INSERT INTO currencymaster (
-      currencyid, currency_code, currency_name, rateper, calculationmethod, priority, countryid,
-      openratepremium, gulfdiscfactor, productallowed, issuerallowed,
-      currencygroupid, isactive, tradedcurrency, defaultminrate, defaultmaxrate,
-      branchCode, isverified, verifiedby, verifieddate, createdby, creationdate,
-      lastupdateby, lastupdatedate, trackingid, lasttransaction, deletedby, isdeleted, deleteddate
+      currency_code, currency_name,priority, rateper, defaultminrate, defaultmaxrate, calculationmethod ,
+      openratepremium, gulfdiscfactor, isactive
     )
     VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      $1, $2, $3, $4 , $5, $6, $7, $8, $9, $10
     );
   `;
 
@@ -97,35 +75,16 @@ router.post("/CurrencyMasterCreate", authenticate, async (req, res) => {
     pool.query(
       query,
       [
-        currencyid,
         currency_code,
         currency_name,
-        rateper,
-        calculationmethod,
         priority,
-        countryid,
-        openratepremium,
-        gulfdiscfactor,
-        productallowed,
-        issuerallowed,
-        currencygroupid,
-        isactive,
-        tradedcurrency,
+        rateper,
         defaultminrate,
         defaultmaxrate,
-        branchCode,
-        isverified,
-        verifiedby,
-        verifieddate,
-        createdby,
-        creationdate,
-        lastupdateby,
-        lastupdatedate,
-        trackingid,
-        lasttransaction,
-        deletedby,
-        isdeleted,
-        deleteddate,
+        calculationmethod,
+        openratepremium,
+        gulfdiscfactor,
+        isactive,
       ],
       (error, results) => {
         if (error) {
@@ -159,6 +118,26 @@ router.post("/CurrencyMasterDelete", authenticate, async (req, res) => {
       }
       console.log("Data deleted successfully");
       res.status(201).json({ message: "Data deleted successfully" });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get("/CurrencyMasterDeletedData", authenticate, async (req, res) => {
+  const query = `
+  SELECT * FROM currencymaster WHERE isdeleted = true
+  `;
+
+  try {
+    pool.query(query, (error, results) => {
+      if (error) {
+        console.error("Error fetching rows:", error);
+        res.status(500).json({ error: "Error fetching rows" });
+      }
+      console.log("Data fetched successfully");
+      res.status(200).json(results.rows);
     });
   } catch (error) {
     console.error(error);

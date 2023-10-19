@@ -96,7 +96,10 @@ const CurrencyProfile = () => {
             Edit
           </button>
           {isLoading ? (
-            <CircularProgress size="25px" style={{ color: COLORS.text }} />
+            <CircularProgress
+              size="25px"
+              style={{ color: COLORS.secondaryBG }}
+            />
           ) : (
             <button
               className="ActionsButtonsDelete"
@@ -120,11 +123,55 @@ const CurrencyProfile = () => {
 
   //  ---------------------FUNCTIONS START----------------------
 
-  const handleSubmitCreate = (event) => {
+  const handleSubmitCreate = async (event) => {
+    const token = localStorage.getItem("token");
     event.preventDefault();
     var data = new FormData(event.target);
     let formObject = Object.fromEntries(data.entries());
     console.log(formObject);
+    if (
+      currencyCode !== "" &&
+      currencyName !== "" &&
+      priority !== "" &&
+      ratePer !== ""
+    ) {
+      try {
+        const response = await axios.post(
+          `http://localhost:5001/api/master/CurrencyMasterCreate`,
+          {
+            currency_code: formObject.CurrencyCode,
+            currency_name: formObject.CurrencyName,
+            priority: formObject.Priority,
+            rateper: formObject.Rateper,
+            defaultminrate: formObject.DefaultMinRate,
+            defaultmaxrate: formObject.DefaultMaxRate,
+            calculationmethod:
+              formObject.CalculationMethod === "Multiplication" ? "M" : "D",
+            openratepremium: formObject.OpenRatePremium,
+            gulfdiscfactor: formObject.GulfDiscFactor,
+            isactive: formObject.Activate === "on" ? true : false,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log(response.data);
+        showToast("Data Inserted Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 1500);
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      showToast("Please Enter All Fields", "Fail");
+      setTimeout(() => {
+        hideToast();
+      }, 1500);
+    }
   };
 
   const handleSearchClick = () => {
@@ -237,18 +284,21 @@ const CurrencyProfile = () => {
     setEditedRatePer(row.rateper);
     setEditedDefaultMinRate(row.defaultminrate);
     setEditedDefaultMaxRate(row.defaultmaxrate);
-    setEditedCalculationMethod(row.calculationmethod);
+    setEditedCalculationMethod(
+      row.calculationmethod === "M" ? "Multiplication" : "Division"
+    );
     setEditedOpenRatePremium(row.openratepremium);
     setEditedGulfDiscFactor(row.gulfdiscfactor);
-    // setEditedAmexMapCode()
+    setEditedAmexMapCode(row.amexcode);
     // setEditedGroup()
 
-    // --------------End of setting all states-------------------------
+    // --------------End of setting all data states-------------------------
 
     setDataForEdit(row);
     setIsEdit(true);
     setIsCreateForm(false);
     setIsSearch(false);
+    setSearchKeyword("");
     // Switch the view and fetch the corresponding row's data for editing
     // You can set the data in your component's state for editing
     console.log("Edit button clicked for currency ID:", row.currencyid);
@@ -350,8 +400,8 @@ const CurrencyProfile = () => {
                   onChange={(e) => setPriority(e.target.value)}
                 />
                 <TextField
-                  id="Rate/per"
-                  name="Rate/per"
+                  id="Rateper"
+                  name="Rateper"
                   sx={{ width: "12vw" }}
                   label="Rate / per"
                   value={ratePer}
@@ -651,13 +701,13 @@ const CurrencyProfile = () => {
                   name="CurrencyCode"
                   value={editedcurrencyCode}
                   onChange={(e) => setEditedCurrencyCode(e.target.value)}
-                  label={dataForEdit.currency_code || "Currency Code"}
+                  label="Currency Code"
                 />
 
                 <TextField
                   sx={{ width: "12vw" }}
                   name="CurrencyName"
-                  label={dataForEdit.currency_name || "Currency Name"}
+                  label="Currency Name"
                   value={editedcurrencyName}
                   onChange={(e) => setEditedCurrencyName(e.target.value)}
                 />
@@ -714,11 +764,7 @@ const CurrencyProfile = () => {
                   disablePortal
                   id="CalculationMethod"
                   options={CalculationMethodOptions}
-                  value={
-                    editedcalculationMethod === "M"
-                      ? "Multiplication"
-                      : "Division"
-                  }
+                  value={editedcalculationMethod}
                   onChange={(e, newValue) =>
                     setEditedCalculationMethod(newValue)
                   }
@@ -737,24 +783,24 @@ const CurrencyProfile = () => {
                   name="OpenRatePremium"
                   sx={{ width: "12vw" }}
                   label="Open Rate Premium"
-                  value={openRatePremium}
-                  onChange={(e) => setOpenRatePremium(e.target.value)}
+                  value={editedopenRatePremium}
+                  onChange={(e) => setEditedOpenRatePremium(e.target.value)}
                 />
                 <TextField
                   id="GulfDiscFactor"
                   name="GulfDiscFactor"
                   sx={{ width: "12vw" }}
                   label="Gulf Disc Factor"
-                  value={gulfDiscFactor}
-                  onChange={(e) => setGulfDiscFactor(e.target.value)}
+                  value={editedgulfDiscFactor}
+                  onChange={(e) => setEditedGulfDiscFactor(e.target.value)}
                 />
                 <TextField
                   label="Amex Map Code"
                   name="AmexMapCode"
                   id="AmexMapCode"
                   sx={{ width: "12vw" }}
-                  value={amexMapCode}
-                  onChange={(e) => setAmexMapCode(e.target.value)}
+                  value={editedamexMapCode}
+                  onChange={(e) => setEditedAmexMapCode(e.target.value)}
                 />
                 <Autocomplete
                   disabled
@@ -770,7 +816,7 @@ const CurrencyProfile = () => {
                 />
                 <FormControlLabel
                   control={<Checkbox name="Activate" />}
-                  label="Activate"
+                  label="Active"
                   sx={{ width: 50 }}
                 />
                 <FormControlLabel
