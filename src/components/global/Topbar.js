@@ -24,6 +24,35 @@ const Topbar = ({ title }) => {
     setIsProfileVis(!isProfileVis);
   };
 
+  const [isUserActive, setUserActive] = useState(true);
+
+  useEffect(() => {
+    let inactivityTimeout;
+
+    const resetInactivityTimeout = () => {
+      clearTimeout(inactivityTimeout);
+      inactivityTimeout = setTimeout(() => {
+        setUserActive(false);
+      }, 15 * 60 * 1000); // 15 minutes (adjust as needed)
+    };
+
+    // Event listeners to reset the inactivity timeout
+    const resetEvents = ["mousemove", "keydown", "click"];
+    resetEvents.forEach((event) => {
+      document.addEventListener(event, resetInactivityTimeout);
+    });
+
+    // Initial setup
+    resetInactivityTimeout();
+
+    // Clean up event listeners when the component unmounts
+    return () => {
+      resetEvents.forEach((event) => {
+        document.removeEventListener(event, resetInactivityTimeout);
+      });
+    };
+  }, []);
+
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
@@ -43,6 +72,11 @@ const Topbar = ({ title }) => {
         setUserData(response.data);
       } catch (err) {
         console.log("Error", err);
+        logout();
+        showToast("Session Expired, Kindly Login Again", "Failed");
+        setTimeout(() => {
+          hideToast();
+        }, 2500);
       }
     };
     fetchUserData();
@@ -94,6 +128,14 @@ const Topbar = ({ title }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("userid");
   };
+
+  if (!isUserActive) {
+    logout();
+    showToast("Logged Out Due To Inactivity", "Fail");
+    setTimeout(() => {
+      hideToast();
+    }, 2000);
+  }
 
   return (
     <Box>

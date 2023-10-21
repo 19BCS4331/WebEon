@@ -13,6 +13,8 @@ const pool = new Pool({
   port: 5432,
 });
 
+// -----------------------------FETCH-------------------------
+
 router.get("/CurrencyMasterAll", authenticate, async (req, res) => {
   try {
     pool.query(
@@ -46,6 +48,10 @@ router.get("/CurrencyMasterOne", authenticate, async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+
+// -----------------------------FETCH END-------------------------
+
+// -----------------INSERT---------------------
 
 router.post("/CurrencyMasterCreate", authenticate, async (req, res) => {
   const {
@@ -101,6 +107,10 @@ router.post("/CurrencyMasterCreate", authenticate, async (req, res) => {
   }
 });
 
+// -----------------INSERT END---------------------
+
+// ------------------DELETE---------------------------
+
 router.post("/CurrencyMasterDelete", authenticate, async (req, res) => {
   const { currencyid } = req.body;
 
@@ -144,5 +154,63 @@ router.get("/CurrencyMasterDeletedData", authenticate, async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+
+// ------------------DELETE END---------------------------
+
+// ---------------------EDIT------------------------------
+
+router.post("/CurrencyMasterEdit", authenticate, async (req, res) => {
+  const {
+    currencyid,
+    currency_code,
+    currency_name,
+    priority,
+    rateper,
+    defaultminrate,
+    defaultmaxrate,
+    calculationmethod,
+    openratepremium,
+    gulfdiscfactor,
+    isactive,
+  } = req.body;
+
+  const query = `
+  UPDATE currencymaster
+  SET currency_code = $2, currency_name = $3, priority = $4, rateper = $5, defaultminrate = $6, defaultmaxrate = $7, calculationmethod = $8, openratepremium =$9, gulfdiscfactor = $10, isactive = $11
+  WHERE currencyid = $1
+  `;
+
+  try {
+    pool.query(
+      query,
+      [
+        currencyid,
+        currency_code,
+        currency_name,
+        priority,
+        rateper,
+        defaultminrate,
+        defaultmaxrate,
+        calculationmethod,
+        openratepremium,
+        gulfdiscfactor,
+        isactive,
+      ],
+      (error, results) => {
+        if (error) {
+          console.error("Error Editing:", error);
+          res.status(500).json({ error: "Error Editing data" });
+        }
+        console.log("Data Edited successfully");
+        res.status(201).json({ message: "Data Edited successfully" });
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+// ---------------------EDIT END------------------------------
 
 module.exports = router;

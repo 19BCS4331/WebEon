@@ -1,7 +1,7 @@
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { ToastProvider } from "./contexts/ToastContext";
+import { ToastProvider, useToast } from "./contexts/ToastContext";
 import Toast from "./components/Toast";
 import TestPage from "./pages/TestPage";
 import { AuthProvider } from "./contexts/AuthContext";

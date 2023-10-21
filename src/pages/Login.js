@@ -163,12 +163,34 @@ const Login = () => {
       }}
     >
       <Box
+        sx={{ backgroundColor: COLORS.text, opacity: 0.6 }}
+        height={"400px"}
+        width={"400px"}
+        position={"absolute"}
+        zIndex={1}
+        top={-100}
+        left={-150}
+        borderRadius={100}
+      />
+
+      <Box
+        sx={{ backgroundColor: COLORS.text, opacity: 0.6 }}
+        height={"400px"}
+        width={"400px"}
+        position={"absolute"}
+        zIndex={1}
+        bottom={20}
+        right={50}
+        borderRadius={100}
+      />
+      <Box
         sx={{
           display: "flex",
           alignItems: "center",
           flexDirection: "column",
           gap: 5,
         }}
+        zIndex={99999}
       >
         <Box
           component={motion.div}

@@ -54,6 +54,7 @@ const CurrencyProfile = () => {
   // --------------end create form states (values--------------
 
   // --------------Edit form states--------------
+  const [editedSelectedId, setEditedSelectedId] = useState("");
   const [editedcurrencyCode, setEditedCurrencyCode] = useState("");
   const [editedcurrencyName, setEditedCurrencyName] = useState("");
   const [editedcountry, setEditedCountry] = useState("");
@@ -65,6 +66,7 @@ const CurrencyProfile = () => {
   const [editedopenRatePremium, setEditedOpenRatePremium] = useState("");
   const [editedgulfDiscFactor, setEditedGulfDiscFactor] = useState("");
   const [editedamexMapCode, setEditedAmexMapCode] = useState("");
+  const [editedActiveStatus, setEditedActiveStatus] = useState("");
   const [editedgroup, setEditedGroup] = useState(null);
 
   // --------------end Edit form states--------------
@@ -124,6 +126,7 @@ const CurrencyProfile = () => {
   //  ---------------------FUNCTIONS START----------------------
 
   const handleSubmitCreate = async (event) => {
+    setisLoading(true);
     const token = localStorage.getItem("token");
     event.preventDefault();
     var data = new FormData(event.target);
@@ -160,13 +163,96 @@ const CurrencyProfile = () => {
 
         console.log(response.data);
         showToast("Data Inserted Successfully!", "success");
+        setisLoading(false);
+        setCurrencyCode("");
+        setCurrencyName("");
+        setPriority("");
+        setRatePer("");
+        setDefaultMinRate("");
+        setDefaultMaxRate("");
+        setCalculationMethod("");
+        setOpenRatePremium("");
+        setGulfDiscFactor("");
+
         setTimeout(() => {
           hideToast();
         }, 1500);
+
+        const updatedData = await CurrencyRefresh();
+        if (updatedData) {
+          setAllCurrencyData(updatedData);
+        }
       } catch (error) {
         console.log(error);
+        setisLoading(false);
       }
     } else {
+      setisLoading(false);
+      showToast("Please Enter All Fields", "Fail");
+      setTimeout(() => {
+        hideToast();
+      }, 1500);
+    }
+  };
+
+  const handleSubmitEdit = async (event) => {
+    setisLoading(true);
+    const token = localStorage.getItem("token");
+    event.preventDefault();
+    var data = new FormData(event.target);
+    let formObject = Object.fromEntries(data.entries());
+    console.log(formObject);
+    if (
+      editedcurrencyCode !== "" &&
+      editedcurrencyName !== "" &&
+      editedpriority !== "" &&
+      editedratePer !== ""
+    ) {
+      try {
+        const response = await axios.post(
+          `http://localhost:5001/api/master/CurrencyMasterEdit`,
+          {
+            currencyid: editedSelectedId,
+            currency_code: formObject.CurrencyCodeEdited,
+            currency_name: formObject.CurrencyNameEdited,
+            priority: formObject.PriorityEdited,
+            rateper: formObject.RateperEdited,
+            defaultminrate: formObject.DefaultMinRateEdited,
+            defaultmaxrate: formObject.DefaultMaxRateEdited,
+            calculationmethod:
+              formObject.CalculationMethodEdited === "Multiplication"
+                ? "M"
+                : "D",
+            openratepremium: formObject.OpenRatePremiumEdited,
+            gulfdiscfactor: formObject.GulfDiscFactorEdited,
+            isactive: formObject.ActivateEdited === "on" ? true : false,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log(response.data);
+        showToast("Data Edited Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 1500);
+        const updatedData = await CurrencyRefresh(); // Replace with your API call to fetch data
+        if (updatedData) {
+          setAllCurrencyData(updatedData);
+        }
+        setIsEdit(false);
+        setIsSearch(true);
+        setIsCreateForm(false);
+        setisLoading(false);
+      } catch (error) {
+        console.log(error);
+        setisLoading(false);
+      }
+    } else {
+      setisLoading(false);
       showToast("Please Enter All Fields", "Fail");
       setTimeout(() => {
         hideToast();
@@ -189,6 +275,24 @@ const CurrencyProfile = () => {
     setIsSearch(true);
     setIsEdit(false);
     setIsCreateForm(false);
+  };
+
+  const CurrencyRefresh = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5001/api/master/CurrencyMasterAll`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAllCurrencyData(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
@@ -259,6 +363,7 @@ const CurrencyProfile = () => {
         hideToast();
       }, 2000);
       hideAlertDialogCurrency();
+      setSearchKeyword("");
     } catch (error) {
       console.log(error);
       setisLoading(false);
@@ -277,6 +382,7 @@ const CurrencyProfile = () => {
 
   const handleEditClickOnRow = (row) => {
     // --------------setting all states-------------------------
+    setEditedSelectedId(row.currencyid);
     setEditedCurrencyCode(row.currency_code);
     setEditedCurrencyName(row.currency_name);
     // setEditedCountry()
@@ -290,6 +396,8 @@ const CurrencyProfile = () => {
     setEditedOpenRatePremium(row.openratepremium);
     setEditedGulfDiscFactor(row.gulfdiscfactor);
     setEditedAmexMapCode(row.amexcode);
+    setEditedActiveStatus(row.isactive);
+
     // setEditedGroup()
 
     // --------------End of setting all data states-------------------------
@@ -310,6 +418,10 @@ const CurrencyProfile = () => {
     SetRowid(row.currencyid);
     console.log("Delete button clicked for currency ID:", row.currencyid);
     showAlertDialogCurrency(`Delete the record : ${row.currency_name} `);
+  };
+
+  const handleCheckboxChange = (event) => {
+    setEditedActiveStatus(event.target.checked); // Update the state when the checkbox is toggled
   };
 
   //  ---------------------FUNCTIONS END----------------------
@@ -350,141 +462,146 @@ const CurrencyProfile = () => {
               <Box name="HeaderSection" fontSize={"14px"} mt={2}>
                 (Create New)
               </Box>
-              <Box
-                name="InputsContainer"
-                mt={4}
-                display={"grid"}
-                gridTemplateColumns={"repeat(3, 1fr)"}
-                gridTemplateRows={"repeat(3, 1fr)"}
-                columnGap={"40px"}
-                rowGap={"40px"}
-              >
-                <TextField
-                  sx={{ width: "12vw" }}
-                  name="CurrencyCode"
-                  value={currencyCode}
-                  onChange={(e) => setCurrencyCode(e.target.value)}
-                  label="Currency Code"
-                />
+              {isLoading ? (
+                <CircularProgress sx={{ marginTop: 5 }} />
+              ) : (
+                <Box
+                  name="InputsContainer"
+                  mt={4}
+                  display={"grid"}
+                  gridTemplateColumns={"repeat(3, 1fr)"}
+                  gridTemplateRows={"repeat(3, 1fr)"}
+                  columnGap={"40px"}
+                  rowGap={"40px"}
+                >
+                  <TextField
+                    sx={{ width: "12vw" }}
+                    name="CurrencyCode"
+                    value={currencyCode}
+                    onChange={(e) => setCurrencyCode(e.target.value)}
+                    label="Currency Code"
+                  />
 
-                <TextField
-                  sx={{ width: "12vw" }}
-                  name="CurrencyName"
-                  label="Currency Name"
-                  value={currencyName}
-                  onChange={(e) => setCurrencyName(e.target.value)}
-                />
-                <Autocomplete
-                  disabled
-                  disablePortal
-                  id="Countries"
-                  name="Countries"
-                  onChange={(event, newValue) => setCountry(newValue)}
-                  options={options}
-                  sx={{ width: "12vw" }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Countries"
-                      value={country}
-                      name="country"
-                    />
-                  )}
-                />
-                <TextField
-                  id="Priority"
-                  sx={{ width: "12vw" }}
-                  label="Priority"
-                  name="Priority"
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                />
-                <TextField
-                  id="Rateper"
-                  name="Rateper"
-                  sx={{ width: "12vw" }}
-                  label="Rate / per"
-                  value={ratePer}
-                  onChange={(e) => setRatePer(e.target.value)}
-                />
-                <TextField
-                  id="DefaultMinRate"
-                  name="DefaultMinRate"
-                  sx={{ width: "12vw" }}
-                  label="Default Min Rate"
-                  value={defaultMinRate}
-                  onChange={(e) => setDefaultMinRate(e.target.value)}
-                />
-                <TextField
-                  id="DefaultMaxRate"
-                  name="DefaultMaxRate"
-                  sx={{ width: "12vw" }}
-                  label="Default Max Rate"
-                  value={defaultMaxRate}
-                  onChange={(e) => setDefaultMaxRate(e.target.value)}
-                />
-                <Autocomplete
-                  disablePortal
-                  id="CalculationMethod"
-                  options={CalculationMethodOptions}
-                  // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                  sx={{ width: "12vw" }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Calculation Method"
-                      name="CalculationMethod"
-                      // value={calculationMethod}
-                    />
-                  )}
-                />
-                <TextField
-                  id="OpenRatePremium"
-                  name="OpenRatePremium"
-                  sx={{ width: "12vw" }}
-                  label="Open Rate Premium"
-                  value={openRatePremium}
-                  onChange={(e) => setOpenRatePremium(e.target.value)}
-                />
-                <TextField
-                  id="GulfDiscFactor"
-                  name="GulfDiscFactor"
-                  sx={{ width: "12vw" }}
-                  label="Gulf Disc Factor"
-                  value={gulfDiscFactor}
-                  onChange={(e) => setGulfDiscFactor(e.target.value)}
-                />
-                <TextField
-                  label="Amex Map Code"
-                  name="AmexMapCode"
-                  id="AmexMapCode"
-                  sx={{ width: "12vw" }}
-                  value={amexMapCode}
-                  onChange={(e) => setAmexMapCode(e.target.value)}
-                />
-                <Autocomplete
-                  disabled
-                  disablePortal
-                  id="Group"
-                  options={options}
-                  sx={{ width: "12vw" }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Group" name="Group" />
-                  )}
-                  // value={group}
-                  // onChange={(_, newValue) => setGroup(newValue)}
-                />
-                <FormControlLabel
-                  control={<Checkbox name="Activate" />}
-                  label="Activate"
-                  sx={{ width: 50 }}
-                />
-                <FormControlLabel
-                  control={<Checkbox name="OnlyStocking" />}
-                  label="Only Stocking"
-                  sx={{ width: 50 }}
-                />
-              </Box>
+                  <TextField
+                    sx={{ width: "12vw" }}
+                    name="CurrencyName"
+                    label="Currency Name"
+                    value={currencyName}
+                    onChange={(e) => setCurrencyName(e.target.value)}
+                  />
+                  <Autocomplete
+                    disabled
+                    disablePortal
+                    id="Countries"
+                    name="Countries"
+                    onChange={(event, newValue) => setCountry(newValue)}
+                    options={options}
+                    sx={{ width: "12vw" }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Countries"
+                        value={country}
+                        name="country"
+                      />
+                    )}
+                  />
+                  <TextField
+                    id="Priority"
+                    sx={{ width: "12vw" }}
+                    label="Priority"
+                    name="Priority"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                  />
+                  <TextField
+                    id="Rateper"
+                    name="Rateper"
+                    sx={{ width: "12vw" }}
+                    label="Rate / per"
+                    value={ratePer}
+                    onChange={(e) => setRatePer(e.target.value)}
+                  />
+                  <TextField
+                    id="DefaultMinRate"
+                    name="DefaultMinRate"
+                    sx={{ width: "12vw" }}
+                    label="Default Min Rate"
+                    value={defaultMinRate}
+                    onChange={(e) => setDefaultMinRate(e.target.value)}
+                  />
+                  <TextField
+                    id="DefaultMaxRate"
+                    name="DefaultMaxRate"
+                    sx={{ width: "12vw" }}
+                    label="Default Max Rate"
+                    value={defaultMaxRate}
+                    onChange={(e) => setDefaultMaxRate(e.target.value)}
+                  />
+                  <Autocomplete
+                    disablePortal
+                    id="CalculationMethod"
+                    options={CalculationMethodOptions}
+                    // onChange={(e, newValue) => setCalculationMethod(newValue)}
+                    sx={{ width: "12vw" }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Calculation Method"
+                        name="CalculationMethod"
+                        // value={calculationMethod}
+                      />
+                    )}
+                  />
+                  <TextField
+                    id="OpenRatePremium"
+                    name="OpenRatePremium"
+                    sx={{ width: "12vw" }}
+                    label="Open Rate Premium"
+                    value={openRatePremium}
+                    onChange={(e) => setOpenRatePremium(e.target.value)}
+                  />
+                  <TextField
+                    id="GulfDiscFactor"
+                    name="GulfDiscFactor"
+                    sx={{ width: "12vw" }}
+                    label="Gulf Disc Factor"
+                    value={gulfDiscFactor}
+                    onChange={(e) => setGulfDiscFactor(e.target.value)}
+                  />
+                  <TextField
+                    label="Amex Map Code"
+                    name="AmexMapCode"
+                    id="AmexMapCode"
+                    sx={{ width: "12vw" }}
+                    value={amexMapCode}
+                    onChange={(e) => setAmexMapCode(e.target.value)}
+                  />
+                  <Autocomplete
+                    disabled
+                    disablePortal
+                    id="Group"
+                    options={options}
+                    sx={{ width: "12vw" }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Group" name="Group" />
+                    )}
+                    // value={group}
+                    // onChange={(_, newValue) => setGroup(newValue)}
+                  />
+                  <FormControlLabel
+                    control={<Checkbox name="Activate" />}
+                    label="Activate"
+                    sx={{ width: 50 }}
+                  />
+                  <FormControlLabel
+                    control={<Checkbox name="OnlyStocking" />}
+                    label="Only Stocking"
+                    sx={{ width: 50 }}
+                  />
+                </Box>
+              )}
+
               <Box display="flex" name="FooterSection" mt={4} gap={5}>
                 <button
                   onClick={handleSearchClick}
@@ -608,6 +725,10 @@ const CurrencyProfile = () => {
 
               return false;
             })}
+            columnVisibilityModel={{
+              // Hide columns status and traderName, the other columns will remain visible
+              currencyid: false,
+            }}
             getRowId={(row) => row.currencyid}
             rowSelectionModel={selectionModel}
             onRowSelectionModelChange={handleSelectionModelChange}
@@ -668,7 +789,7 @@ const CurrencyProfile = () => {
               alignItems={"center"}
               name="ContainerBox"
               component={"form"}
-              onSubmit={handleSubmitCreate}
+              onSubmit={handleSubmitEdit}
               sx={{ backgroundColor: COLORS.text }}
               height={"auto"}
               p={3}
@@ -676,177 +797,189 @@ const CurrencyProfile = () => {
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
-              <Box
-                name="HeaderSection"
-                textAlign={"center"}
-                fontSize={"20px"}
-                mt={0}
-              >
-                Edit Data
-              </Box>
-              <Box name="HeaderSection" fontSize={"14px"} mt={2}>
-                (Currency : {dataForEdit.currency_name})
-              </Box>
-              <Box
-                name="InputsContainer"
-                mt={4}
-                display={"grid"}
-                gridTemplateColumns={"repeat(3, 1fr)"}
-                gridTemplateRows={"repeat(3, 1fr)"}
-                columnGap={"40px"}
-                rowGap={"40px"}
-              >
-                <TextField
-                  sx={{ width: "12vw" }}
-                  name="CurrencyCode"
-                  value={editedcurrencyCode}
-                  onChange={(e) => setEditedCurrencyCode(e.target.value)}
-                  label="Currency Code"
-                />
-
-                <TextField
-                  sx={{ width: "12vw" }}
-                  name="CurrencyName"
-                  label="Currency Name"
-                  value={editedcurrencyName}
-                  onChange={(e) => setEditedCurrencyName(e.target.value)}
-                />
-                <Autocomplete
-                  disabled
-                  disablePortal
-                  id="Countries"
-                  name="Countries"
-                  onChange={(event, newValue) => setCountry(newValue)}
-                  options={options}
-                  sx={{ width: "12vw" }}
-                  renderInput={(params) => (
+              {isLoading ? (
+                <CircularProgress size={"30px"} />
+              ) : (
+                <>
+                  <Box
+                    name="HeaderSection"
+                    textAlign={"center"}
+                    fontSize={"20px"}
+                    mt={0}
+                  >
+                    Edit Data
+                  </Box>
+                  <Box name="HeaderSection" fontSize={"14px"} mt={2}>
+                    (Currency : {dataForEdit.currency_name})
+                  </Box>
+                  <Box
+                    name="InputsContainer"
+                    mt={4}
+                    display={"grid"}
+                    gridTemplateColumns={"repeat(3, 1fr)"}
+                    gridTemplateRows={"repeat(3, 1fr)"}
+                    columnGap={"40px"}
+                    rowGap={"40px"}
+                  >
                     <TextField
-                      {...params}
-                      label="Countries"
-                      value={country}
-                      name="country"
+                      sx={{ width: "12vw" }}
+                      name="CurrencyCodeEdited"
+                      value={editedcurrencyCode}
+                      onChange={(e) => setEditedCurrencyCode(e.target.value)}
+                      label="Currency Code"
                     />
-                  )}
-                />
-                <TextField
-                  id="Priority"
-                  sx={{ width: "12vw" }}
-                  label={"Priority"}
-                  name="Priority"
-                  value={editedpriority}
-                  onChange={(e) => setEditedPriority(e.target.value)}
-                />
-                <TextField
-                  id="Rate/per"
-                  name="Rate/per"
-                  sx={{ width: "12vw" }}
-                  label="Rate / per"
-                  value={editedratePer}
-                  onChange={(e) => setEditedRatePer(e.target.value)}
-                />
-                <TextField
-                  id="DefaultMinRate"
-                  name="DefaultMinRate"
-                  sx={{ width: "12vw" }}
-                  label="Default Min Rate"
-                  value={editeddefaultMinRate}
-                  onChange={(e) => setEditedDefaultMinRate(e.target.value)}
-                />
-                <TextField
-                  id="DefaultMaxRate"
-                  name="DefaultMaxRate"
-                  sx={{ width: "12vw" }}
-                  label="Default Max Rate"
-                  value={editeddefaultMaxRate}
-                  onChange={(e) => setEditedDefaultMaxRate(e.target.value)}
-                />
-                <Autocomplete
-                  disablePortal
-                  id="CalculationMethod"
-                  options={CalculationMethodOptions}
-                  value={editedcalculationMethod}
-                  onChange={(e, newValue) =>
-                    setEditedCalculationMethod(newValue)
-                  }
-                  sx={{ width: "12vw" }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Calculation Method"
-                      name="CalculationMethod"
-                      // value={calculationMethod}
-                    />
-                  )}
-                />
-                <TextField
-                  id="OpenRatePremium"
-                  name="OpenRatePremium"
-                  sx={{ width: "12vw" }}
-                  label="Open Rate Premium"
-                  value={editedopenRatePremium}
-                  onChange={(e) => setEditedOpenRatePremium(e.target.value)}
-                />
-                <TextField
-                  id="GulfDiscFactor"
-                  name="GulfDiscFactor"
-                  sx={{ width: "12vw" }}
-                  label="Gulf Disc Factor"
-                  value={editedgulfDiscFactor}
-                  onChange={(e) => setEditedGulfDiscFactor(e.target.value)}
-                />
-                <TextField
-                  label="Amex Map Code"
-                  name="AmexMapCode"
-                  id="AmexMapCode"
-                  sx={{ width: "12vw" }}
-                  value={editedamexMapCode}
-                  onChange={(e) => setEditedAmexMapCode(e.target.value)}
-                />
-                <Autocomplete
-                  disabled
-                  disablePortal
-                  id="Group"
-                  options={options}
-                  sx={{ width: "12vw" }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Group" name="Group" />
-                  )}
-                  // value={group}
-                  // onChange={(_, newValue) => setGroup(newValue)}
-                />
-                <FormControlLabel
-                  control={<Checkbox name="Activate" />}
-                  label="Active"
-                  sx={{ width: 50 }}
-                />
-                <FormControlLabel
-                  control={<Checkbox name="OnlyStocking" />}
-                  label="Only Stocking"
-                  sx={{ width: 50 }}
-                />
-              </Box>
-              <Box display="flex" name="FooterSection" mt={4} gap={5}>
-                <button
-                  onClick={handleBackOnEdit}
-                  className="FormFooterButton"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 5,
-                  }}
-                >
-                  <KeyboardBackspaceIcon />
-                  Go Back
-                </button>
 
-                {/* <button className="FormFooterButton" type="reset">
-              Cancel
-            </button> */}
-                <button className="FormFooterButton" type="submit">
-                  Edit & Save
-                </button>
-              </Box>
+                    <TextField
+                      sx={{ width: "12vw" }}
+                      name="CurrencyNameEdited"
+                      label="Currency Name"
+                      value={editedcurrencyName}
+                      onChange={(e) => setEditedCurrencyName(e.target.value)}
+                    />
+                    <Autocomplete
+                      disabled
+                      disablePortal
+                      id="Countries"
+                      name="CountriesEdited"
+                      onChange={(event, newValue) => setCountry(newValue)}
+                      options={options}
+                      sx={{ width: "12vw" }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Countries"
+                          value={country}
+                          name="country"
+                        />
+                      )}
+                    />
+                    <TextField
+                      id="Priority"
+                      sx={{ width: "12vw" }}
+                      label={"Priority"}
+                      name="PriorityEdited"
+                      value={editedpriority}
+                      onChange={(e) => setEditedPriority(e.target.value)}
+                    />
+                    <TextField
+                      id="Rate/per"
+                      name="RateperEdited"
+                      sx={{ width: "12vw" }}
+                      label="Rate / per"
+                      value={editedratePer}
+                      onChange={(e) => setEditedRatePer(e.target.value)}
+                    />
+                    <TextField
+                      id="DefaultMinRate"
+                      name="DefaultMinRateEdited"
+                      sx={{ width: "12vw" }}
+                      label="Default Min Rate"
+                      value={editeddefaultMinRate}
+                      onChange={(e) => setEditedDefaultMinRate(e.target.value)}
+                    />
+                    <TextField
+                      id="DefaultMaxRate"
+                      name="DefaultMaxRateEdited"
+                      sx={{ width: "12vw" }}
+                      label="Default Max Rate"
+                      value={editeddefaultMaxRate}
+                      onChange={(e) => setEditedDefaultMaxRate(e.target.value)}
+                    />
+                    <Autocomplete
+                      disablePortal
+                      id="CalculationMethod"
+                      options={CalculationMethodOptions}
+                      value={editedcalculationMethod}
+                      onChange={(e, newValue) =>
+                        setEditedCalculationMethod(newValue)
+                      }
+                      sx={{ width: "12vw" }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Calculation Method"
+                          name="CalculationMethodEdited"
+                          // value={calculationMethod}
+                        />
+                      )}
+                    />
+                    <TextField
+                      id="OpenRatePremium"
+                      name="OpenRatePremiumEdited"
+                      sx={{ width: "12vw" }}
+                      label="Open Rate Premium"
+                      value={editedopenRatePremium}
+                      onChange={(e) => setEditedOpenRatePremium(e.target.value)}
+                    />
+                    <TextField
+                      id="GulfDiscFactor"
+                      name="GulfDiscFactorEdited"
+                      sx={{ width: "12vw" }}
+                      label="Gulf Disc Factor"
+                      value={editedgulfDiscFactor}
+                      onChange={(e) => setEditedGulfDiscFactor(e.target.value)}
+                    />
+                    <TextField
+                      label="Amex Map Code"
+                      name="AmexMapCodeEdited"
+                      id="AmexMapCode"
+                      sx={{ width: "12vw" }}
+                      value={editedamexMapCode}
+                      onChange={(e) => setEditedAmexMapCode(e.target.value)}
+                    />
+                    <Autocomplete
+                      disabled
+                      disablePortal
+                      id="Group"
+                      options={options}
+                      sx={{ width: "12vw" }}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Group" name="Group" />
+                      )}
+                      // value={group}
+                      // onChange={(_, newValue) => setGroup(newValue)}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          name="ActivateEdited"
+                          checked={editedActiveStatus}
+                          onChange={handleCheckboxChange}
+                        />
+                      }
+                      label="Active"
+                      sx={{ width: 50 }}
+                    />
+                    <FormControlLabel
+                      control={<Checkbox name="OnlyStockingEdited" />}
+                      label="Only Stocking"
+                      sx={{ width: 50 }}
+                    />
+                  </Box>
+                  <Box display="flex" name="FooterSection" mt={4} gap={5}>
+                    <button
+                      onClick={handleBackOnEdit}
+                      className="FormFooterButton"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 5,
+                      }}
+                    >
+                      <KeyboardBackspaceIcon />
+                      Go Back
+                    </button>
+
+                    {/* <button className="FormFooterButton" type="reset">
+                    Cancel
+                  </button> */}
+                    <button className="FormFooterButton" type="submit">
+                      Edit & Save
+                    </button>
+                  </Box>
+                </>
+              )}
             </Box>
           </Box>
         </AnimatePresence>
