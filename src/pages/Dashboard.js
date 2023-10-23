@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import React from "react";
+import React, { useContext } from "react";
 import "../css/pages/Dashboard.css";
 import Marquee from "react-fast-marquee";
 import SideNavbar from "../components/global/SideNavbar";

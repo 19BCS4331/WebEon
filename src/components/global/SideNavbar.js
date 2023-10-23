@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Dropdown from "../Dropdown";
 import { Box, TextField } from "@mui/material";
 import { useAuth } from "../../contexts/AuthContext";
@@ -6,60 +6,48 @@ import { COLORS } from "../../assets/colors/COLORS";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import ClearIcon from "@mui/icons-material/Clear";
+import axios from "axios";
 
 const SideNavbar = () => {
   // const DropDownItemsMaster = ["Master Profiles", "Party Profiles", "Hello"];
+  const [menuData, setMenuData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const DropDownItems = [
-    {
-      text: "Master",
-      role: "All",
-      subMenu: [
-        {
-          text: "Master Profiles",
-          subMenu: [{ text: "Currency Profile" }, { text: "Financial Codes" }],
-        },
-        {
-          text: "Party Profiles",
-          subMenu: [
-            { text: "Category Master" },
-            { text: "Corporate Client Profile" },
-          ],
-        },
-      ],
-    },
-    {
-      text: "Transactions",
-      role: "All",
-      subMenu: [
-        {
-          text: "Other Transactions",
-          subMenu: [{ text: "AD1 Transactions" }, { text: "Insurance Sales" }],
-        },
-        {
-          text: "Accounting Transactions",
-          subMenu: [{ text: "Debit / Credit Transact" }, { text: "Receipt" }],
-        },
-      ],
-    },
+  useEffect(() => {
+    const fetchNavMenu = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.get(
+          `http://localhost:5001/api/nav/NavMenu`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const organizedMenuData = organizeMenuData(response.data);
+        setMenuData(organizedMenuData);
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-    {
-      text: "Miscellaneous",
-      role: "Admin",
-      subMenu: [
-        {
-          text: "Options",
-          subMenu: [{ text: "AD1 Transactions" }, { text: "Insurance Sales" }],
-        },
-        {
-          text: "Opening Balances",
-          subMenu: [{ text: "Debit / Credit Transact" }, { text: "Receipt" }],
-        },
-      ],
-    },
-  ];
+    fetchNavMenu();
+  }, []);
 
-  // const DropDownItemsTrans = ["Other Trans", "Transactions", "Bye"];
+  const organizeMenuData = (menuItems, parentId = null) => {
+    const organizedData = menuItems
+      .filter((item) => item.parent_id === parentId)
+      .map((item) => {
+        const subMenu = organizeMenuData(menuItems, item.id);
+        if (subMenu.length > 0) {
+          item.subMenu = subMenu;
+        }
+        return item;
+      });
+
+    return organizedData;
+  };
 
   const { userRole } = useAuth();
   const [searchKeyword, setSearchKeyword] = React.useState("");
@@ -72,7 +60,7 @@ const SideNavbar = () => {
     setSearchKeyword("");
   };
 
-  const filteredItems = DropDownItems.filter((item) => {
+  const filteredItems = menuData.filter((item) => {
     return (
       item.text.toLowerCase().includes(searchKeyword.toLowerCase()) ||
       item.subMenu.some((subItem) =>

@@ -20,9 +20,11 @@ import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import "../../css/pages/CurrencyProfile.css";
 import { useToast } from "../../contexts/ToastContext";
 import CustomAlertModalCurrency from "../../components/CustomerAlertModalCurrency";
+import { useNavigate } from "react-router-dom";
 
 const CurrencyProfile = () => {
   // -----------------STATES START---------------------
+  const navigate = useNavigate();
   const {
     showAlertDialogCurrency,
     hideAlertDialogCurrency,
@@ -134,6 +136,7 @@ const CurrencyProfile = () => {
     console.log(formObject);
     if (
       currencyCode !== "" &&
+      currencyCode.length === 3 &&
       currencyName !== "" &&
       priority !== "" &&
       ratePer !== ""
@@ -142,7 +145,7 @@ const CurrencyProfile = () => {
         const response = await axios.post(
           `http://localhost:5001/api/master/CurrencyMasterCreate`,
           {
-            currency_code: formObject.CurrencyCode,
+            currency_code: formObject.CurrencyCode.toUpperCase(),
             currency_name: formObject.CurrencyName,
             priority: formObject.Priority,
             rateper: formObject.Rateper,
@@ -162,7 +165,7 @@ const CurrencyProfile = () => {
         );
 
         console.log(response.data);
-        showToast("Data Inserted Successfully!", "success");
+
         setisLoading(false);
         setCurrencyCode("");
         setCurrencyName("");
@@ -174,21 +177,28 @@ const CurrencyProfile = () => {
         setOpenRatePremium("");
         setGulfDiscFactor("");
 
-        setTimeout(() => {
-          hideToast();
-        }, 1500);
-
         const updatedData = await CurrencyRefresh();
         if (updatedData) {
           setAllCurrencyData(updatedData);
         }
+        showToast("Data Inserted Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 1500);
       } catch (error) {
         console.log(error);
         setisLoading(false);
       }
-    } else {
+    }
+    if (currencyName === "" && priority === "" && ratePer === "") {
       setisLoading(false);
       showToast("Please Enter All Fields", "Fail");
+      setTimeout(() => {
+        hideToast();
+      }, 1500);
+    } else if (currencyCode.length !== 3) {
+      setisLoading(false);
+      showToast("Currency Code Should be in 3 letters", "Fail");
       setTimeout(() => {
         hideToast();
       }, 1500);
@@ -269,6 +279,10 @@ const CurrencyProfile = () => {
   const handlebackClickOnSearch = () => {
     setIsSearch(false);
     setIsCreateForm(true);
+  };
+
+  const handlebackClickOnCreate = () => {
+    navigate(-1);
   };
 
   const handleBackOnEdit = () => {
@@ -451,6 +465,16 @@ const CurrencyProfile = () => {
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
+              <KeyboardBackspaceIcon
+                onClick={handlebackClickOnCreate}
+                fontSize="large"
+                sx={{
+                  alignSelf: "flex-start",
+                  color: COLORS.secondaryBG,
+                  position: "absolute",
+                  cursor: "pointer",
+                }}
+              />
               <Box
                 name="HeaderSection"
                 textAlign={"center"}
