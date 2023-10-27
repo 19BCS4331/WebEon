@@ -14,6 +14,8 @@ import DivisionProfile from "./pages/Master/DivisionProfile";
 import DivisionDetails from "./pages/Master/DivisionDetails";
 import AccountsProfile from "./pages/Master/AccountsProfile";
 import Ad1Provider from "./pages/Master/Ad1Provider";
+import BuySellOptions from "./pages/Transactions/BuySellTransactions";
+import BuyFromIndivi from "./pages/Transactions/BuySellTransactions/BuyFromIndiviOrCorp";
 
 const App = () => {
   return (
@@ -63,6 +65,28 @@ const App = () => {
             <Route path="/ad1-provider" element={<ProtectedRoute />}>
               <Route path="/ad1-provider" element={<Ad1Provider />} />
             </Route>
+
+            {/* ------------MASTERS--------------------- */}
+
+            {/* --------------Transactions-------------------- */}
+            <Route path="/buy-/-sell-transactions" element={<ProtectedRoute />}>
+              <Route
+                path="/buy-/-sell-transactions"
+                element={<BuySellOptions />}
+              />
+            </Route>
+
+            <Route
+              path="/buy-from-individual-/-corporates"
+              element={<ProtectedRoute />}
+            >
+              <Route
+                path="/buy-from-individual-/-corporates"
+                element={<BuyFromIndivi />}
+              />
+            </Route>
+
+            {/* --------------Transactions-------------------- */}
           </Routes>
         </ToastProvider>
       </BrowserRouter>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Dropdown from "../Dropdown";
-import { Box, TextField } from "@mui/material";
+import { Box, CircularProgress, TextField } from "@mui/material";
 import { useAuth } from "../../contexts/AuthContext";
 import { COLORS } from "../../assets/colors/COLORS";
 import SearchIcon from "@mui/icons-material/Search";
@@ -15,6 +15,7 @@ const SideNavbar = () => {
 
   useEffect(() => {
     const fetchNavMenu = async () => {
+      setIsLoading(true);
       const token = localStorage.getItem("token");
       try {
         const response = await axios.get(
@@ -27,8 +28,10 @@ const SideNavbar = () => {
         );
         const organizedMenuData = organizeMenuData(response.data);
         setMenuData(organizedMenuData);
+        setIsLoading(false);
       } catch (error) {
         console.log(error);
+        setIsLoading(false);
       }
     };
 
@@ -138,27 +141,35 @@ const SideNavbar = () => {
           }
         />
       </Box>
-      {filteredItems.map((item) => (
+      {isLoading ? (
+        <CircularProgress sx={{ marginTop: "20vh", color: COLORS.text }} />
+      ) : (
         <>
-          {userRole === "Admin" ? (
-            <Dropdown
-              MenuText={item.text}
-              DropDownItems={item.subMenu.map((subItem) => subItem.text)}
-              searchResults={filteredItems}
-            />
-          ) : (
+          {filteredItems.map((item) => (
             <>
-              {item.role !== "Admin" && (
+              {userRole === "Admin" ? (
                 <Dropdown
                   MenuText={item.text}
                   DropDownItems={item.subMenu.map((subItem) => subItem.text)}
                   searchResults={filteredItems}
                 />
+              ) : (
+                <>
+                  {item.role !== "Admin" && (
+                    <Dropdown
+                      MenuText={item.text}
+                      DropDownItems={item.subMenu.map(
+                        (subItem) => subItem.text
+                      )}
+                      searchResults={filteredItems}
+                    />
+                  )}
+                </>
               )}
             </>
-          )}
+          ))}{" "}
         </>
-      ))}
+      )}
     </Box>
   );
 };

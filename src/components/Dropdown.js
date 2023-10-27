@@ -5,6 +5,7 @@ import KeyboardControlKeyIcon from "@mui/icons-material/KeyboardControlKey";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { COLORS } from "../assets/colors/COLORS";
+import { useEffect } from "react";
 
 const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
   const navigate = useNavigate();
@@ -31,6 +32,21 @@ const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
       navigate(targetLocation);
     }
   };
+
+  useEffect(() => {
+    if (
+      searchResults &&
+      searchResults.length === 1 &&
+      searchResults.some(
+        (item) => item.text === MenuText || item.subMenu.includes(MenuText)
+      )
+    ) {
+      setIsDropdownVis(true);
+    }
+    // else if (searchResults.length > 2 && isDropdownVis === true) {
+    //   setIsDropdownVis(false);
+    // }
+  }, [searchResults]);
 
   return (
     <Box>

@@ -197,7 +197,7 @@ const Login = () => {
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <h1 style={{ color: "#edf2f4" }}>Advanced EON</h1>
+          <h1 style={{ color: "#edf2f4" }}> Maraekat's Advanced EON</h1>
         </Box>
         <Box
           component={motion.div}

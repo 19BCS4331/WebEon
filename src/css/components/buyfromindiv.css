@@ -1,0 +1,14 @@
+.PartySelect{
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: #edf2f4;
+    cursor: pointer;
+    transition: 0.4s;
+}
+.PartySelect:hover{
+    background-color: #8d99ae;
+    border-radius: 20px;
+    color: white;
+    border:none;
+}
+
