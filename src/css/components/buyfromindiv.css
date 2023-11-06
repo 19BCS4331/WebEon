@@ -12,3 +12,74 @@
     border:none;
 }
 
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+   
+    margin-left: 20px;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #e3e3e3;
+    border-radius: 20px;
+ 
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+
+    background: #8d99ae;
+    border-radius: 20px;
+   
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2b2d42;
+   
+  }
+
+
+  .OverFlowBox{
+    overflow: scroll;
+    overflow-x: hidden;
+    
+  }
+
+  .SavePax{
+    align-self: flex-end;
+    width: 8vw;
+    height:5vh ;
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: #edf2f4;
+    cursor: pointer;
+    transition: 0.4s;
+    font-size: 16px;
+  }
+
+  .SavePax:hover{
+    background-color: #8d99ae;
+    border-radius: 20px;
+    color: white;
+    border:none;
+  }
+
+  .NextOnCreate{
+    border: none;
+    width: 8vw;
+    height: 4.5vh;
+    background-color: #8d99ae;
+    color: white;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: 0.4s;
+    margin-top: 20px;
+    font-size: 15px;
+  }
+
+  .NextOnCreate:hover{
+    background-color:#2b2d42;
+    font-size: 16px;
+  }

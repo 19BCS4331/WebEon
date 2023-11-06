@@ -112,7 +112,7 @@ const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
             justifyContent={"center"}
           >
             <Box>
-              {DropDownItems.map((item) => (
+              {DropDownItems?.map((item) => (
                 <Box
                   component={motion.div}
                   initial={{ opacity: 0 }}
