@@ -759,7 +759,7 @@ const CurrencyProfile = () => {
             sortModel={[
               {
                 field: "currencyid",
-                sort: "asc", // 'asc' for ascending, 'desc' for descending
+                sort: "asc",
               },
             ]}
             columns={columns}

@@ -6,6 +6,7 @@ import {
   CircularProgress,
   InputAdornment,
   MenuItem,
+  Popper,
   TextField,
 } from "@mui/material";
 
@@ -14,8 +15,7 @@ import "../../../css/components/formComponent.css";
 import axios from "axios";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
+
 import { DataGrid } from "@mui/x-data-grid";
 import { AnimatePresence, motion } from "framer-motion";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
@@ -24,8 +24,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
 import { useNavigate } from "react-router-dom";
 import { COLORS } from "../../../assets/colors/COLORS";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import "../../../css/components/buyfromindiv.css";
 import EmailIcon from "@mui/icons-material/Email";
@@ -49,6 +48,15 @@ import {
   fetchCurrencyRate,
 } from "../../../apis/OptionsMaster/index.js";
 
+import {
+  postPaxDetails,
+  PaxDetailsID,
+  PaxDetailsFull,
+  PaxDetailsFullMain,
+} from "../../../apis/IndiviOrCorp/Buy/index.js";
+import { ClickAwayListener } from "@mui/base/ClickAwayListener";
+import PaxModal from "../../../components/Transactions/BuyFromIndivi/PaxModal.js";
+
 const BuyFromIndivi = () => {
   // -----------------STATES START---------------------
   const navigate = useNavigate();
@@ -65,6 +73,7 @@ const BuyFromIndivi = () => {
 
   const [allCurrencyData, setAllCurrencyData] = useState(null);
   const [currencyOneData, setCurrencyOneData] = useState(null);
+  const [isTransacDetailsView, setIsTransacDetailsView] = useState(false);
 
   // --------------create form states(values)--------------
   const [currencyCode, setCurrencyCode] = useState("");
@@ -112,49 +121,6 @@ const BuyFromIndivi = () => {
   const [rowid, SetRowid] = useState(null);
   const [dataForEdit, setDataForEdit] = useState(null);
 
-  const [selectionModel, setSelectionModel] = useState([]);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const columns = [
-    { field: "currencyid", headerName: "ID", width: 140 },
-    { field: "currency_code", headerName: "Currency Code", width: 200 },
-    { field: "currency_name", headerName: "Currency Name", width: 180 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      sortable: false,
-      width: 200,
-      renderCell: (params) => (
-        <Box display={"flex"} gap={2}>
-          <button
-            className="ActionsButtonsEdit"
-            onClick={() => handleEditClickOnRow(params.row)}
-          >
-            Edit
-          </button>
-          {isLoading ? (
-            <CircularProgress
-              size="25px"
-              style={{ color: COLORS.secondaryBG }}
-            />
-          ) : (
-            <button
-              className="ActionsButtonsDelete"
-              onClick={() => handleDeleteClick(params.row)}
-            >
-              Delete
-            </button>
-          )}
-        </Box>
-      ),
-    },
-    // {
-    //   field: "branchcode",
-    //   headerName: "Branch Code",
-
-    //   width: 130,
-    // },
-  ];
-
   // -----------------STATES END---------------------
 
   //  ---------------------FUNCTIONS START----------------------
@@ -176,6 +142,7 @@ const BuyFromIndivi = () => {
       formObject.Date = ""; // Or any other default value
     }
     console.log(formObject);
+
     // if (
     //   currencyCode !== "" &&
     //   currencyCode.length === 3 &&
@@ -323,6 +290,11 @@ const BuyFromIndivi = () => {
     setIsCreateForm(true);
   };
 
+  const handlebackClickOnPaxSearch = () => {
+    setSearchPax(false);
+    setCreatePax(true);
+  };
+
   const handlebackClickOnCreate = () => {
     navigate(-1);
   };
@@ -352,48 +324,52 @@ const BuyFromIndivi = () => {
   };
 
   useEffect(() => {
-    const fetchCurrencyAll = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get(
-          `http://localhost:5001/api/master/CurrencyMasterAll`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setAllCurrencyData(response.data);
-        console.log(response.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+    if (isTransacDetailsView) {
+      const fetchCurrencyAll = async () => {
+        const token = localStorage.getItem("token");
+        try {
+          const response = await axios.get(
+            `http://localhost:5001/api/master/CurrencyMasterAll`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setAllCurrencyData(response.data);
+          console.log(response.data);
+        } catch (error) {
+          console.log(error);
+        }
+      };
 
-    fetchCurrencyAll();
-  }, []);
+      fetchCurrencyAll();
+    }
+  }, [isTransacDetailsView]);
 
   useEffect(() => {
-    const fetchCurrencyOne = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get(
-          `http://localhost:5001/api/master/CurrencyMasterOne`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setCurrencyOneData(response.data);
-        console.log(response.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+    if (isTransacDetailsView) {
+      const fetchCurrencyOne = async () => {
+        const token = localStorage.getItem("token");
+        try {
+          const response = await axios.get(
+            `http://localhost:5001/api/master/CurrencyMasterOne`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setCurrencyOneData(response.data);
+          console.log(response.data);
+        } catch (error) {
+          console.log(error);
+        }
+      };
 
-    fetchCurrencyOne();
-  }, []);
+      fetchCurrencyOne();
+    }
+  }, [isTransacDetailsView]);
 
   const CurrencyMasterDelete = async (currencyid) => {
     setisLoading(true);
@@ -419,7 +395,7 @@ const BuyFromIndivi = () => {
         hideToast();
       }, 2000);
       hideAlertDialogCurrency();
-      setSearchKeyword("");
+      // setSearchKeyword("");
     } catch (error) {
       console.log(error);
       setisLoading(false);
@@ -427,13 +403,9 @@ const BuyFromIndivi = () => {
     }
   };
 
-  const handleSelectionModelChange = (newSelection) => {
-    // Ensure that only one row is selected at a time
-    if (newSelection.length > 0) {
-      setSelectionModel([newSelection[newSelection.length - 1]]);
-    } else {
-      setSelectionModel(newSelection);
-    }
+  const selectClickOnRowVisibility = () => {
+    setCreatePax(true);
+    setSearchPax(false);
   };
 
   const handleEditClickOnRow = (row) => {
@@ -462,7 +434,7 @@ const BuyFromIndivi = () => {
     setIsEdit(true);
     setIsCreateForm(false);
     setIsSearch(false);
-    setSearchKeyword("");
+    // setSearchKeyword("");
     // Switch the view and fetch the corresponding row's data for editing
     // You can set the data in your component's state for editing
     console.log("Edit button clicked for currency ID:", row.currencyid);
@@ -490,35 +462,68 @@ const BuyFromIndivi = () => {
   const [nationalityOptions, setNationalityOptions] = useState(null);
   const [idOptions, setIDOptions] = useState(null);
   const [optionsDataLoading, setOptionsDataLoading] = useState(true);
-  const [isTransacDetailsView, setIsTransacDetailsView] = useState(false);
+
   const [currencyRateOptions, setCurrencyRateOptions] = useState(null);
   const [selectedCurrency, setSelectedCurrency] = useState(null);
   const [rateCurr, setRateCurr] = useState(null);
+  const [transacType, setTransacType] = useState(null);
+  const [feAmount, setFeAmount] = useState(null);
+  const [isPaxSaved, setIsPaxSaved] = useState(false);
+  const [paxData, setPaxData] = useState(null);
+  const [showPaxNameDropdown, setShowPaxNameDropdown] = useState(false);
+
+  const [paxNameOptions, setPaxNameOptions] = useState(null);
+  const [searchItem, setSearchItem] = useState("");
+  const [filteredPaxNames, setFilteredPaxNames] = useState(null);
+  const [paxDetailsFullMain, setPaxDetailsFullMain] = useState(null);
+
+  // ------------------------------ states for PAX MODAL-------------------------------------
+
+  const [createPax, setCreatePax] = useState(true);
+  const [searchPax, setSearchPax] = useState(false);
+  const [showPaxModal, setShowPaxModal] = useState(false);
+
+  // ------------------------------ states for PAX MODAL-------------------------------------
+
+  const handleClickAway = () => {
+    setShowPaxNameDropdown(false);
+  };
 
   useEffect(() => {
-    const OptionsFetch = async () => {
-      const Countryresponse = await fetchCountryOptions();
-      setCountries(Countryresponse);
+    if (showPaxModal) {
+      const OptionsFetch = async () => {
+        const Countryresponse = await fetchCountryOptions();
+        setCountries(Countryresponse);
 
-      const Cityresponse = await fetchCityOptions();
-      setCities(Cityresponse);
+        const Cityresponse = await fetchCityOptions();
+        setCities(Cityresponse);
 
-      const Stateresponse = await fetchStateOptions();
-      setStateOptions(Stateresponse);
+        const Stateresponse = await fetchStateOptions();
+        setStateOptions(Stateresponse);
 
-      const NationalityResponse = await fetchNationalityOptions();
-      setNationalityOptions(NationalityResponse);
+        const NationalityResponse = await fetchNationalityOptions();
+        setNationalityOptions(NationalityResponse);
 
-      const IDResponse = await fetchIDOptions();
-      setIDOptions(IDResponse);
+        const IDResponse = await fetchIDOptions();
+        setIDOptions(IDResponse);
 
-      const CurrencyRateOptions = await fetchCurrencyRate();
-      setCurrencyRateOptions(CurrencyRateOptions);
+        setOptionsDataLoading(false);
+      };
+      OptionsFetch();
+    }
+  }, [showPaxModal]);
 
-      setOptionsDataLoading(false);
-    };
-    OptionsFetch();
-  }, []);
+  useEffect(() => {
+    if (isTransacDetailsView) {
+      const OptionsFetch = async () => {
+        const CurrencyRateOptions = await fetchCurrencyRate();
+        setCurrencyRateOptions(CurrencyRateOptions);
+
+        setOptionsDataLoading(false);
+      };
+      OptionsFetch();
+    }
+  }, [isTransacDetailsView]);
 
   const resiStatus = ["Select", "Resident", "Non-Resident"];
   const PanRelationOptions = [
@@ -536,6 +541,93 @@ const BuyFromIndivi = () => {
     "Son",
     "Wife",
   ];
+  const TransTypeOptions = [
+    "Select",
+    "CN (Currency)",
+    "EM (Encashed TM)",
+    "ET (Encashed TCS)",
+    "TP (TT Purchase Back)",
+    "DP (DD Purchase Back)",
+  ];
+
+  const handlePaxCreate = async (event) => {
+    setisLoading(true);
+    event.preventDefault();
+    var data = new FormData(event.target);
+    let PaxformObject = Object.fromEntries(data.entries());
+    setPaxData(PaxformObject);
+    console.log(PaxformObject);
+
+    if (PaxformObject.Paxname !== "") {
+      try {
+        const response = await postPaxDetails(
+          PaxformObject.PaxName,
+          PaxformObject.EmailID,
+          PaxformObject.DOB,
+          PaxformObject.ContactNo,
+          PaxformObject.Nationality,
+          PaxformObject.Occupation,
+          PaxformObject.ResiStatus,
+          PaxformObject.Bldg +
+            " " +
+            PaxformObject.StreetName +
+            " " +
+            PaxformObject.City +
+            " " +
+            PaxformObject.State +
+            " " +
+            PaxformObject.Country,
+          PaxformObject.Bldg,
+          PaxformObject.StreetName,
+          PaxformObject.City,
+          PaxformObject.State,
+          PaxformObject.Country,
+          PaxformObject.PanNo,
+          PaxformObject.PanName,
+          PaxformObject.PanHolderRelation,
+          PaxformObject.UIN,
+          PaxformObject.PaidPanNumber,
+          PaxformObject.PaidPanName,
+          PaxformObject.LoanAmount,
+          PaxformObject.DeclaredAmount,
+          PaxformObject.GSTIN,
+          PaxformObject.GSTState,
+          PaxformObject.isTourOperator,
+          PaxformObject.isProprietorShip,
+          PaxformObject.isNRI,
+          PaxformObject.isITRProcess,
+          PaxformObject.PassNumber,
+          PaxformObject.PassIssueAt,
+          PaxformObject.PassIssuedDate,
+          PaxformObject.PassExpiryDate,
+          PaxformObject.OtherIDType,
+          PaxformObject.OtherIDNo,
+          PaxformObject.OtherIDExpiry,
+          PaxformObject.TCSExcemption,
+          PaxformObject.ExemptionRemarks
+        );
+
+        console.log(response.data);
+        showToast("Pax Added Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 1500);
+        setisLoading(false);
+        setIsPaxSaved(true);
+        handlePaxSubmit();
+      } catch (error) {
+        console.log(error);
+        setisLoading(false);
+      }
+    } else {
+      setisLoading(false);
+      showToast("Please Enter All Fields", "Fail");
+      setTimeout(() => {
+        hideToast();
+      }, 1500);
+    }
+  };
+
   const handlePaxSubmit = () => {
     setIsPartySelect(false);
     setIsCreateForm(true);
@@ -562,15 +654,51 @@ const BuyFromIndivi = () => {
     }
   };
 
-  // const handleCurrencyChange = (event, newValue) => {
-  //   // if (newValue) {
-  //   setSelectedCurrency(newValue);
-  //   // setRateCurr(newValue.rate);
-  //   // }
+  const handlebackClickOnTransacView = () => {
+    setIsTransacDetailsView(false);
+    setIsCreateForm(true);
+  };
 
-  //   console.log(selectedCurrency);
-  //   console.log(rateCurr);
-  // };
+  const finalAmountInit = feAmount * rateCurr;
+  const finalAmount = finalAmountInit.toFixed(0);
+
+  useEffect(() => {
+    const fetchPaxId = async () => {
+      try {
+        const response = await PaxDetailsID();
+
+        setPaxNameOptions(response);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchPaxId();
+  }, []);
+
+  useEffect(() => {
+    if (searchPax) {
+      const FetchPaxMain = async () => {
+        try {
+          const response = await PaxDetailsFullMain();
+          setPaxDetailsFullMain(response);
+          console.log(response);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      FetchPaxMain();
+    }
+  }, [searchPax]);
+
+  const handleHidePaxModal = () => {
+    setShowPaxModal(false);
+  };
+
+  const handleSearchPaxClick = () => {
+    setCreatePax(false);
+    setSearchPax(true);
+  };
 
   //  ---------------------FUNCTIONS END----------------------
 
@@ -639,11 +767,12 @@ const BuyFromIndivi = () => {
                     label="Entity"
                     defaultValue="Individual"
                   >
-                    {EntityOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
+                    {EntityOptions &&
+                      EntityOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
                   </TextField>
 
                   <TextField
@@ -653,26 +782,37 @@ const BuyFromIndivi = () => {
                     label="Purpose"
                     defaultValue="Encashment"
                   >
-                    {PurposeOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
+                    {PurposeOptions &&
+                      PurposeOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
                   </TextField>
 
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      label="Date"
-                      value={selectedDate}
-                      onChange={handleDateChange}
-                      format="DD-MM-YYYY"
-                      sx={{ width: "12vw" }}
-                    />
-                  </LocalizationProvider>
+                  <DatePicker
+                    label="Date"
+                    value={selectedDate}
+                    onChange={handleDateChange}
+                    format="DD-MM-YYYY"
+                    sx={{ width: "12vw" }}
+                  />
 
-                  <button onClick={handlePaxview} className="PartySelect">
-                    Select Party
-                  </button>
+                  {isPaxSaved && paxData ? (
+                    <TextField
+                      value={paxData.PaxName}
+                      sx={{ width: "12vw" }}
+                      label="Selected Pax"
+                    />
+                  ) : (
+                    <button
+                      // onClick={handlePaxview}
+                      onClick={() => setShowPaxModal(true)}
+                      className="PartySelect"
+                    >
+                      Select Party
+                    </button>
+                  )}
 
                   <TextField
                     id="ManualBillRef"
@@ -759,540 +899,6 @@ const BuyFromIndivi = () => {
       )}
 
       {/* -------------------------CREATION END------------------------------- */}
-
-      {/* -------------------------SEARCH & DELETE) START------------------------------- */}
-
-      {isPartySelect && (
-        <Box
-          component={motion.div}
-          initial={{ y: -50 }}
-          animate={{ y: 0 }}
-          height={"auto"}
-          minHeight={"40vh"}
-          maxHeight={"80vh"}
-          width={"auto"}
-          display={"flex"}
-          flexDirection={"column"}
-          alignItems={"center"}
-          gap={4}
-          p={5}
-          borderRadius={"20px"}
-          sx={{ backgroundColor: COLORS.text }}
-          boxShadow={5}
-        >
-          <KeyboardBackspaceIcon
-            onClick={handlebackClickOnPax}
-            fontSize="large"
-            sx={{
-              alignSelf: "flex-start",
-              color: COLORS.secondaryBG,
-              position: "absolute",
-              cursor: "pointer",
-            }}
-          />
-          {optionsDataLoading ? (
-            <CircularProgress />
-          ) : (
-            <>
-              <p style={{ fontSize: 20, color: COLORS.background }}>
-                Select Party
-              </p>
-              <Box display={"flex"} maxHeight={"50vh"} gap={5}>
-                <Box
-                  className="OverFlowBox"
-                  component={"form"}
-                  sx={{ maxHeight: "60vh", p: 2 }}
-                  border={`1px solid ${COLORS.secondaryBG}`}
-                  borderRadius={"5px"}
-                >
-                  <p style={{ marginTop: -2, color: COLORS.background }}>
-                    PAX Details
-                  </p>
-                  <Box
-                    name="InputsContainer2"
-                    display={"grid"}
-                    gridTemplateColumns={"repeat(2, 1fr)"}
-                    gridTemplateRows={"repeat(3, 1fr)"}
-                    columnGap={"40px"}
-                    rowGap={"40px"}
-                  >
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="PaxName"
-                      label="Name"
-                    />
-
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="EmailID"
-                      label="Email ID"
-                      type="email"
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <EmailIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        label="Date Of Birth"
-                        // value={selectedDate}
-                        // onChange={handleDateChange}
-                        format="DD-MM-YYYY"
-                        sx={{ width: "12vw" }}
-                      />
-                    </LocalizationProvider>
-                    <TextField
-                      required
-                      sx={{ width: "12vw" }}
-                      name="ContactNo"
-                      label="Contact Number"
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <PhoneIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <Autocomplete
-                      // disablePortal
-                      id="Nationality"
-                      options={nationalityOptions.map(
-                        (item) => item.description
-                      )}
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Nationality"
-                          name="Nationality"
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                <InputAdornment position="end">
-                                  <PersonPinIcon />
-                                </InputAdornment>
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="Occupation"
-                      label="Occupation"
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <HomeRepairServiceIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <TextField
-                      select
-                      sx={{ width: "12vw" }}
-                      name="ResiStatus"
-                      label="Residential Status"
-                      defaultValue="Select"
-                    >
-                      {resiStatus.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="Bldg"
-                      label="Building / Flat"
-                    />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="StreetName"
-                      label="Street"
-                    />
-                    <Autocomplete
-                      // disablePortal
-                      id="City"
-                      options={cities.map((item) => item.description)}
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="City"
-                          name="City"
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                <InputAdornment position="end">
-                                  <LocationCityIcon />
-                                </InputAdornment>
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
-                    <Autocomplete
-                      // disablePortal
-                      id="State"
-                      options={stateOptions.map((item) => item.description)}
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="State"
-                          name="State"
-
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
-                    <Autocomplete
-                      disablePortal
-                      id="Country"
-                      options={countries.map((item) => item.description)}
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Country"
-                          name="Country"
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                <InputAdornment position="end">
-                                  <FlagIcon />
-                                </InputAdornment>
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="PanNo"
-                      label="Pan Number"
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <ArticleIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="PanName"
-                      label="Pan Holder Name"
-                    />
-                    <TextField
-                      select
-                      sx={{ width: "12vw" }}
-                      name="PanHolderRelation"
-                      label="Pan Holder Relation"
-                      defaultValue="Select"
-                    >
-                      {PanRelationOptions.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-
-                    <TextField sx={{ width: "12vw" }} name="UIN" label="UIN" />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="PaidPanNumber"
-                      label="Paid Pan Number"
-                    />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="PaidPanName"
-                      label="Paid By"
-                    />
-
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="LoanAmount"
-                      label="Loan Amount"
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <MoneyIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="DeclaredAmount"
-                      label="Declared Amount"
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <MoneyIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <Box display={"flex"} alignItems={"center"}>
-                      <p>Tour Operator?</p>
-                      <Checkbox
-                        sx={{ width: "2vw", height: "3vh" }}
-                        name="isTourOperator"
-                      />
-                    </Box>
-                    <Box display={"flex"} alignItems={"center"}>
-                      <p>Proprietor Ship?</p>
-                      <Checkbox
-                        sx={{ width: "2vw", height: "3vh" }}
-                        name="isProprietorShip"
-                      />
-                    </Box>
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="GSTIN"
-                      label="GSTIN"
-                    />
-                    <TextField
-                      sx={{ width: "12vw" }}
-                      name="GSTState"
-                      label="GST State"
-                    />
-                  </Box>
-                  <Box display={"flex"} alignItems={"center"} mt={2}>
-                    <p>NRI?</p>
-                    <Checkbox
-                      sx={{ width: "2vw", height: "3vh" }}
-                      name="isNRI"
-                    />
-                  </Box>
-                  <Box display={"flex"} alignItems={"center"}>
-                    <p>ITR Process or TCS+TDS &lt;=50000?</p>
-                    <Checkbox
-                      sx={{ width: "2vw", height: "3vh" }}
-                      name="isProprietorShip"
-                    />
-                  </Box>
-                </Box>
-                <Box
-                  display={"flex"}
-                  flexDirection={"column"}
-                  gap={2}
-                  border={`1px solid ${COLORS.secondaryBG}`}
-                  sx={{ padding: 4, overflow: "scroll", overflowX: "hidden" }}
-                  borderRadius={"5px"}
-                >
-                  <Box>
-                    <Box
-                      component={"form"}
-                      sx={{
-                        maxHeight: "20vh",
-                        overflow: "hidden",
-                        p: 2,
-                      }}
-                      border={`1px solid ${COLORS.secondaryBG}`}
-                      borderRadius={"5px"}
-                    >
-                      <p style={{ marginTop: -2, color: COLORS.background }}>
-                        Passport Information
-                      </p>
-                      <Box
-                        name="InputsContainer2"
-                        display={"grid"}
-                        gridTemplateColumns={"repeat(2, 1fr)"}
-                        // gridTemplateRows={"repeat(3, 1fr)"}
-                        columnGap={"40px"}
-                        rowGap={"20px"}
-                      >
-                        <TextField
-                          sx={{ width: "12vw" }}
-                          name="PassNumber"
-                          label="Passport Number"
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <AssignmentIndIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-
-                        <TextField
-                          sx={{ width: "12vw" }}
-                          name="PassIssueAt"
-                          label="Issued At"
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <NotListedLocationIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-
-                        {/* <TextField
-                      sx={{ width: "12vw" }}
-                      name="PassIssueDate"
-                      label="Issued Date"
-                    /> */}
-
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            label="Issued Date"
-                            // value={selectedDate}
-                            // onChange={handleDateChange}
-                            format="DD-MM-YYYY"
-                            sx={{ width: "12vw" }}
-                          />
-                        </LocalizationProvider>
-
-                        {/* <TextField
-                      sx={{ width: "12vw" }}
-                      name="PassExpDate"
-                      label="Expiry Date"
-                    /> */}
-
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            label="Expiry Date"
-                            // value={selectedDate}
-                            // onChange={handleDateChange}
-                            format="DD-MM-YYYY"
-                            sx={{ width: "12vw" }}
-                          />
-                        </LocalizationProvider>
-                      </Box>
-                    </Box>
-                  </Box>
-                  <Box>
-                    <Box
-                      component={"form"}
-                      sx={{ maxHeight: "20vh", overflow: "hidden", p: 2 }}
-                      border={`1px solid ${COLORS.secondaryBG}`}
-                      borderRadius={"5px"}
-                    >
-                      <p style={{ marginTop: -5, color: COLORS.background }}>
-                        Other ID Details
-                      </p>
-                      <Box
-                        name="InputsContainer2"
-                        display={"grid"}
-                        gridTemplateColumns={"repeat(2, 1fr)"}
-                        // gridTemplateRows={"repeat(3, 1fr)"}
-                        columnGap={"40px"}
-                        rowGap={"20px"}
-                      >
-                        <Autocomplete
-                          disablePortal
-                          id="IDType"
-                          options={idOptions.map((item) => item.description)}
-                          // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                          sx={{ width: "12vw" }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="ID Type"
-                              name="IDType"
-
-                              // value={calculationMethod}
-                            />
-                          )}
-                        />
-
-                        <TextField
-                          sx={{ width: "12vw" }}
-                          name="OtherIDNo"
-                          label="ID Number"
-                        />
-
-                        {/* <TextField
-                      sx={{ width: "12vw" }}
-                      name="OtherIDExpiry"
-                      label="Expiry Date"
-                    /> */}
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            label="Expiry Date"
-                            // value={selectedDate}
-                            // onChange={handleDateChange}
-                            format="DD-MM-YYYY"
-                            sx={{ width: "12vw" }}
-                          />
-                        </LocalizationProvider>
-                      </Box>
-                    </Box>
-                  </Box>
-                  <Box>
-                    <Box
-                      component={"form"}
-                      sx={{ maxHeight: "20vh", overflow: "hidden", p: 2 }}
-                      border={`1px solid ${COLORS.secondaryBG}`}
-                      borderRadius={"5px"}
-                    >
-                      <p style={{ marginTop: -5, color: COLORS.background }}>
-                        TCS Exemption
-                      </p>
-                      <Box
-                        name="InputsContainer2"
-                        display={"flex"}
-                        columnGap={"40px"}
-                        flexDirection={"column"}
-                      >
-                        <Box display={"flex"} alignItems={"center"}>
-                          <p>Government TCS Exemption</p>
-                          <Checkbox
-                            sx={{ width: "2vw", height: "3vh" }}
-                            name="TCSExemption"
-                          />
-                        </Box>
-
-                        <TextField
-                          sx={{ width: "25vw" }}
-                          name="ExemptionRemarks"
-                          label="Exemption Remarks"
-                        />
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-            </>
-          )}
-
-          <button className="SavePax" onClick={handlePaxSubmit}>
-            Save
-          </button>
-        </Box>
-      )}
-
-      {/* -------------------------SEARCH END------------------------------- */}
 
       {/* -------------------------EDIT START------------------------------- */}
 
@@ -1507,6 +1113,19 @@ const BuyFromIndivi = () => {
           <p style={{ color: COLORS.background, fontSize: "16px" }}>
             Transaction Details
           </p>
+          <KeyboardBackspaceIcon
+            onClick={handlebackClickOnTransacView}
+            fontSize="large"
+            sx={{
+              alignSelf: "flex-start",
+              color: COLORS.secondaryBG,
+              position: "absolute",
+              cursor: "pointer",
+              marginTop: 1.5,
+              marginLeft: 4,
+            }}
+          />
+
           <Box
             display={"flex"}
             gap={3}
@@ -1520,7 +1139,10 @@ const BuyFromIndivi = () => {
               <Autocomplete
                 disablePortal
                 id="CurrencyCodeRate"
-                options={currencyRateOptions.map((item) => item.currencycode)}
+                options={
+                  currencyRateOptions &&
+                  currencyRateOptions.map((item) => item.currencycode)
+                }
                 onChange={handleCurrencyChange}
                 sx={{ width: "9vw" }}
                 renderInput={(params) => (
@@ -1533,25 +1155,52 @@ const BuyFromIndivi = () => {
                   />
                 )}
               />
-              <TextField label="Transaction Nature" sx={{ width: "10vw" }} />
-              <TextField label="Type" sx={{ width: "9vw" }} />
-              <TextField label="Issuer" sx={{ width: "9vw" }} />
-            </Box>
-            <Box display={"flex"} gap={4}>
-              <TextField label="FE Amount" sx={{ width: "9vw" }} />
+              {/* <TextField label="Transaction Nature" sx={{ width: "10vw" }} /> */}
               <TextField
-                // label="Rate"
+                select
+                label="Type"
                 sx={{ width: "9vw" }}
-                placeholder="Rate"
-                value={rateCurr}
+                defaultValue={"Select"}
+                value={transacType}
+                onChange={(e) => setTransacType(e.target.value)}
+              >
+                {TransTypeOptions &&
+                  TransTypeOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+              </TextField>
+              <TextField
+                disabled={transacType !== "EM (Encashed TM)"}
+                label="Issuer"
+                sx={{ width: "9vw" }}
+              />
+              <TextField
+                label="FE Amount"
+                sx={{ width: "9vw" }}
+                value={feAmount}
+                onChange={(e) => setFeAmount(e.target.value)}
+              />
+            </Box>
+            <Box display={"flex"} gap={5}>
+              <TextField
+                label="Rate"
+                disabled
+                sx={{ width: "9vw" }}
+                value={rateCurr ? rateCurr : ""}
               />
               <TextField label="Commission Type" sx={{ width: "9vw" }} />
               <TextField label="Commission Per 1" sx={{ width: "9.5vw" }} />
             </Box>
-            <Box display={"flex"} gap={4}>
+            <Box display={"flex"} gap={5}>
               <TextField label="Commission Amount" sx={{ width: "10.5vw" }} />
-              <TextField label="Final Amount" sx={{ width: "9vw" }} />
-              <TextField label="Rounded" sx={{ width: "9vw" }} />
+              <TextField
+                label="Final Amount"
+                sx={{ width: "9vw" }}
+                value={finalAmount}
+              />
+              {/* <TextField label="Rounded" sx={{ width: "9vw" }} /> */}
             </Box>
           </Box>
         </Box>
@@ -1562,6 +1211,19 @@ const BuyFromIndivi = () => {
       <CustomAlertModalCurrency
         handleAction={() => CurrencyMasterDelete(rowid)}
       />
+
+      {/* -------------------------------------------------------PAX MODAL START--------------------------------------- */}
+
+      <PaxModal
+        showPaxModal={showPaxModal}
+        createPax={createPax}
+        searchPax={searchPax}
+        handleHidePaxModal={handleHidePaxModal}
+        selectClickOnRowVisibility={selectClickOnRowVisibility}
+        handleSearchPaxClick={handleSearchPaxClick}
+        handlebackClickOnPaxSearch={handlebackClickOnPaxSearch}
+      />
+      {/* -------------------------------------------------------PAX MODAL END--------------------------------------- */}
     </MainContainerCompilation>
   );
 };

@@ -51,19 +51,20 @@
     align-self: flex-end;
     width: 8vw;
     height:5vh ;
-    border: 1px solid gray;
-    border-radius: 5px;
-    background-color: #edf2f4;
+    border:2px solid #8d99ae;
+    border-radius: 20px;
+    background-color: white;
     cursor: pointer;
     transition: 0.4s;
     font-size: 16px;
+    color: #8d99ae;
   }
 
   .SavePax:hover{
     background-color: #8d99ae;
     border-radius: 20px;
     color: white;
-    border:none;
+    
   }
 
   .NextOnCreate{
@@ -82,4 +83,14 @@
   .NextOnCreate:hover{
     background-color:#2b2d42;
     font-size: 16px;
+  }
+
+  .timesButton{
+    transition-duration: 0.3s;
+  }
+
+  .timesButton:hover{
+    background-color: #8d99ae;
+    color: white;
+    font-size: 25px;
   }
