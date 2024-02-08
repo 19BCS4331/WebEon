@@ -4,9 +4,7 @@ import {
   Autocomplete,
   Box,
   CircularProgress,
-  InputAdornment,
   MenuItem,
-  Popper,
   TextField,
 } from "@mui/material";
 
@@ -15,8 +13,6 @@ import "../../../css/components/formComponent.css";
 import axios from "axios";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
-
-import { DataGrid } from "@mui/x-data-grid";
 import { AnimatePresence, motion } from "framer-motion";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import "../../../css/pages/CurrencyProfile.css";
@@ -24,38 +20,17 @@ import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
 import { useNavigate } from "react-router-dom";
 import { COLORS } from "../../../assets/colors/COLORS";
-
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import "../../../css/components/buyfromindiv.css";
-import EmailIcon from "@mui/icons-material/Email";
-import PhoneIcon from "@mui/icons-material/Phone";
 import dayjs from "dayjs";
-import PersonPinIcon from "@mui/icons-material/PersonPin";
-import HomeRepairServiceIcon from "@mui/icons-material/HomeRepairService";
-import LocationCityIcon from "@mui/icons-material/LocationCity";
-import FlagIcon from "@mui/icons-material/Flag";
-import ArticleIcon from "@mui/icons-material/Article";
-import MoneyIcon from "@mui/icons-material/Money";
-import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import NotListedLocationIcon from "@mui/icons-material/NotListedLocation";
-// import Checkbox from "@mui/material/Checkbox";
-import {
-  fetchCountryOptions,
-  fetchCityOptions,
-  fetchNationalityOptions,
-  fetchStateOptions,
-  fetchIDOptions,
-  fetchCurrencyRate,
-} from "../../../apis/OptionsMaster/index.js";
 
 import {
   postPaxDetails,
   PaxDetailsID,
-  PaxDetailsFull,
   PaxDetailsFullMain,
 } from "../../../apis/IndiviOrCorp/Buy/index.js";
-import { ClickAwayListener } from "@mui/base/ClickAwayListener";
 import PaxModal from "../../../components/Transactions/BuyFromIndivi/PaxModal.js";
+import TransacDetails from "../../../components/Transactions/BuyFromIndivi/TransacDetails.js";
 
 const BuyFromIndivi = () => {
   // -----------------STATES START---------------------
@@ -279,17 +254,6 @@ const BuyFromIndivi = () => {
     }
   };
 
-  const handleSearchClick = () => {
-    setIsSearch(true);
-    // setIsEdit(true);
-    setIsCreateForm(false);
-  };
-
-  const handlebackClickOnPax = () => {
-    setIsPartySelect(false);
-    setIsCreateForm(true);
-  };
-
   const handlebackClickOnPaxSearch = () => {
     setSearchPax(false);
     setCreatePax(true);
@@ -371,38 +335,6 @@ const BuyFromIndivi = () => {
     }
   }, [isTransacDetailsView]);
 
-  const CurrencyMasterDelete = async (currencyid) => {
-    setisLoading(true);
-    const token = localStorage.getItem("token");
-    try {
-      const response = await axios.post(
-        `http://localhost:5001/api/master/CurrencyMasterDelete`,
-        { currencyid: currencyid },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(response.data);
-      const updatedData = allCurrencyData.filter(
-        (item) => item.currencyid !== currencyid
-      );
-      setAllCurrencyData(updatedData);
-      setisLoading(false);
-      showToast("Successfully Deleted!", "success");
-      setTimeout(() => {
-        hideToast();
-      }, 2000);
-      hideAlertDialogCurrency();
-      // setSearchKeyword("");
-    } catch (error) {
-      console.log(error);
-      setisLoading(false);
-      hideAlertDialogCurrency();
-    }
-  };
-
   const selectClickOnRowVisibility = () => {
     setCreatePax(true);
     setSearchPax(false);
@@ -452,29 +384,8 @@ const BuyFromIndivi = () => {
     setEditedActiveStatus(event.target.checked); // Update the state when the checkbox is toggled
   };
 
-  const handlePaxview = () => {
-    setIsPartySelect(true);
-    setIsCreateForm(false);
-  };
-  const [countries, setCountries] = useState(null);
-  const [cities, setCities] = useState(null);
-  const [stateOptions, setStateOptions] = useState(null);
-  const [nationalityOptions, setNationalityOptions] = useState(null);
-  const [idOptions, setIDOptions] = useState(null);
-  const [optionsDataLoading, setOptionsDataLoading] = useState(true);
-
-  const [currencyRateOptions, setCurrencyRateOptions] = useState(null);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
-  const [rateCurr, setRateCurr] = useState(null);
-  const [transacType, setTransacType] = useState(null);
-  const [feAmount, setFeAmount] = useState(null);
   const [isPaxSaved, setIsPaxSaved] = useState(false);
   const [paxData, setPaxData] = useState(null);
-  const [showPaxNameDropdown, setShowPaxNameDropdown] = useState(false);
-
-  const [paxNameOptions, setPaxNameOptions] = useState(null);
-  const [searchItem, setSearchItem] = useState("");
-  const [filteredPaxNames, setFilteredPaxNames] = useState(null);
   const [paxDetailsFullMain, setPaxDetailsFullMain] = useState(null);
 
   // ------------------------------ states for PAX MODAL-------------------------------------
@@ -484,149 +395,6 @@ const BuyFromIndivi = () => {
   const [showPaxModal, setShowPaxModal] = useState(false);
 
   // ------------------------------ states for PAX MODAL-------------------------------------
-
-  const handleClickAway = () => {
-    setShowPaxNameDropdown(false);
-  };
-
-  useEffect(() => {
-    if (showPaxModal) {
-      const OptionsFetch = async () => {
-        const Countryresponse = await fetchCountryOptions();
-        setCountries(Countryresponse);
-
-        const Cityresponse = await fetchCityOptions();
-        setCities(Cityresponse);
-
-        const Stateresponse = await fetchStateOptions();
-        setStateOptions(Stateresponse);
-
-        const NationalityResponse = await fetchNationalityOptions();
-        setNationalityOptions(NationalityResponse);
-
-        const IDResponse = await fetchIDOptions();
-        setIDOptions(IDResponse);
-
-        setOptionsDataLoading(false);
-      };
-      OptionsFetch();
-    }
-  }, [showPaxModal]);
-
-  useEffect(() => {
-    if (isTransacDetailsView) {
-      const OptionsFetch = async () => {
-        const CurrencyRateOptions = await fetchCurrencyRate();
-        setCurrencyRateOptions(CurrencyRateOptions);
-
-        setOptionsDataLoading(false);
-      };
-      OptionsFetch();
-    }
-  }, [isTransacDetailsView]);
-
-  const resiStatus = ["Select", "Resident", "Non-Resident"];
-  const PanRelationOptions = [
-    "Select",
-    "Brother",
-    "Company",
-    "Daughter",
-    "Father",
-    "Father In Law",
-    "Husband",
-    "Mother",
-    "Mother In Law",
-    "Self",
-    "Sister",
-    "Son",
-    "Wife",
-  ];
-  const TransTypeOptions = [
-    "Select",
-    "CN (Currency)",
-    "EM (Encashed TM)",
-    "ET (Encashed TCS)",
-    "TP (TT Purchase Back)",
-    "DP (DD Purchase Back)",
-  ];
-
-  const handlePaxCreate = async (event) => {
-    setisLoading(true);
-    event.preventDefault();
-    var data = new FormData(event.target);
-    let PaxformObject = Object.fromEntries(data.entries());
-    setPaxData(PaxformObject);
-    console.log(PaxformObject);
-
-    if (PaxformObject.Paxname !== "") {
-      try {
-        const response = await postPaxDetails(
-          PaxformObject.PaxName,
-          PaxformObject.EmailID,
-          PaxformObject.DOB,
-          PaxformObject.ContactNo,
-          PaxformObject.Nationality,
-          PaxformObject.Occupation,
-          PaxformObject.ResiStatus,
-          PaxformObject.Bldg +
-            " " +
-            PaxformObject.StreetName +
-            " " +
-            PaxformObject.City +
-            " " +
-            PaxformObject.State +
-            " " +
-            PaxformObject.Country,
-          PaxformObject.Bldg,
-          PaxformObject.StreetName,
-          PaxformObject.City,
-          PaxformObject.State,
-          PaxformObject.Country,
-          PaxformObject.PanNo,
-          PaxformObject.PanName,
-          PaxformObject.PanHolderRelation,
-          PaxformObject.UIN,
-          PaxformObject.PaidPanNumber,
-          PaxformObject.PaidPanName,
-          PaxformObject.LoanAmount,
-          PaxformObject.DeclaredAmount,
-          PaxformObject.GSTIN,
-          PaxformObject.GSTState,
-          PaxformObject.isTourOperator,
-          PaxformObject.isProprietorShip,
-          PaxformObject.isNRI,
-          PaxformObject.isITRProcess,
-          PaxformObject.PassNumber,
-          PaxformObject.PassIssueAt,
-          PaxformObject.PassIssuedDate,
-          PaxformObject.PassExpiryDate,
-          PaxformObject.OtherIDType,
-          PaxformObject.OtherIDNo,
-          PaxformObject.OtherIDExpiry,
-          PaxformObject.TCSExcemption,
-          PaxformObject.ExemptionRemarks
-        );
-
-        console.log(response.data);
-        showToast("Pax Added Successfully!", "success");
-        setTimeout(() => {
-          hideToast();
-        }, 1500);
-        setisLoading(false);
-        setIsPaxSaved(true);
-        handlePaxSubmit();
-      } catch (error) {
-        console.log(error);
-        setisLoading(false);
-      }
-    } else {
-      setisLoading(false);
-      showToast("Please Enter All Fields", "Fail");
-      setTimeout(() => {
-        hideToast();
-      }, 1500);
-    }
-  };
 
   const handlePaxSubmit = () => {
     setIsPartySelect(false);
@@ -638,43 +406,10 @@ const BuyFromIndivi = () => {
     setIsCreateForm(false);
   };
 
-  const handleCurrencyChange = (event, newValue) => {
-    if (newValue !== null) {
-      const selectedCurrency = newValue;
-      const selectedRate = currencyRateOptions.find(
-        (currency) => currency.currencycode === selectedCurrency
-      ).rate;
-
-      setSelectedCurrency(selectedCurrency);
-      setRateCurr(selectedRate);
-      console.log(selectedRate);
-      console.log(newValue);
-    } else {
-      setRateCurr(null);
-    }
-  };
-
   const handlebackClickOnTransacView = () => {
     setIsTransacDetailsView(false);
     setIsCreateForm(true);
   };
-
-  const finalAmountInit = feAmount * rateCurr;
-  const finalAmount = finalAmountInit.toFixed(0);
-
-  useEffect(() => {
-    const fetchPaxId = async () => {
-      try {
-        const response = await PaxDetailsID();
-
-        setPaxNameOptions(response);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchPaxId();
-  }, []);
 
   useEffect(() => {
     if (searchPax) {
@@ -1099,118 +834,16 @@ const BuyFromIndivi = () => {
       {/* -------------------------EDIT END------------------------------- */}
 
       {/* --------------------------Transac Details Start----------------------- */}
-      {isTransacDetailsView && (
-        <Box
-          display={"flex"}
-          flexDirection={"column"}
-          alignItems={"center"}
-          sx={{ backgroundColor: COLORS.text }}
-          width={"50vw"}
-          height={"50vh"}
-          borderRadius={"25px"}
-          boxShadow={"0px 10px 15px -3px rgba(0,0,0,0.1)"}
-        >
-          <p style={{ color: COLORS.background, fontSize: "16px" }}>
-            Transaction Details
-          </p>
-          <KeyboardBackspaceIcon
-            onClick={handlebackClickOnTransacView}
-            fontSize="large"
-            sx={{
-              alignSelf: "flex-start",
-              color: COLORS.secondaryBG,
-              position: "absolute",
-              cursor: "pointer",
-              marginTop: 1.5,
-              marginLeft: 4,
-            }}
-          />
-
-          <Box
-            display={"flex"}
-            gap={3}
-            flexDirection={"column"}
-            mt={2}
-            border={`1px solid ${COLORS.secondaryBG}`}
-            padding={2}
-            borderRadius={"10px"}
-          >
-            <Box display={"flex"} gap={4}>
-              <Autocomplete
-                disablePortal
-                id="CurrencyCodeRate"
-                options={
-                  currencyRateOptions &&
-                  currencyRateOptions.map((item) => item.currencycode)
-                }
-                onChange={handleCurrencyChange}
-                sx={{ width: "9vw" }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Currency Code"
-                    name="CurrencyCodeRate"
-
-                    // value={calculationMethod}
-                  />
-                )}
-              />
-              {/* <TextField label="Transaction Nature" sx={{ width: "10vw" }} /> */}
-              <TextField
-                select
-                label="Type"
-                sx={{ width: "9vw" }}
-                defaultValue={"Select"}
-                value={transacType}
-                onChange={(e) => setTransacType(e.target.value)}
-              >
-                {TransTypeOptions &&
-                  TransTypeOptions.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-              </TextField>
-              <TextField
-                disabled={transacType !== "EM (Encashed TM)"}
-                label="Issuer"
-                sx={{ width: "9vw" }}
-              />
-              <TextField
-                label="FE Amount"
-                sx={{ width: "9vw" }}
-                value={feAmount}
-                onChange={(e) => setFeAmount(e.target.value)}
-              />
-            </Box>
-            <Box display={"flex"} gap={5}>
-              <TextField
-                label="Rate"
-                disabled
-                sx={{ width: "9vw" }}
-                value={rateCurr ? rateCurr : ""}
-              />
-              <TextField label="Commission Type" sx={{ width: "9vw" }} />
-              <TextField label="Commission Per 1" sx={{ width: "9.5vw" }} />
-            </Box>
-            <Box display={"flex"} gap={5}>
-              <TextField label="Commission Amount" sx={{ width: "10.5vw" }} />
-              <TextField
-                label="Final Amount"
-                sx={{ width: "9vw" }}
-                value={finalAmount}
-              />
-              {/* <TextField label="Rounded" sx={{ width: "9vw" }} /> */}
-            </Box>
-          </Box>
-        </Box>
-      )}
+      <TransacDetails
+        isTransacDetailsView={isTransacDetailsView}
+        handlebackClickOnTransacView={handlebackClickOnTransacView}
+      />
 
       {/* -----------------------------Transac Details End ----------------------- */}
 
-      <CustomAlertModalCurrency
+      {/* <CustomAlertModalCurrency
         handleAction={() => CurrencyMasterDelete(rowid)}
-      />
+      /> */}
 
       {/* -------------------------------------------------------PAX MODAL START--------------------------------------- */}
 

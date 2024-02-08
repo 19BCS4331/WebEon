@@ -196,31 +196,35 @@ const PaxModal = ({
     setOtherIDNumber(row.otherid_number);
     setExemptionRemarks(row.exemption_remarks);
 
+    setSearchKeyword("");
     selectClickOnRowVisibility();
     // ----------------------Setting States for pax form-----------------------------------
   };
 
   useEffect(() => {
-    const OptionsFetch = async () => {
-      const Countryresponse = await fetchCountryOptions();
-      setCountries(Countryresponse);
+    setOptionsDataLoading(true);
+    if (showPaxModal) {
+      const OptionsFetch = async () => {
+        const Countryresponse = await fetchCountryOptions();
+        setCountries(Countryresponse);
 
-      const Cityresponse = await fetchCityOptions();
-      setCities(Cityresponse);
+        const Cityresponse = await fetchCityOptions();
+        setCities(Cityresponse);
 
-      const Stateresponse = await fetchStateOptions();
-      setStateOptions(Stateresponse);
+        const Stateresponse = await fetchStateOptions();
+        setStateOptions(Stateresponse);
 
-      const NationalityResponse = await fetchNationalityOptions();
-      setNationalityOptions(NationalityResponse);
+        const NationalityResponse = await fetchNationalityOptions();
+        setNationalityOptions(NationalityResponse);
 
-      const IDResponse = await fetchIDOptions();
-      setIDOptions(IDResponse);
+        const IDResponse = await fetchIDOptions();
+        setIDOptions(IDResponse);
 
-      setOptionsDataLoading(false);
-    };
-    OptionsFetch();
-  }, []);
+        setOptionsDataLoading(false);
+      };
+      OptionsFetch();
+    }
+  }, [showPaxModal]);
 
   const handlePaxCreate = async (event) => {
     setisLoading(true);
@@ -314,6 +318,8 @@ const PaxModal = ({
       FetchPaxMain();
     }
   }, [searchPax]);
+
+  console.log("optionsDataLoading: ", optionsDataLoading);
 
   return (
     <AnimatePresence>

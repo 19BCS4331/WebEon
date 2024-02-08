@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from "react";
 import Dropdown from "../Dropdown";
 import { Box, CircularProgress, TextField } from "@mui/material";
-import { useAuth } from "../../contexts/AuthContext";
 import { COLORS } from "../../assets/colors/COLORS";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import ClearIcon from "@mui/icons-material/Clear";
 import axios from "axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 const SideNavbar = () => {
   // const DropDownItemsMaster = ["Master Profiles", "Party Profiles", "Hello"];
   const [menuData, setMenuData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { userRole } = useAuth();
+  const [searchKeyword, setSearchKeyword] = React.useState("");
+  // const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    // Check if menuData is already fetched
+
     const fetchNavMenu = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem("token");
       try {
         const response = await axios.get(
           `http://localhost:5001/api/nav/NavMenu`,
@@ -51,9 +57,6 @@ const SideNavbar = () => {
 
     return organizedData;
   };
-
-  const { userRole } = useAuth();
-  const [searchKeyword, setSearchKeyword] = React.useState("");
 
   const handleSearchChange = (event) => {
     setSearchKeyword(event.target.value);
