@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import React, { useEffect, useState, useContext } from "react";
 import "../css/pages/Login.css";
 import TextField from "@mui/material/TextField";
@@ -10,8 +10,15 @@ import { useToast } from "../contexts/ToastContext";
 import { AuthContext } from "../contexts/AuthContext";
 import CircularProgress from "@mui/material/CircularProgress";
 import { COLORS } from "../assets/colors/COLORS";
+import ThemeContext from "../contexts/ThemeContext";
+import { useBaseUrl } from "../contexts/BaseUrl";
 
 const Login = () => {
+  const { logout } = useContext(AuthContext);
+  const { baseUrl } = useBaseUrl();
+  const { Colortheme } = useContext(ThemeContext);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
 
   const { showToast, hideToast } = useToast();
@@ -49,13 +56,10 @@ const Login = () => {
       finyear !== ""
     ) {
       try {
-        const response = await axios.post(
-          "http://localhost:5001/api/auth/login",
-          {
-            username: username,
-            password: password,
-          }
-        );
+        const response = await axios.post(`${baseUrl}/api/auth/login`, {
+          username: username,
+          password: password,
+        });
 
         if (response.data.token) {
           // Store the token in localStorage
@@ -72,6 +76,10 @@ const Login = () => {
         // console.log(response.data);
         showToast("Successfully Logged In !", "success");
         navigate("/Dashboard");
+        setTimeout(() => {
+          logout();
+          showToast("Token Expired, Logged Out !", "error");
+        }, 60 * 60 * 1000);
       } catch (error) {
         // Handle login failure here
         console.error(error);
@@ -112,9 +120,7 @@ const Login = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5001/api/auth/branch`
-        );
+        const response = await axios.get(`${baseUrl}/api/auth/branch`);
         setBranches(response.data);
       } catch (err) {
         console.log("errorr", err);
@@ -126,9 +132,7 @@ const Login = () => {
   useEffect(() => {
     const fetchCounters = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5001/api/auth/counter`
-        );
+        const response = await axios.get(`${baseUrl}/api/auth/counter`);
         setCounters(response.data);
       } catch (err) {
         console.log("errorr", err);
@@ -140,9 +144,7 @@ const Login = () => {
   useEffect(() => {
     const fetchFinYear = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5001/api/auth/finyear`
-        );
+        const response = await axios.get(`${baseUrl}/api/auth/finyear`);
         setFinYear(response.data);
       } catch (err) {
         console.log("errorr", err);
@@ -157,13 +159,13 @@ const Login = () => {
         display: "flex",
         flex: 1,
         height: "100vh",
-        backgroundColor: "#2b2d42",
+        backgroundColor: Colortheme.background,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
       <Box
-        sx={{ backgroundColor: COLORS.text, opacity: 0.6 }}
+        sx={{ backgroundColor: Colortheme.text, opacity: 0.6 }}
         height={"400px"}
         width={"400px"}
         position={"absolute"}
@@ -174,7 +176,7 @@ const Login = () => {
       />
 
       <Box
-        sx={{ backgroundColor: COLORS.text, opacity: 0.6 }}
+        sx={{ backgroundColor: Colortheme.text, opacity: 0.6 }}
         height={"400px"}
         width={"400px"}
         position={"absolute"}
@@ -197,7 +199,9 @@ const Login = () => {
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <h1 style={{ color: "#edf2f4" }}> Maraekat's Advanced EON</h1>
+          <h1 style={{ color: Colortheme.text, textAlign: "center" }}>
+            Maraekat's Advanced EON
+          </h1>
         </Box>
         <Box
           component={motion.div}
@@ -214,7 +218,13 @@ const Login = () => {
           }}
           className="WhiteContainer"
         >
-          <h1 style={{ color: "#8d99ae", fontSize: "30px", marginTop: 20 }}>
+          <h1
+            style={{
+              color: Colortheme.secondaryBG,
+              fontSize: "30px",
+              marginTop: 20,
+            }}
+          >
             Login
           </h1>
 
@@ -229,6 +239,7 @@ const Login = () => {
               id="outlined-basic"
               label="Username"
               variant="outlined"
+              sx={{ width: isMobile ? "50vw" : "16vw" }}
               value={username}
               error={
                 errorMsg && errorMsg === "User does not exist !" ? true : false
@@ -240,6 +251,7 @@ const Login = () => {
               id="outlined-basic"
               label="Password"
               variant="outlined"
+              sx={{ width: isMobile ? "50vw" : "16vw" }}
               type="password"
               value={password}
               error={
@@ -265,7 +277,7 @@ const Login = () => {
               onChange={(event, newValue) => {
                 setBranch(newValue); // Update the selectedBranch state
               }}
-              sx={{ width: "25vw" }}
+              sx={{ width: isMobile ? "35vw" : "16vw" }}
               renderInput={(params) => <TextField {...params} label="Branch" />}
             />
 
@@ -278,7 +290,7 @@ const Login = () => {
               onChange={(event, newValue) => {
                 setCounter(newValue); // Update the selectedBranch state
               }}
-              sx={{ width: "25vw" }}
+              sx={{ width: isMobile ? "25vw" : "16vw" }}
               renderInput={(params) => (
                 <TextField {...params} label="Counter" />
               )}
@@ -298,7 +310,7 @@ const Login = () => {
               id="PurposeSelect"
               options={counters.map((counter) => counter.name)}
               value={counter || ""}
-              sx={{ width: "25vw" }}
+              sx={{ width: isMobile ? "25vw" : "16vw" }}
               renderInput={(params) => (
                 <TextField {...params} label="Purpose" />
               )}
@@ -313,7 +325,7 @@ const Login = () => {
               onChange={(event, newValue) => {
                 setFinyear(newValue); // Update the selectedBranch state
               }}
-              sx={{ width: "25vw" }}
+              sx={{ width: isMobile ? "40vw" : "16vw" }}
               renderInput={(params) => (
                 <TextField {...params} label="Financial Year" />
               )}
@@ -323,7 +335,10 @@ const Login = () => {
           <Box mt={8}>
             <button className="loginButton" onClick={loginUser}>
               {isLoading ? (
-                <CircularProgress size="25px" style={{ color: COLORS.text }} />
+                <CircularProgress
+                  size="25px"
+                  style={{ color: Colortheme.text }}
+                />
               ) : (
                 "Login"
               )}

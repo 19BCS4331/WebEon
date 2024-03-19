@@ -49,7 +49,7 @@
 
   .SavePax{
     align-self: flex-end;
-    width: 8vw;
+    /* width: 8vw; */
     height:5vh ;
     border:2px solid #8d99ae;
     border-radius: 20px;
@@ -69,7 +69,7 @@
 
   .NextOnCreate{
     border: none;
-    width: 8vw;
+    /* width: 8vw; */
     height: 4.5vh;
     background-color: #8d99ae;
     color: white;
@@ -93,4 +93,93 @@
     background-color: #8d99ae;
     color: white;
     font-size: 25px;
+  }
+
+  .TransacAddButton{
+    width: 7vw;
+    height: 50px;
+    border-radius: 20px;
+    border: none;
+    background-color:#8d99ae;
+    color: white;
+    transition: 0.4s;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 3px;
+  }
+
+  .TransacAddButton:hover{
+    background-color: #2b2d42;
+    
+  }
+
+
+  .table-container {
+    width: 95%;
+    overflow-x: auto; /* Horizontal scrolling */
+    /* height: 150px; */
+    
+  }
+  
+  .table-container table {
+    width: 100%;
+    border-collapse: collapse;
+
+    
+  }
+  
+  .table-container th,
+  .table-container td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    border-right: 1px solid #ddd;
+  }
+
+  .table-container thead th {
+    position: sticky;
+    top: 0;
+    
+  }
+  
+  
+  .table-container th {
+    background-color: #8d99ae;
+    font-weight: bold;
+    color: white;
+    
+  }
+  
+  /* .table-container tr:hover {
+    background-color: #8d99ae;
+    color: white;
+  } */
+
+  .ActionButtons{
+    background-color: #8d99ae;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
+  }
+
+
+  .ActionButtons:hover{
+    background-color: #2b2d42;
+    color: white;
+    /* border: 2px solid white; */
+  }
+
+  .DeleteButton{
+    background-color: #8d99ae;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
+  }
+
+  .DeleteButton:hover{
+    background-color: maroon;
+    color: white;
+    /* border: 2px solid white; */
   }

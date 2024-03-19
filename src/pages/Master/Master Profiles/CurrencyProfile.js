@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import MainContainerCompilation from "../../components/global/MainContainerCompilation";
+import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import {
   Autocomplete,
   Box,
   CircularProgress,
   InputAdornment,
   TextField,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { COLORS } from "../../assets/colors/COLORS";
-import "../../css/components/formComponent.css";
+import { COLORS } from "../../../assets/colors/COLORS";
+import "../../../css/components/formComponent.css";
 import axios from "axios";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -17,13 +19,16 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { DataGrid } from "@mui/x-data-grid";
 import { AnimatePresence, motion } from "framer-motion";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
-import "../../css/pages/CurrencyProfile.css";
-import { useToast } from "../../contexts/ToastContext";
-import CustomAlertModalCurrency from "../../components/CustomerAlertModalCurrency";
+import "../../../css/pages/CurrencyProfile.css";
+import { useToast } from "../../../contexts/ToastContext";
+import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
 import { useNavigate } from "react-router-dom";
 
 const CurrencyProfile = () => {
   // -----------------STATES START---------------------
+  const baseUrl = process.env.REACT_APP_BASE_URL;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const {
     showAlertDialogCurrency,
@@ -35,9 +40,10 @@ const CurrencyProfile = () => {
   const options = ["hello", "hi", "bye"];
 
   const CalculationMethodOptions = ["Multiplication", "Division"];
+  const [loading, setLoading] = useState(false);
 
   const [allCurrencyData, setAllCurrencyData] = useState(null);
-  const [currencyOneData, setCurrencyOneData] = useState(null);
+  // const [currencyOneData, setCurrencyOneData] = useState(null);
 
   // --------------create form states(values)--------------
   const [currencyCode, setCurrencyCode] = useState("");
@@ -84,13 +90,18 @@ const CurrencyProfile = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const columns = [
     { field: "currencyid", headerName: "ID", width: 140 },
-    { field: "currency_code", headerName: "Currency Code", width: 200 },
+    {
+      field: "currency_code",
+      headerName: "Currency Code",
+      width: isMobile ? 120 : 200,
+    },
     { field: "currency_name", headerName: "Currency Name", width: 180 },
     {
       field: "actions",
       headerName: "Actions",
       sortable: false,
       width: 200,
+      headerAlign: "center",
       renderCell: (params) => (
         <Box display={"flex"} gap={2}>
           <button
@@ -143,7 +154,7 @@ const CurrencyProfile = () => {
     ) {
       try {
         const response = await axios.post(
-          `http://localhost:5001/api/master/CurrencyMasterCreate`,
+          `${baseUrl}/api/master/CurrencyMasterCreate`,
           {
             currency_code: formObject.CurrencyCode.toUpperCase(),
             currency_name: formObject.CurrencyName,
@@ -164,7 +175,10 @@ const CurrencyProfile = () => {
           }
         );
 
-        console.log(response.data);
+        console.log(
+          "Response Data for Creation of Currency Master:",
+          response.data
+        );
 
         setisLoading(false);
         setCurrencyCode("");
@@ -220,7 +234,7 @@ const CurrencyProfile = () => {
     ) {
       try {
         const response = await axios.post(
-          `http://localhost:5001/api/master/CurrencyMasterEdit`,
+          `${baseUrl}/api/master/CurrencyMasterEdit`,
           {
             currencyid: editedSelectedId,
             currency_code: formObject.CurrencyCodeEdited,
@@ -295,7 +309,7 @@ const CurrencyProfile = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        `http://localhost:5001/api/master/CurrencyMasterAll`,
+        `${baseUrl}/api/master/CurrencyMasterAll`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -311,54 +325,59 @@ const CurrencyProfile = () => {
 
   useEffect(() => {
     const fetchCurrencyAll = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get(
-          `http://localhost:5001/api/master/CurrencyMasterAll`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setAllCurrencyData(response.data);
-        console.log(response.data);
-      } catch (error) {
-        console.log(error);
+      setLoading(true);
+      if (isSearch === true) {
+        const token = localStorage.getItem("token");
+        try {
+          const response = await axios.get(
+            `${baseUrl}/api/master/CurrencyMasterAll`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setAllCurrencyData(response.data);
+          console.log(response.data);
+          setLoading(false);
+        } catch (error) {
+          console.log(error);
+          setLoading(false);
+        }
       }
     };
 
     fetchCurrencyAll();
-  }, []);
+  }, [isSearch]);
 
-  useEffect(() => {
-    const fetchCurrencyOne = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get(
-          `http://localhost:5001/api/master/CurrencyMasterOne`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setCurrencyOneData(response.data);
-        console.log(response.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchCurrencyOne = async () => {
+  //     const token = localStorage.getItem("token");
+  //     try {
+  //       const response = await axios.get(
+  //         `${baseUrl}/api/master/CurrencyMasterOne`,
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+  //       setCurrencyOneData(response.data);
+  //       console.log(response.data);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
 
-    fetchCurrencyOne();
-  }, []);
+  //   fetchCurrencyOne();
+  // }, []);
 
   const CurrencyMasterDelete = async (currencyid) => {
     setisLoading(true);
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `http://localhost:5001/api/master/CurrencyMasterDelete`,
+        `${baseUrl}/api/master/CurrencyMasterDelete`,
         { currencyid: currencyid },
         {
           headers: {
@@ -458,10 +477,14 @@ const CurrencyProfile = () => {
               name="ContainerBox"
               component={"form"}
               onSubmit={handleSubmitCreate}
-              sx={{ backgroundColor: COLORS.text }}
+              sx={{
+                backgroundColor: COLORS.text,
+                overflow: isMobile ? "auto" : "visible",
+                maxHeight: isMobile ? "70vh" : "auto",
+              }}
               height={"auto"}
               p={3}
-              width={"auto"}
+              width={isMobile ? "70vw" : "auto"}
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
@@ -493,13 +516,16 @@ const CurrencyProfile = () => {
                   name="InputsContainer"
                   mt={4}
                   display={"grid"}
-                  gridTemplateColumns={"repeat(3, 1fr)"}
+                  gridTemplateColumns={
+                    isMobile ? "repeat(1, 1fr)" : "repeat(3, 1fr)"
+                  }
+                  // gridTemplateColumns={"repeat(3, 1fr)"}
                   gridTemplateRows={"repeat(3, 1fr)"}
                   columnGap={"40px"}
                   rowGap={"40px"}
                 >
                   <TextField
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="CurrencyCode"
                     value={currencyCode}
                     onChange={(e) => setCurrencyCode(e.target.value)}
@@ -507,7 +533,7 @@ const CurrencyProfile = () => {
                   />
 
                   <TextField
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="CurrencyName"
                     label="Currency Name"
                     value={currencyName}
@@ -520,7 +546,7 @@ const CurrencyProfile = () => {
                     name="Countries"
                     onChange={(event, newValue) => setCountry(newValue)}
                     options={options}
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -532,7 +558,7 @@ const CurrencyProfile = () => {
                   />
                   <TextField
                     id="Priority"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Priority"
                     name="Priority"
                     value={priority}
@@ -541,7 +567,7 @@ const CurrencyProfile = () => {
                   <TextField
                     id="Rateper"
                     name="Rateper"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Rate / per"
                     value={ratePer}
                     onChange={(e) => setRatePer(e.target.value)}
@@ -549,7 +575,7 @@ const CurrencyProfile = () => {
                   <TextField
                     id="DefaultMinRate"
                     name="DefaultMinRate"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Default Min Rate"
                     value={defaultMinRate}
                     onChange={(e) => setDefaultMinRate(e.target.value)}
@@ -557,7 +583,7 @@ const CurrencyProfile = () => {
                   <TextField
                     id="DefaultMaxRate"
                     name="DefaultMaxRate"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Default Max Rate"
                     value={defaultMaxRate}
                     onChange={(e) => setDefaultMaxRate(e.target.value)}
@@ -567,7 +593,7 @@ const CurrencyProfile = () => {
                     id="CalculationMethod"
                     options={CalculationMethodOptions}
                     // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -580,7 +606,7 @@ const CurrencyProfile = () => {
                   <TextField
                     id="OpenRatePremium"
                     name="OpenRatePremium"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Open Rate Premium"
                     value={openRatePremium}
                     onChange={(e) => setOpenRatePremium(e.target.value)}
@@ -588,7 +614,7 @@ const CurrencyProfile = () => {
                   <TextField
                     id="GulfDiscFactor"
                     name="GulfDiscFactor"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Gulf Disc Factor"
                     value={gulfDiscFactor}
                     onChange={(e) => setGulfDiscFactor(e.target.value)}
@@ -597,7 +623,7 @@ const CurrencyProfile = () => {
                     label="Amex Map Code"
                     name="AmexMapCode"
                     id="AmexMapCode"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     value={amexMapCode}
                     onChange={(e) => setAmexMapCode(e.target.value)}
                   />
@@ -606,7 +632,7 @@ const CurrencyProfile = () => {
                     disablePortal
                     id="Group"
                     options={options}
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     renderInput={(params) => (
                       <TextField {...params} label="Group" name="Group" />
                     )}
@@ -656,143 +682,153 @@ const CurrencyProfile = () => {
       {/* -------------------------CREATION END------------------------------- */}
 
       {/* -------------------------SEARCH & DELETE) START------------------------------- */}
-
-      {isSearch && (
-        <Box
-          component={motion.div}
-          initial={{ x: 150 }}
-          animate={{ x: 0 }}
-          height={"auto"}
-          minHeight={"40vh"}
-          width={"50vw"}
-          display={"flex"}
-          flexDirection={"column"}
-          alignItems={"center"}
-          gap={4}
-          p={5}
-          borderRadius={"20px"}
-          sx={{ backgroundColor: COLORS.text }}
-          boxShadow={5}
-        >
-          <KeyboardBackspaceIcon
-            onClick={handlebackClickOnSearch}
-            fontSize="large"
-            sx={{
-              alignSelf: "flex-start",
-              color: COLORS.secondaryBG,
-              position: "absolute",
-              cursor: "pointer",
-            }}
-          />
-          <TextField
-            placeholder="Search.."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            sx={{
-              "& fieldset": { border: "none" },
-            }}
-            style={{
-              display: "flex",
-              width: "16vw",
-              backgroundColor: COLORS.text,
-              borderRadius: "20px",
-              border: `2px solid ${COLORS.secondaryBG}`,
-              height: 50,
-              justifyContent: "center",
-              boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
-            }}
-            InputProps={
-              searchKeyword.length > 0
-                ? {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <ClearIcon
-                          onClick={() => setSearchKeyword("")}
-                          style={{ cursor: "pointer" }}
-                        />
-                      </InputAdornment>
-                    ),
-                  }
-                : {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  }
-            }
-          />
-          <DataGrid
-            disableRowSelectionOnClick
-            disableColumnFilter
-            rows={allCurrencyData.filter((row) => {
-              if (searchKeyword === "") {
-                return true; // No search keyword, so show all rows
-              }
-
-              const lowerSearchKeyword = searchKeyword.toLowerCase();
-
-              // Check if any column value includes the search keyword (case-insensitive)
-              for (const column of columns) {
-                const cellValue = row[column.field]
-                  ? row[column.field].toString().toLowerCase()
-                  : "";
-                if (cellValue.includes(lowerSearchKeyword)) {
-                  return true;
+      {loading && isSearch ? (
+        <CircularProgress />
+      ) : (
+        <>
+          {isSearch && (
+            <Box
+              component={motion.div}
+              initial={{ x: 150 }}
+              animate={{ x: 0 }}
+              height={"auto"}
+              minHeight={"40vh"}
+              width={isMobile ? "65vw" : "50vw"}
+              display={"flex"}
+              flexDirection={"column"}
+              alignItems={"center"}
+              gap={4}
+              p={5}
+              borderRadius={"20px"}
+              sx={{ backgroundColor: COLORS.text }}
+              boxShadow={5}
+            >
+              <KeyboardBackspaceIcon
+                onClick={handlebackClickOnSearch}
+                fontSize="large"
+                sx={{
+                  alignSelf: "flex-start",
+                  color: COLORS.secondaryBG,
+                  position: "absolute",
+                  cursor: "pointer",
+                }}
+              />
+              <TextField
+                placeholder="Search.."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                sx={{
+                  "& fieldset": { border: "none" },
+                }}
+                style={{
+                  display: "flex",
+                  width: isMobile ? "40vw" : "16vw",
+                  backgroundColor: COLORS.text,
+                  borderRadius: "20px",
+                  border: `2px solid ${COLORS.secondaryBG}`,
+                  height: 50,
+                  justifyContent: "center",
+                  boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
+                }}
+                InputProps={
+                  searchKeyword.length > 0
+                    ? {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <ClearIcon
+                              onClick={() => setSearchKeyword("")}
+                              style={{ cursor: "pointer" }}
+                            />
+                          </InputAdornment>
+                        ),
+                      }
+                    : {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                        ),
+                      }
                 }
-              }
+              />
+              <DataGrid
+                disableRowSelectionOnClick
+                disableColumnFilter
+                rows={allCurrencyData.filter((row) => {
+                  if (searchKeyword === "") {
+                    return true; // No search keyword, so show all rows
+                  }
 
-              return false;
-            })}
-            columnVisibilityModel={{
-              // Hide columns status and traderName, the other columns will remain visible
-              currencyid: false,
-            }}
-            getRowId={(row) => row.currencyid}
-            rowSelectionModel={selectionModel}
-            onRowSelectionModelChange={handleSelectionModelChange}
-            sortModel={[
-              {
-                field: "currencyid",
-                sort: "asc",
-              },
-            ]}
-            columns={columns}
-            onModelChange={(model) => {
-              // Update the search keyword when filtering is applied
-              if (model.filterModel && model.filterModel.items.length > 0) {
-                setSearchKeyword(model.filterModel.items[0].value);
-              } else {
-                setSearchKeyword("");
-              }
-            }}
-            sx={{
-              backgroundColor: COLORS.text,
-              p: "20px",
-              maxHeight: "60vh",
-              width: "50vw",
-              boxShadow: 3,
-              border: "2px solid",
-              borderColor: COLORS.secondaryBG,
-              "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                {
-                  display: "none",
-                },
-            }}
-            initialState={{
-              pagination: {
-                paginationModel: { page: 0, pageSize: 5 },
-              },
-            }}
-            pageSizeOptions={[5, 10]}
-            // checkboxSelection
-          />
-        </Box>
+                  const lowerSearchKeyword = searchKeyword.toLowerCase();
+
+                  // Check if any column value includes the search keyword (case-insensitive)
+                  for (const column of columns) {
+                    const cellValue = row[column.field]
+                      ? row[column.field].toString().toLowerCase()
+                      : "";
+                    if (cellValue.includes(lowerSearchKeyword)) {
+                      return true;
+                    }
+                  }
+
+                  return false;
+                })}
+                columnVisibilityModel={
+                  isMobile
+                    ? {
+                        // Hide columns status and traderName, the other columns will remain visible
+                        currencyid: false,
+                        currency_name: false,
+                      }
+                    : { currencyid: false }
+                }
+                getRowId={(row) => row.currencyid}
+                rowSelectionModel={selectionModel}
+                onRowSelectionModelChange={handleSelectionModelChange}
+                sortModel={[
+                  {
+                    field: "currencyid",
+                    sort: "asc",
+                  },
+                ]}
+                columns={columns}
+                onModelChange={(model) => {
+                  // Update the search keyword when filtering is applied
+                  if (model.filterModel && model.filterModel.items.length > 0) {
+                    setSearchKeyword(model.filterModel.items[0].value);
+                  } else {
+                    setSearchKeyword("");
+                  }
+                }}
+                sx={{
+                  backgroundColor: COLORS.text,
+                  p: isMobile ? "10px" : "20px",
+                  maxHeight: "60vh",
+                  width: isMobile ? "70vw" : "50vw",
+                  boxShadow: 3,
+                  border: "2px solid",
+                  borderColor: COLORS.secondaryBG,
+                  "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
+                    {
+                      display: "none",
+                    },
+                }}
+                initialState={{
+                  pagination: {
+                    paginationModel: { page: 0, pageSize: 5 },
+                  },
+                }}
+                pageSizeOptions={[5, 10]}
+                // checkboxSelection
+              />
+            </Box>
+          )}{" "}
+        </>
       )}
 
       {/* -------------------------SEARCH END------------------------------- */}
@@ -814,10 +850,14 @@ const CurrencyProfile = () => {
               name="ContainerBox"
               component={"form"}
               onSubmit={handleSubmitEdit}
-              sx={{ backgroundColor: COLORS.text }}
+              sx={{
+                backgroundColor: COLORS.text,
+                overflow: isMobile ? "auto" : "visible",
+                maxHeight: isMobile ? "70vh" : "auto",
+              }}
               height={"auto"}
               p={3}
-              width={"auto"}
+              width={isMobile ? "70vw" : "auto"}
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
@@ -840,13 +880,15 @@ const CurrencyProfile = () => {
                     name="InputsContainer"
                     mt={4}
                     display={"grid"}
-                    gridTemplateColumns={"repeat(3, 1fr)"}
+                    gridTemplateColumns={
+                      isMobile ? "repeat(1, 1fr)" : "repeat(3, 1fr)"
+                    }
                     gridTemplateRows={"repeat(3, 1fr)"}
                     columnGap={"40px"}
                     rowGap={"40px"}
                   >
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="CurrencyCodeEdited"
                       value={editedcurrencyCode}
                       onChange={(e) => setEditedCurrencyCode(e.target.value)}
@@ -854,7 +896,7 @@ const CurrencyProfile = () => {
                     />
 
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="CurrencyNameEdited"
                       label="Currency Name"
                       value={editedcurrencyName}
@@ -867,7 +909,7 @@ const CurrencyProfile = () => {
                       name="CountriesEdited"
                       onChange={(event, newValue) => setCountry(newValue)}
                       options={options}
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       renderInput={(params) => (
                         <TextField
                           {...params}
@@ -879,7 +921,7 @@ const CurrencyProfile = () => {
                     />
                     <TextField
                       id="Priority"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       label={"Priority"}
                       name="PriorityEdited"
                       value={editedpriority}
@@ -888,7 +930,7 @@ const CurrencyProfile = () => {
                     <TextField
                       id="Rate/per"
                       name="RateperEdited"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Rate / per"
                       value={editedratePer}
                       onChange={(e) => setEditedRatePer(e.target.value)}
@@ -896,7 +938,7 @@ const CurrencyProfile = () => {
                     <TextField
                       id="DefaultMinRate"
                       name="DefaultMinRateEdited"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Default Min Rate"
                       value={editeddefaultMinRate}
                       onChange={(e) => setEditedDefaultMinRate(e.target.value)}
@@ -904,7 +946,7 @@ const CurrencyProfile = () => {
                     <TextField
                       id="DefaultMaxRate"
                       name="DefaultMaxRateEdited"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Default Max Rate"
                       value={editeddefaultMaxRate}
                       onChange={(e) => setEditedDefaultMaxRate(e.target.value)}
@@ -917,7 +959,7 @@ const CurrencyProfile = () => {
                       onChange={(e, newValue) =>
                         setEditedCalculationMethod(newValue)
                       }
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       renderInput={(params) => (
                         <TextField
                           {...params}
@@ -930,7 +972,7 @@ const CurrencyProfile = () => {
                     <TextField
                       id="OpenRatePremium"
                       name="OpenRatePremiumEdited"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Open Rate Premium"
                       value={editedopenRatePremium}
                       onChange={(e) => setEditedOpenRatePremium(e.target.value)}
@@ -938,7 +980,7 @@ const CurrencyProfile = () => {
                     <TextField
                       id="GulfDiscFactor"
                       name="GulfDiscFactorEdited"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Gulf Disc Factor"
                       value={editedgulfDiscFactor}
                       onChange={(e) => setEditedGulfDiscFactor(e.target.value)}
@@ -947,7 +989,7 @@ const CurrencyProfile = () => {
                       label="Amex Map Code"
                       name="AmexMapCodeEdited"
                       id="AmexMapCode"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       value={editedamexMapCode}
                       onChange={(e) => setEditedAmexMapCode(e.target.value)}
                     />
@@ -956,7 +998,7 @@ const CurrencyProfile = () => {
                       disablePortal
                       id="Group"
                       options={options}
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       renderInput={(params) => (
                         <TextField {...params} label="Group" name="Group" />
                       )}
@@ -989,6 +1031,7 @@ const CurrencyProfile = () => {
                         alignItems: "center",
                         justifyContent: "center",
                         gap: 5,
+                        width: isMobile ? "30vw" : "auto",
                       }}
                     >
                       <KeyboardBackspaceIcon />
@@ -998,7 +1041,11 @@ const CurrencyProfile = () => {
                     {/* <button className="FormFooterButton" type="reset">
                     Cancel
                   </button> */}
-                    <button className="FormFooterButton" type="submit">
+                    <button
+                      className="FormFooterButton"
+                      type="submit"
+                      style={{ width: isMobile ? "30vw" : "auto" }}
+                    >
                       Edit & Save
                     </button>
                   </Box>

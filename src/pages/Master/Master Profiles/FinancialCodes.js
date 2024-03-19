@@ -1,5 +1,5 @@
 import React from "react";
-import MainContainerCompilation from "../../components/global/MainContainerCompilation";
+import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 
 const FinancialCodes = () => {
   return (

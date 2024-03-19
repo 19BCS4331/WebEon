@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import {
+  Alert,
   Autocomplete,
   Box,
   CircularProgress,
   MenuItem,
+  Skeleton,
   TextField,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 
 import "../../../css/components/formComponent.css";
@@ -17,23 +21,28 @@ import { AnimatePresence, motion } from "framer-motion";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import "../../../css/pages/CurrencyProfile.css";
 import { useToast } from "../../../contexts/ToastContext";
-import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
+
 import { useNavigate } from "react-router-dom";
 import { COLORS } from "../../../assets/colors/COLORS";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import "../../../css/components/buyfromindiv.css";
 import dayjs from "dayjs";
+import Tooltip from "@mui/material/Tooltip";
 
 import {
-  postPaxDetails,
-  PaxDetailsID,
   PaxDetailsFullMain,
+  getAgents,
+  getDeliAgent,
+  getMarktRef,
 } from "../../../apis/IndiviOrCorp/Buy/index.js";
 import PaxModal from "../../../components/Transactions/BuyFromIndivi/PaxModal.js";
 import TransacDetails from "../../../components/Transactions/BuyFromIndivi/TransacDetails.js";
 
 const BuyFromIndivi = () => {
   // -----------------STATES START---------------------
+  const baseUrl = process.env.REACT_APP_BASE_URL;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const {
     showAlertDialogCurrency,
@@ -51,23 +60,40 @@ const BuyFromIndivi = () => {
   const [isTransacDetailsView, setIsTransacDetailsView] = useState(false);
 
   // --------------create form states(values)--------------
-  const [currencyCode, setCurrencyCode] = useState("");
-  const [currencyName, setCurrencyName] = useState("");
-  const [country, setCountry] = useState("");
-  const [priority, setPriority] = useState("");
+
   const [ratePer, setRatePer] = useState("");
-  const [defaultMinRate, setDefaultMinRate] = useState("");
-  const [defaultMaxRate, setDefaultMaxRate] = useState("");
-  const [calculationMethod, setCalculationMethod] = useState(null);
-  const [openRatePremium, setOpenRatePremium] = useState("");
-  const [gulfDiscFactor, setGulfDiscFactor] = useState("");
-  const [amexMapCode, setAmexMapCode] = useState("");
-  const [group, setGroup] = useState(null);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [isPartySelect, setIsPartySelect] = useState(false);
 
+  const [behalf, setBehalf] = useState("");
+  const [category, setCategory] = useState(null);
+  const [reference, setReference] = useState("");
+  const [marktRef, setMarktRef] = useState(null);
+  const [idText, setIdText] = useState("");
+  const [vendorInvNo, setVendorInvNo] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [deliveryPerson, setDeliveryPerson] = useState(null);
+
   const EntityOptions = ["Individual", "Corporate"];
   const PurposeOptions = ["Encashment", "Surrender"];
+  const CategoryOptions = ["High Risk", "Medium Risk", "Low Risk"];
+
+  const [agentsOpen, setAgentsOpen] = useState(false);
+  const [agentOptions, setAgentOptions] = useState([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(null);
+
+  const [marktRefOpen, setMarktRefOpen] = useState(false);
+  const [marktRefOptions, setMarktRefOptions] = useState([]);
+  const [marktRefLoading, setMarktRefLoading] = useState(false);
+  const [selectedMarktRef, setSelectedMarktRef] = useState(null);
+
+  const [deliAgentOpen, setDeliAgentOpen] = useState(false);
+  const [deliAgentOptions, setDeliAgentOptions] = useState([]);
+  const [deliAgentLoading, setDeliAgentLoading] = useState(false);
+  const [selectedDeliAgent, setSelectedDeliAgent] = useState(null);
+
+  const [comission, setComission] = useState(false);
 
   // --------------end create form states (values--------------
 
@@ -127,7 +153,7 @@ const BuyFromIndivi = () => {
     // ) {
     //   try {
     //     const response = await axios.post(
-    //       `http://localhost:5001/api/master/CurrencyMasterCreate`,
+    //       `${baseUrl}/api/master/CurrencyMasterCreate`,
     //       {
     //         currency_code: formObject.CurrencyCode.toUpperCase(),
     //         currency_name: formObject.CurrencyName,
@@ -204,7 +230,7 @@ const BuyFromIndivi = () => {
     ) {
       try {
         const response = await axios.post(
-          `http://localhost:5001/api/master/CurrencyMasterEdit`,
+          `${baseUrl}/api/master/CurrencyMasterEdit`,
           {
             currencyid: editedSelectedId,
             currency_code: formObject.CurrencyCodeEdited,
@@ -273,7 +299,7 @@ const BuyFromIndivi = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        `http://localhost:5001/api/master/CurrencyMasterAll`,
+        `${baseUrl}/api/master/CurrencyMasterAll`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -293,7 +319,7 @@ const BuyFromIndivi = () => {
         const token = localStorage.getItem("token");
         try {
           const response = await axios.get(
-            `http://localhost:5001/api/master/CurrencyMasterAll`,
+            `${baseUrl}/api/master/CurrencyMasterAll`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -317,7 +343,7 @@ const BuyFromIndivi = () => {
         const token = localStorage.getItem("token");
         try {
           const response = await axios.get(
-            `http://localhost:5001/api/master/CurrencyMasterOne`,
+            `${baseUrl}/api/master/CurrencyMasterOne`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -402,8 +428,16 @@ const BuyFromIndivi = () => {
   };
 
   const handleNextForTransac = () => {
-    setIsTransacDetailsView(true);
-    setIsCreateForm(false);
+    if (!paxData) {
+      // alert("Please Select PAX First");
+      showToast("Please Select PAX First!", "error");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+    } else {
+      setIsTransacDetailsView(true);
+      setIsCreateForm(false);
+    }
   };
 
   const handlebackClickOnTransacView = () => {
@@ -435,7 +469,95 @@ const BuyFromIndivi = () => {
     setSearchPax(true);
   };
 
+  const setIsPaxSavedState = (value) => {
+    setIsPaxSaved(value);
+    setShowPaxModal(false);
+  };
+
+  // Function to update paxData state
+  const setPaxDataState = (data) => {
+    setPaxData(data);
+  };
+
+  useEffect(() => {
+    if (agentsOpen && !agentOptions.length) {
+      // Set loading state to true before fetching data
+      setAgentsLoading(true);
+      // Fetch data from backend when dropdown is opened and options are empty
+      fetchAgentData().then((data) => {
+        setAgentOptions(data);
+        setAgentsLoading(false); // Set loading state to false after data is fetched
+      });
+    }
+  }, [agentsOpen]);
+
+  const fetchAgentData = async () => {
+    // Simulating a delay for demonstration purposes
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Perform your API call to fetch data from backend
+    const response = await getAgents();
+
+    return response;
+  };
+
+  useEffect(() => {
+    if (selectedAgent) {
+      setComission(true);
+    } else if (selectedAgent === null) {
+      setComission(false);
+    }
+  }, [selectedAgent]);
+
+  useEffect(() => {
+    if (marktRefOpen && !marktRefOptions.length) {
+      // Set loading state to true before fetching data
+      setMarktRefLoading(true);
+      // Fetch data from backend when dropdown is opened and options are empty
+      fetchMarktRefData().then((data) => {
+        setMarktRefOptions(data);
+        setMarktRefLoading(false); // Set loading state to false after data is fetched
+      });
+    }
+  }, [marktRefOpen]);
+
+  const fetchMarktRefData = async () => {
+    // Simulating a delay for demonstration purposes
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Perform your API call to fetch data from backend
+    const response = await getMarktRef();
+
+    return response;
+  };
+
+  useEffect(() => {
+    if (deliAgentOpen && !deliAgentOptions.length) {
+      // Set loading state to true before fetching data
+      setDeliAgentLoading(true);
+      // Fetch data from backend when dropdown is opened and options are empty
+      fetchDeliAgentData().then((data) => {
+        setDeliAgentOptions(data);
+        setDeliAgentLoading(false); // Set loading state to false after data is fetched
+      });
+    }
+  }, [deliAgentOpen]);
+
+  const fetchDeliAgentData = async () => {
+    // Simulating a delay for demonstration purposes
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Perform your API call to fetch data from backend
+    const response = await getDeliAgent();
+
+    return response;
+  };
+
   //  ---------------------FUNCTIONS END----------------------
+
+  // -------------------------------------CONSOLE LOGS--------------------------------------------
+
+  console.log("Selected Agent: ", selectedAgent);
+  console.log("Selected Markt Ref: ", selectedMarktRef);
+
+  // -------------------------------------CONSOLE LOGS--------------------------------------------
 
   return (
     <MainContainerCompilation title={"Buy From Individual / Corporates"}>
@@ -455,10 +577,15 @@ const BuyFromIndivi = () => {
               name="ContainerBox"
               component={"form"}
               onSubmit={handleSubmitCreate}
-              sx={{ backgroundColor: COLORS.text }}
+              sx={{
+                backgroundColor: COLORS.text,
+                overflow: isMobile ? "auto" : "visible",
+                maxHeight: isMobile ? "70vh" : "auto",
+                maxWidth: isMobile ? "60vw" : "auto",
+              }}
               height={"auto"}
               p={3}
-              width={"auto"}
+              width={"70vw"}
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
@@ -488,16 +615,20 @@ const BuyFromIndivi = () => {
               ) : (
                 <Box
                   name="InputsContainer"
-                  mt={5}
+                  mt={{ xs: 2, md: 5 }}
                   display={"grid"}
-                  gridTemplateColumns={"repeat(4, 1fr)"}
-                  gridTemplateRows={"repeat(3, 1fr)"}
-                  columnGap={"40px"}
-                  rowGap={"40px"}
+                  // gridTemplateColumns={"repeat(5, 1fr)"}
+                  // gridTemplateRows={"repeat(3, 1fr)"}
+                  gridTemplateColumns={
+                    isMobile ? "repeat(1, 1fr)" : "repeat(5, 1fr)"
+                  }
+                  // gridTemplateRows={"repeat(6, auto)"}
+                  columnGap={isMobile ? "10px" : "40px"}
+                  rowGap={isMobile ? "10px" : "40px"}
                 >
                   <TextField
                     select
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="Entity"
                     label="Entity"
                     defaultValue="Individual"
@@ -512,7 +643,7 @@ const BuyFromIndivi = () => {
 
                   <TextField
                     select
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="Purpose"
                     label="Purpose"
                     defaultValue="Encashment"
@@ -530,20 +661,46 @@ const BuyFromIndivi = () => {
                     value={selectedDate}
                     onChange={handleDateChange}
                     format="DD-MM-YYYY"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                   />
 
                   {isPaxSaved && paxData ? (
-                    <TextField
-                      value={paxData.PaxName}
-                      sx={{ width: "12vw" }}
-                      label="Selected Pax"
-                    />
+                    // <TextField
+                    //   value={paxData.name}
+                    //   sx={{ width: "12vw" }}
+                    //   label="Selected Pax"
+                    // />
+                    <Tooltip title="Click To Show PAX Selection">
+                      <Box
+                        onClick={() => setShowPaxModal(true)}
+                        display={"flex"}
+                        width={isMobile ? "auto" : "12vw"}
+                        sx={{
+                          border: `solid 1px ${COLORS.background}`,
+                          borderRadius: "5px",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {paxData && (
+                          <p
+                            style={{
+                              color: COLORS.background,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {paxData.name}
+                          </p>
+                        )}
+                      </Box>
+                    </Tooltip>
                   ) : (
                     <button
                       // onClick={handlePaxview}
                       onClick={() => setShowPaxModal(true)}
                       className="PartySelect"
+                      style={{ height: isMobile ? "7vh" : "auto" }}
                     >
                       Select Party
                     </button>
@@ -552,12 +709,12 @@ const BuyFromIndivi = () => {
                   <TextField
                     id="ManualBillRef"
                     name="ManualBillRef"
-                    sx={{ width: "12vw" }}
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Manual Bill Ref"
                     value={ratePer}
                     onChange={(e) => setRatePer(e.target.value)}
                   />
-                  <TextField
+                  {/* <TextField
                     select
                     id="AgentSelect"
                     name="AgentSelect"
@@ -565,53 +722,215 @@ const BuyFromIndivi = () => {
                     label="Agent Involved?"
                     // value={defaultMinRate}
                     // onChange={(e) => setDefaultMinRate(e.target.value)}
-                  />
-                  <TextField
-                    id="DefaultMaxRate"
-                    name="DefaultMaxRate"
-                    sx={{ width: "12vw" }}
-                    label="Default Max Rate"
-                    value={defaultMaxRate}
-                    onChange={(e) => setDefaultMaxRate(e.target.value)}
-                  />
+                  /> */}
+
                   <Autocomplete
-                    disablePortal
-                    id="CalculationMethod"
-                    options={CalculationMethodOptions}
-                    // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                    sx={{ width: "12vw" }}
+                    open={agentsOpen}
+                    value={selectedAgent}
+                    onChange={(event, newValue) => {
+                      setSelectedAgent(newValue);
+                    }}
+                    onOpen={() => {
+                      setAgentsOpen(true);
+                    }}
+                    onClose={() => {
+                      setAgentsOpen(false);
+                    }}
+                    options={agentsLoading ? [1] : agentOptions} // Skeleton placeholders when loading
+                    loading={agentsLoading}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => {
+                      if (agentsLoading) {
+                        return (
+                          <Box
+                            display={"flex"}
+                            alignItems={"center"}
+                            justifyContent={"center"}
+                            height={100}
+                          >
+                            <CircularProgress />
+                          </Box>
+                        );
+                      }
+                      return <li {...props}>{option.name}</li>;
+                    }}
                     renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Calculation Method"
-                        name="CalculationMethod"
-                        // value={calculationMethod}
-                      />
+                      <TextField {...params} label="Agent Involved?" />
                     )}
                   />
                   <TextField
-                    id="OpenRatePremium"
-                    name="OpenRatePremium"
-                    sx={{ width: "12vw" }}
-                    label="Open Rate Premium"
-                    value={openRatePremium}
-                    onChange={(e) => setOpenRatePremium(e.target.value)}
+                    id="Behalf"
+                    name="Behalf"
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    label="Behalf"
+                    value={behalf}
+                    onChange={(e) => setBehalf(e.target.value)}
+                  />
+                  {CategoryOptions && (
+                    <Autocomplete
+                      disablePortal
+                      id="Category"
+                      value={category}
+                      onChange={(event, newValue) => {
+                        setCategory(newValue);
+                      }}
+                      options={CategoryOptions}
+                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Category"
+                          name="Category"
+                          // value={calculationMethod}
+                        />
+                      )}
+                    />
+                  )}
+                  <TextField
+                    id="Reference"
+                    name="Reference"
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    label="Reference"
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                  />
+                  {/* {CategoryOptions && (
+                    <Autocomplete
+                      disablePortal
+                      id="MarktRef"
+                      value={marktRef}
+                      onChange={(event, newValue) => {
+                        setMarktRef(newValue);
+                      }}
+                      options={CategoryOptions}
+                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
+                      sx={{ width: "12vw" }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Marketing Reference"
+                          name="Marketing Reference"
+                          // value={calculationMethod}
+                        />
+                      )}
+                    />
+                  )} */}
+
+                  <Autocomplete
+                    open={marktRefOpen}
+                    value={selectedMarktRef}
+                    onChange={(event, newValue) => {
+                      setSelectedMarktRef(newValue);
+                    }}
+                    onOpen={() => {
+                      setMarktRefOpen(true);
+                    }}
+                    onClose={() => {
+                      setMarktRefOpen(false);
+                    }}
+                    options={marktRefLoading ? [1] : marktRefOptions} // Skeleton placeholders when loading
+                    loading={marktRefLoading}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => {
+                      if (marktRefLoading) {
+                        return (
+                          <Box
+                            display={"flex"}
+                            alignItems={"center"}
+                            justifyContent={"center"}
+                            height={100}
+                          >
+                            <CircularProgress />
+                          </Box>
+                        );
+                      }
+                      return <li {...props}>{option.name}</li>;
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Marketing Reference" />
+                    )}
+                  />
+
+                  <TextField
+                    label="ID"
+                    name="IDText"
+                    id="IDText"
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    value={idText}
+                    onChange={(e) => setIdText(e.target.value)}
                   />
                   <TextField
-                    id="GulfDiscFactor"
-                    name="GulfDiscFactor"
-                    sx={{ width: "12vw" }}
-                    label="Gulf Disc Factor"
-                    value={gulfDiscFactor}
-                    onChange={(e) => setGulfDiscFactor(e.target.value)}
+                    label="Inv# Vendor"
+                    name="VendorInvNo"
+                    id="VendorInvNo"
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    value={vendorInvNo}
+                    onChange={(e) => setVendorInvNo(e.target.value)}
                   />
                   <TextField
-                    label="Amex Map Code"
-                    name="AmexMapCode"
-                    id="AmexMapCode"
-                    sx={{ width: "12vw" }}
-                    value={amexMapCode}
-                    onChange={(e) => setAmexMapCode(e.target.value)}
+                    label="Remarks"
+                    name="Remarks"
+                    id="Remarks"
+                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                  />
+                  {/* {CategoryOptions && (
+                    <Autocomplete
+                      disablePortal
+                      id="DeliveryPerson"
+                      value={deliveryPerson}
+                      onChange={(event, newValue) => {
+                        setDeliveryPerson(newValue);
+                      }}
+                      options={CategoryOptions}
+                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
+                      sx={{ width: "12vw" }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Delivery Person"
+                          name="Delivery Person"
+                          // value={calculationMethod}
+                        />
+                      )}
+                    />
+                  )} */}
+
+                  <Autocomplete
+                    open={deliAgentOpen}
+                    value={selectedDeliAgent}
+                    onChange={(event, newValue) => {
+                      setSelectedDeliAgent(newValue);
+                    }}
+                    onOpen={() => {
+                      setDeliAgentOpen(true);
+                    }}
+                    onClose={() => {
+                      setDeliAgentOpen(false);
+                    }}
+                    options={deliAgentLoading ? [1] : deliAgentOptions} // Skeleton placeholders when loading
+                    loading={deliAgentLoading}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => {
+                      if (deliAgentLoading) {
+                        return (
+                          <Box
+                            display={"flex"}
+                            alignItems={"center"}
+                            justifyContent={"center"}
+                            height={100}
+                          >
+                            <CircularProgress />
+                          </Box>
+                        );
+                      }
+                      return <li {...props}>{option.name}</li>;
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Delivery Agent" />
+                    )}
                   />
                 </Box>
               )}
@@ -624,7 +943,11 @@ const BuyFromIndivi = () => {
                 flexDirection={"column"}
                 alignItems={"center"}
               >
-                <button className="NextOnCreate" onClick={handleNextForTransac}>
+                <button
+                  className="NextOnCreate"
+                  onClick={handleNextForTransac}
+                  style={{ width: isMobile ? "20vw" : "12vw" }}
+                >
                   Next
                 </button>
               </Box>
@@ -723,6 +1046,7 @@ const BuyFromIndivi = () => {
                       value={editeddefaultMinRate}
                       onChange={(e) => setEditedDefaultMinRate(e.target.value)}
                     />
+
                     <TextField
                       id="DefaultMaxRate"
                       name="DefaultMaxRateEdited"
@@ -837,6 +1161,7 @@ const BuyFromIndivi = () => {
       <TransacDetails
         isTransacDetailsView={isTransacDetailsView}
         handlebackClickOnTransacView={handlebackClickOnTransacView}
+        comission={comission}
       />
 
       {/* -----------------------------Transac Details End ----------------------- */}
@@ -855,6 +1180,8 @@ const BuyFromIndivi = () => {
         selectClickOnRowVisibility={selectClickOnRowVisibility}
         handleSearchPaxClick={handleSearchPaxClick}
         handlebackClickOnPaxSearch={handlebackClickOnPaxSearch}
+        setIsPaxSaved={setIsPaxSavedState}
+        setPaxData={setPaxDataState}
       />
       {/* -------------------------------------------------------PAX MODAL END--------------------------------------- */}
     </MainContainerCompilation>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardControlKeyIcon from "@mui/icons-material/KeyboardControlKey";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,8 @@ import { COLORS } from "../assets/colors/COLORS";
 import { useEffect } from "react";
 
 const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,13 +24,14 @@ const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
   };
 
   const handleItemClick = (item) => {
-    // const validPageNames = ["master-profiles", "party-profiles"];
-    const pageName = item.toLowerCase().replace(/ /g, "-");
-    const targetLocation = `/${pageName}`;
-    if (
-      location.pathname !== targetLocation
-      // validPageNames.includes(pageName.toLowerCase())
-    ) {
+    const pageName = item
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "") // Remove special characters except hyphens and spaces
+      .replace(/\s+/g, "-") // Replace consecutive spaces with a single hyphen
+      .replace(/-{2,}/g, "-") // Replace consecutive hyphens with a single hyphen
+      .trim(); // Trim any leading or trailing spaces
+    const targetLocation = `/${MenuText}/${pageName}`;
+    if (location.pathname !== targetLocation) {
       navigate(targetLocation);
     }
   };
@@ -54,7 +57,7 @@ const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
         className="DropDownContainer"
         display={"flex"}
         sx={{ backgroundColor: COLORS.text, cursor: "pointer" }}
-        width={"16vw"}
+        width={isMobile ? "35vw" : "15vw"}
         height={"50px"}
         mt={5}
         borderRadius={"10px"}
@@ -118,7 +121,7 @@ const Dropdown = ({ MenuText, DropDownItems, searchResults }) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1, transition: 0.4 }}
                   exit={{ opacity: 0 }}
-                  width={"13vw"}
+                  width={isMobile ? "25vw" : "13vw"}
                   mt={1}
                   pl={2}
                   borderRadius={2}

@@ -1,17 +1,23 @@
 import React, { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
 import HomeIcon from "@mui/icons-material/Home";
-import { COLORS } from "../../assets/colors/COLORS";
+// import { COLORS } from "../../assets/colors/COLORS";
 import { useToast } from "../../contexts/ToastContext";
 import { AuthContext } from "../../contexts/AuthContext";
 import axios from "axios";
 import CustomAlertModal from "../CustomAlertModal";
+import ThemeContext from "../../contexts/ThemeContext";
+import { useBaseUrl } from "../../contexts/BaseUrl";
 
 const Topbar = ({ title }) => {
+  const { baseUrl } = useBaseUrl();
+  const { Colortheme } = useContext(ThemeContext);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { logout, setUserRole } = useContext(AuthContext);
   const [isProfileVis, setIsProfileVis] = useState(false);
 
@@ -30,28 +36,72 @@ const Topbar = ({ title }) => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
       const userid = localStorage.getItem("userid");
-      try {
-        const response = await axios.get(
-          `http://localhost:5001/api/users/userData/${userid}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setUserRole(response.data.role);
-        setUserData(response.data);
-      } catch (err) {
-        console.log("Error", err);
-        logout();
-        showToast("Session Expired, Kindly Login Again", "Failed");
-        setTimeout(() => {
-          hideToast();
-        }, 2500);
+
+      // Check if user data exists in local storage
+      const cachedUserData = JSON.parse(localStorage.getItem("userData"));
+
+      // If user data exists and is not expired, set it
+      if (cachedUserData) {
+        setUserRole(cachedUserData.role);
+        setUserData(cachedUserData);
+      } else {
+        try {
+          // Fetch user data from the server
+          const response = await axios.get(
+            `${baseUrl}/api/users/userData/${userid}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          // Set user role and data from the response
+          setUserRole(response.data.role);
+          setUserData(response.data);
+
+          // Update local storage with the new user data
+          localStorage.setItem("userData", JSON.stringify(response.data));
+        } catch (err) {
+          console.error("Error", err);
+          logout();
+          showToast("Session Expired, Kindly Login Again", "Failed");
+          setTimeout(() => {
+            hideToast();
+          }, 2500);
+        }
       }
     };
+
     fetchUserData();
   }, [setUserRole]);
+
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     const token = localStorage.getItem("token");
+  //     const userid = localStorage.getItem("userid");
+  //     try {
+  //       const response = await axios.get(
+  //         `${baseUrl}/api/users/userData/${userid}`,
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+  //       setUserRole(response.data.role);
+  //       setUserData(response.data);
+  //     } catch (err) {
+  //       console.log("Error", err);
+  //       logout();
+  //       showToast("Session Expired, Kindly Login Again", "Failed");
+  //       setTimeout(() => {
+  //         hideToast();
+  //       }, 2500);
+  //     }
+  //   };
+  //   fetchUserData();
+  // }, [setUserRole]);
 
   useEffect(() => {
     const closeProfileDropdown = (e) => {
@@ -81,7 +131,7 @@ const Topbar = ({ title }) => {
   const handleLogoutAuth = async () => {
     const userid = localStorage.getItem("userid");
     try {
-      const response = axios.post("http://localhost:5001/api/auth/logout", {
+      const response = axios.post(`${baseUrl}/api/auth/logout`, {
         userid: userid,
       });
       console.log(response);
@@ -108,18 +158,24 @@ const Topbar = ({ title }) => {
         animate={{ y: 0 }}
         display={"flex"}
         height={"10vh"}
-        width={"99vw"}
+        width={isMobile ? "70vw" : "99vw"}
         borderRadius={"20px"}
-        sx={{ backgroundColor: COLORS.secondaryBG }}
+        sx={{ backgroundColor: Colortheme.secondaryBG }}
         mt={2}
         ml={1}
         alignItems={"center"}
-        justifyContent={"space-between"}
+        justifyContent={
+          isMobile
+            ? title !== "Dashboard"
+              ? "space-between"
+              : "space-around"
+            : "space-between"
+        }
       >
         {title !== "Dashboard" && (
           <HomeIcon
             className="ProfileIcon"
-            style={{ marginLeft: 40, fontSize: 40 }}
+            style={{ marginLeft: 40, fontSize: isMobile ? 30 : 40 }}
             onClick={handleNavtoDash}
           />
         )}
@@ -127,13 +183,16 @@ const Topbar = ({ title }) => {
           style={
             title === "Dashboard"
               ? {
-                  color: "#edf2f4",
+                  color: Colortheme.text,
                   userSelect: "none",
-                  marginLeft: "45%",
+                  marginLeft: isMobile ? "0%" : "45%",
+                  fontSize: isMobile ? 25 : 35,
                 }
               : {
-                  color: "#edf2f4",
+                  color: Colortheme.text,
                   userSelect: "none",
+                  fontSize: isMobile ? 15 : 35,
+                  textAlign: "center",
                 }
           }
         >
@@ -143,7 +202,7 @@ const Topbar = ({ title }) => {
         <AccountCircleIcon
           className="ProfileIcon"
           onClick={handleProfileToggle}
-          style={{ marginRight: 40, fontSize: 40 }}
+          style={{ marginRight: 40, fontSize: isMobile ? 30 : 40 }}
         />
 
         <AnimatePresence>
@@ -161,8 +220,8 @@ const Topbar = ({ title }) => {
               sx={{
                 border: "solid",
                 borderWidth: "2px",
-                borderColor: "white",
-                backgroundColor: COLORS.background,
+                borderColor: Colortheme.text,
+                backgroundColor: Colortheme.background,
                 width: "auto",
                 position: "absolute",
                 top: 80,
@@ -171,7 +230,7 @@ const Topbar = ({ title }) => {
                 zIndex: 99999,
                 borderRadius: "20px",
                 p: 4,
-                color: "#edf2f4",
+                color: Colortheme.text,
               }}
             >
               <p className="ProfileInfo" style={{ fontWeight: "bold" }}>

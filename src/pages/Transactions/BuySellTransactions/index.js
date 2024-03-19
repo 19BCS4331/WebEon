@@ -1,10 +1,6 @@
 import React from "react";
-import MainBackBox from "../../../components/global/MainBackBox";
-import Topbar from "../../../components/global/Topbar";
-import MainContentLayout from "../../../components/global/MainContentLayout";
 import InnerUrlGrid from "../../../components/global/InnerUrlGrid";
-import SideNavbar from "../../../components/global/SideNavbar";
-import MainContentBox from "../../../components/global/MainContentBox";
+import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 
 const BuySellOptions = () => {
   const InnerUrlGridData = [
@@ -32,15 +28,12 @@ const BuySellOptions = () => {
   ];
 
   return (
-    <MainBackBox>
-      <Topbar title={"Master Profiles"} />
-      <MainContentLayout>
-        <SideNavbar />
-        <MainContentBox>
-          <InnerUrlGrid InnerUrlGridData={InnerUrlGridData} />
-        </MainContentBox>
-      </MainContentLayout>
-    </MainBackBox>
+    <MainContainerCompilation title={"Buy / Sell Transactions"}>
+      <InnerUrlGrid
+        InnerUrlGridData={InnerUrlGridData}
+        title={"buy-sell-transactions"}
+      />
+    </MainContainerCompilation>
   );
 };
 

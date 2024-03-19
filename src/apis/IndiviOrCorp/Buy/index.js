@@ -1,4 +1,5 @@
 import axios from "axios";
+const baseUrl = process.env.REACT_APP_BASE_URL;
 
 const postPaxDetails = async (
   name,
@@ -39,9 +40,10 @@ const postPaxDetails = async (
   exemption_remarks
 ) => {
   const token = localStorage.getItem("token");
+
   try {
     const response = await axios.post(
-      `http://localhost:5001/api/nav/PaxCreate`,
+      `${baseUrl}/api/nav/PaxCreate`,
       {
         name: name,
         email: email,
@@ -95,14 +97,11 @@ const postPaxDetails = async (
 const PaxDetailsID = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/PaxDataID`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/PaxDataID`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -113,7 +112,7 @@ const PaxDetailsFull = async (paxid) => {
   const token = localStorage.getItem("token");
   try {
     const response = await axios.post(
-      `http://localhost:5001/api/nav/PaxDataFull`,
+      `${baseUrl}/api/nav/PaxDataFull`,
       {
         paxid: paxid,
       },
@@ -132,8 +131,44 @@ const PaxDetailsFull = async (paxid) => {
 const PaxDetailsFullMain = async () => {
   const token = localStorage.getItem("token");
   try {
+    const response = await axios.get(`${baseUrl}/api/nav/PaxDataFullMain`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const PaxCheck = async (name, contactno) => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.post(
+      `${baseUrl}/api/nav/CheckPax`,
+      {
+        name: name,
+        contactno: contactno,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAgents = async () => {
+  const token = localStorage.getItem("token");
+  try {
     const response = await axios.get(
-      `http://localhost:5001/api/nav/PaxDataFullMain`,
+      `${baseUrl}/api/master/AgentsMaster`,
+
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -146,4 +181,49 @@ const PaxDetailsFullMain = async () => {
   }
 };
 
-export { postPaxDetails, PaxDetailsID, PaxDetailsFull, PaxDetailsFullMain };
+const getMarktRef = async () => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.get(
+      `${baseUrl}/api/master/MarktRefMaster`,
+
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getDeliAgent = async () => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.get(
+      `${baseUrl}/api/master/DeliAgentMaster`,
+
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export {
+  postPaxDetails,
+  PaxDetailsID,
+  PaxDetailsFull,
+  PaxDetailsFullMain,
+  PaxCheck,
+  getAgents,
+  getMarktRef,
+  getDeliAgent,
+};

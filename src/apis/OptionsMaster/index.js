@@ -1,16 +1,14 @@
 import axios from "axios";
+const baseUrl = process.env.REACT_APP_BASE_URL;
 
 const fetchCountryOptions = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/CountryOptions`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/CountryOptions`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -20,14 +18,11 @@ const fetchCountryOptions = async () => {
 const fetchCityOptions = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/CityOptions`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/CityOptions`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -37,14 +32,11 @@ const fetchCityOptions = async () => {
 const fetchStateOptions = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/StateOptions`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/StateOptions`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -54,14 +46,11 @@ const fetchStateOptions = async () => {
 const fetchNationalityOptions = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/NationalityOptions`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/NationalityOptions`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -71,14 +60,11 @@ const fetchNationalityOptions = async () => {
 const fetchIDOptions = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/IDOptions`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/IDOptions`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -88,14 +74,11 @@ const fetchIDOptions = async () => {
 const fetchCurrencyRate = async () => {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get(
-      `http://localhost:5001/api/nav/CurrencyRate`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${baseUrl}/api/nav/CurrencyRate`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);

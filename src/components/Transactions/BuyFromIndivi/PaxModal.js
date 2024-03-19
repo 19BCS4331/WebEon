@@ -7,12 +7,15 @@ import {
   InputAdornment,
   MenuItem,
   TextField,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  PaxCheck,
   PaxDetailsFullMain,
   postPaxDetails,
 } from "../../../apis/IndiviOrCorp/Buy";
@@ -40,6 +43,7 @@ import LocationCityIcon from "@mui/icons-material/LocationCity";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
+import Skeleton from "@mui/material/Skeleton";
 
 const PaxModal = ({
   showPaxModal,
@@ -49,7 +53,11 @@ const PaxModal = ({
   selectClickOnRowVisibility,
   handleSearchPaxClick,
   handlebackClickOnPaxSearch,
+  setIsPaxSaved,
+  setPaxData,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast, hideToast } = useToast();
   const [isLoading, setisLoading] = useState(false);
 
@@ -58,6 +66,9 @@ const PaxModal = ({
   const [PaxDOB, setPaxDOB] = useState(null);
   const [PaxNumber, setPaxNumber] = useState("");
   const [PaxNationality, setPaxNationality] = useState("");
+  const [PaxCity, setPaxCity] = useState("");
+  const [PaxState, setPaxState] = useState("");
+  const [PaxCountry, setPaxCountry] = useState("");
   const [PaxOccupation, setPaxOccupation] = useState("");
   const [paxResiStatus, setPaxResiStatus] = useState("Select");
   const [PaxBldg, setPaxBldg] = useState("");
@@ -74,6 +85,10 @@ const PaxModal = ({
   const [paxGSTState, setpaxGSTState] = useState("");
   const [paxPassNumber, setpaxPassNumber] = useState("");
   const [paxPassIssuedAt, setpaxPassIssuedAt] = useState("");
+  const [PaxPassIssuedDate, setPaxPassIssuedDate] = useState(null);
+  const [PaxPassExpiryDate, setPaxPassExpiryDate] = useState(null);
+  const [paxOtherIDType, setPaxOtherIDType] = useState("");
+  const [PaxOtherIDExpiryDate, setPaxOtherIDExpiryDate] = useState(null);
   const [otherIDNumber, setOtherIDNumber] = useState("");
   const [exemptionRemarks, setExemptionRemarks] = useState("");
 
@@ -120,32 +135,13 @@ const PaxModal = ({
       sortable: false,
       width: 200,
       renderCell: (params) => (
-        <Box display={"flex"} gap={2}>
+        <Box>
           <button
             className="ActionsButtonsEdit"
             onClick={() => handleSelectClickOnRow(params.row)}
           >
             Select
           </button>
-          <button
-            className="ActionsButtonsEdit"
-            // onClick={() => handleEditClickOnRow(params.row)}
-          >
-            Edit
-          </button>
-          {/* {isLoading ? (
-             <CircularProgress
-               size="25px"
-               style={{ color: COLORS.secondaryBG }}
-             />
-           ) : (
-             <button
-               className="ActionsButtonsDelete"
-               onClick={() => handleDeleteClick(params.row)}
-             >
-               Delete
-             </button>
-           )} */}
         </Box>
       ),
     },
@@ -171,11 +167,34 @@ const PaxModal = ({
     console.log("rowData", row);
     setPaxName(row.name);
     setPaxEmail(row.email);
-    const formattedDob = dayjs(row.dob).format("DD-MM-YYYY");
-    console.log(formattedDob);
-    setPaxDOB(formattedDob);
+    // const datePart = row.dob.split("T")[0];
+
+    // ----------------------------DATEPICKERS----------------------------
+    const adjustedDOB = dayjs(row.dob).format("YYYY-MM-DD");
+    console.log(adjustedDOB);
+    setPaxDOB(adjustedDOB);
+
+    const adjustedIssuedDate = dayjs(row.p_issued_date).format("YYYY-MM-DD");
+    console.log(adjustedIssuedDate);
+    setPaxPassIssuedDate(adjustedIssuedDate);
+
+    const adjustedPExpiry = dayjs(row.p_expiry).format("YYYY-MM-DD");
+    console.log(adjustedPExpiry);
+    setPaxPassExpiryDate(adjustedPExpiry);
+
+    const adjustedOtherIDExpiry = dayjs(row.otherid_expiry).format(
+      "YYYY-MM-DD"
+    );
+    console.log(adjustedOtherIDExpiry);
+    setPaxOtherIDExpiryDate(adjustedOtherIDExpiry);
+
+    // ----------------------------DATEPICKERS-----------------------------
+
     setPaxNumber(row.contactno);
     setPaxNationality(row.nationality);
+    setPaxCity(row.city);
+    setPaxState(row.state);
+    setPaxCountry(row.country);
     setPaxOccupation(row.occupation);
     setPaxResiStatus(row.residentstatus);
     setPaxBldg(row.bldg);
@@ -193,6 +212,8 @@ const PaxModal = ({
 
     setpaxPassNumber(row.p_number);
     setpaxPassIssuedAt(row.p_issuedat);
+
+    setPaxOtherIDType(row.otherid_type);
     setOtherIDNumber(row.otherid_number);
     setExemptionRemarks(row.exemption_remarks);
 
@@ -226,88 +247,11 @@ const PaxModal = ({
     }
   }, [showPaxModal]);
 
-  const handlePaxCreate = async (event) => {
-    setisLoading(true);
-    event.preventDefault();
-    var data = new FormData(event.target);
-    let PaxformObject = Object.fromEntries(data.entries());
-    // setPaxData(PaxformObject);
-    console.log(PaxformObject);
-
-    if (PaxformObject.Paxname !== "") {
-      try {
-        const response = await postPaxDetails(
-          PaxformObject.PaxName,
-          PaxformObject.EmailID,
-          PaxformObject.DOB,
-          PaxformObject.ContactNo,
-          PaxformObject.Nationality,
-          PaxformObject.Occupation,
-          PaxformObject.ResiStatus,
-          PaxformObject.Bldg +
-            " " +
-            PaxformObject.StreetName +
-            " " +
-            PaxformObject.City +
-            " " +
-            PaxformObject.State +
-            " " +
-            PaxformObject.Country,
-          PaxformObject.Bldg,
-          PaxformObject.StreetName,
-          PaxformObject.City,
-          PaxformObject.State,
-          PaxformObject.Country,
-          PaxformObject.PanNo,
-          PaxformObject.PanName,
-          PaxformObject.PanHolderRelation,
-          PaxformObject.UIN,
-          PaxformObject.PaidPanNumber,
-          PaxformObject.PaidPanName,
-          PaxformObject.LoanAmount,
-          PaxformObject.DeclaredAmount,
-          PaxformObject.GSTIN,
-          PaxformObject.GSTState,
-          PaxformObject.isTourOperator,
-          PaxformObject.isProprietorShip,
-          PaxformObject.isNRI,
-          PaxformObject.isITRProcess,
-          PaxformObject.PassNumber,
-          PaxformObject.PassIssueAt,
-          PaxformObject.PassIssuedDate,
-          PaxformObject.PassExpiryDate,
-          PaxformObject.OtherIDType,
-          PaxformObject.OtherIDNo,
-          PaxformObject.OtherIDExpiry,
-          PaxformObject.TCSExcemption,
-          PaxformObject.ExemptionRemarks
-        );
-
-        console.log(response.data);
-        showToast("Pax Added Successfully!", "success");
-        setTimeout(() => {
-          hideToast();
-        }, 1500);
-        setisLoading(false);
-        // setIsPaxSaved(true);
-        // handlePaxSubmit();
-      } catch (error) {
-        console.log(error);
-        setisLoading(false);
-      }
-    } else {
-      setisLoading(false);
-      showToast("Please Enter All Fields", "Fail");
-      setTimeout(() => {
-        hideToast();
-      }, 1500);
-    }
-  };
-
   useEffect(() => {
     if (searchPax) {
       const FetchPaxMain = async () => {
         try {
+          await new Promise((resolve) => setTimeout(resolve, 300));
           const response = await PaxDetailsFullMain();
           setPaxDetailsFullMain(response);
           console.log(response);
@@ -319,7 +263,103 @@ const PaxModal = ({
     }
   }, [searchPax]);
 
-  console.log("optionsDataLoading: ", optionsDataLoading);
+  const handleSaveClick = async (event) => {
+    setisLoading(true);
+    event.preventDefault();
+    var data = new FormData(event.target);
+    let PaxformObject = Object.fromEntries(data.entries());
+    console.log("Passport issued date:", PaxformObject.PassIssuedDate);
+    // setPaxData(PaxformObject);
+    console.log(PaxformObject);
+    const response = await PaxCheck(
+      PaxformObject.PaxName,
+      PaxformObject.ContactNo
+    );
+    console.log(response.data.exists);
+    if (response.data.exists) {
+      // If a matching PAX exists, update the view accordingly
+      //   alert("A PAX with the same name and number already exists.");
+      // Optionally, you can navigate to the existing PAX details page
+      // history.push(`/pax/${response.data.existingPaxId}`);
+      setIsPaxSaved(true);
+      setPaxData({ name: paxName /* other pax data */ });
+      setisLoading(false);
+    } else {
+      // If no matching PAX exists, proceed to save the PAX details
+
+      if (PaxformObject.Paxname !== "") {
+        try {
+          const response = await postPaxDetails(
+            PaxformObject.PaxName,
+            PaxformObject.EmailID,
+            PaxformObject.DOB,
+            PaxformObject.ContactNo,
+            PaxformObject.Nationality,
+            PaxformObject.Occupation,
+            PaxformObject.ResiStatus,
+            PaxformObject.Bldg +
+              " " +
+              PaxformObject.StreetName +
+              " " +
+              PaxformObject.City +
+              " " +
+              PaxformObject.State +
+              " " +
+              PaxformObject.Country,
+            PaxformObject.Bldg,
+            PaxformObject.StreetName,
+            PaxformObject.City,
+            PaxformObject.State,
+            PaxformObject.Country,
+            PaxformObject.PanNo,
+            PaxformObject.PanName,
+            PaxformObject.PanHolderRelation,
+            PaxformObject.UIN,
+            PaxformObject.PaidPanNumber,
+            PaxformObject.PaidPanName,
+            PaxformObject.LoanAmount,
+            PaxformObject.DeclaredAmount,
+            PaxformObject.GSTIN,
+            PaxformObject.GSTState,
+            PaxformObject.isTourOperator,
+            PaxformObject.isProprietorShip,
+            PaxformObject.isNRI,
+            PaxformObject.isITRProcess,
+            PaxformObject.PassNumber,
+            PaxformObject.PassIssueAt,
+            PaxformObject.PassIssuedDate,
+            PaxformObject.PassExpiryDate,
+            PaxformObject.OtherIDType,
+            PaxformObject.OtherIDNo,
+            PaxformObject.OtherIDExpiry,
+            PaxformObject.TCSExcemption,
+            PaxformObject.ExemptionRemarks
+          );
+
+          console.log(response.data);
+          showToast("Pax Added Successfully!", "success");
+          setTimeout(() => {
+            hideToast();
+          }, 1500);
+          setisLoading(false);
+          // setIsPaxSaved(true);
+          // handlePaxSubmit();
+        } catch (error) {
+          console.log(error);
+          setisLoading(false);
+        }
+      } else {
+        setisLoading(false);
+        showToast("Please Enter All Fields", "Fail");
+        setTimeout(() => {
+          hideToast();
+        }, 1500);
+      }
+      //   alert("PAX details saved successfully!");
+      setIsPaxSaved(true);
+      setPaxData({ name: paxName /* other pax data */ });
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -359,7 +399,7 @@ const PaxModal = ({
               display: "flex",
               flexDirection: "column",
               p: 3,
-              zIndex: 3,
+              zIndex: 4,
             }}
           >
             <button
@@ -372,23 +412,30 @@ const PaxModal = ({
                 width: 80,
                 height: 40,
                 cursor: "pointer",
+                marginBottom: isMobile ? "40px" : "20px",
               }}
             >
               &times;
             </button>
             {createPax === true && searchPax === false && (
               <Box
-                display={"flex"}
+                display={isMobile ? "block" : "flex"}
                 maxHeight={"80vh"}
+                sx={{ overflow: isMobile ? "auto" : "visible", zIndex: 5 }}
                 gap={5}
                 component={"form"}
                 autoComplete="off"
-                onSubmit={handlePaxCreate}
+                onSubmit={handleSaveClick}
               >
                 <Box
                   className="OverFlowBox"
                   // component={"form"}
-                  sx={{ maxHeight: "80vh", p: 2, overflowX: "auto" }}
+                  sx={{
+                    maxHeight: "80vh",
+                    p: 2,
+                    overflowX: "auto",
+                    width: isMobile ? "76vw" : "auto",
+                  }}
                   border={`1px solid ${COLORS.secondaryBG}`}
                   borderRadius={"5px"}
                 >
@@ -398,14 +445,17 @@ const PaxModal = ({
                   <Box
                     name="InputsContainer2"
                     display={"grid"}
-                    gridTemplateColumns={"repeat(3, 1fr)"}
+                    // gridTemplateColumns={"repeat(3, 1fr)"}
+                    gridTemplateColumns={
+                      isMobile ? "repeat(1, 1fr)" : "repeat(3, 1fr)"
+                    }
                     // gridTemplateRows={"repeat(4, 1fr)"}
-                    columnGap={"40px"}
+                    columnGap={isMobile ? "auto" : "40px"}
                     rowGap={"40px"}
                   >
                     <TextField
                       required
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="PaxName"
                       label="Name"
                       value={paxName}
@@ -415,7 +465,7 @@ const PaxModal = ({
                     />
 
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="EmailID"
                       label="Email ID"
                       type="email"
@@ -435,21 +485,26 @@ const PaxModal = ({
                       slotProps={{
                         textField: { name: "DOB" },
                       }}
-                      value={dayjs(PaxDOB)}
-                      onChange={(date) => {
-                        if (date) {
-                          setPaxDOB(dayjs(date));
-                        } else {
-                          setPaxDOB(null);
-                        }
+                      value={PaxDOB ? dayjs(PaxDOB, "YYYY-MM-DD") : null} // Parse PaxDOB with 'YYYY-MM-DD' format
+                      onChange={(newValue) => {
+                        setPaxDOB(
+                          newValue ? newValue.format("YYYY-MM-DD") : null
+                        );
                       }}
-                      format="DD-MM-YYYY"
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      renderInput={(params) => (
+                        <TextField {...params} variant="standard" />
+                      )}
+                      inputFormat="YYYY-MM-DD" // Specify the format expected for input
+                      renderDay={(day, _value, _DayComponentProps) => (
+                        <span>{dayjs(day).format("D")}</span>
+                      )}
+                      format="DD/MM/YYYY"
                     />
 
                     <TextField
                       required
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="ContactNo"
                       label="Contact Number"
                       value={PaxNumber}
@@ -463,42 +518,46 @@ const PaxModal = ({
                       }}
                     />
 
-                    <Autocomplete
-                      // disablePortal
-                      inputValue={PaxNationality}
-                      options={
-                        nationalityOptions &&
-                        nationalityOptions.map((item) => item.description)
-                      }
-                      onInputChange={(e, newInputValue) => {
-                        console.log("New Input Value:", newInputValue);
-                        setPaxNationality(newInputValue);
-                      }}
-                      id="Nationality"
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Nationality"
-                          name="Nationality"
-                          // value={PaxNationality}
-                          // onChange={(e) => setPaxNationality(e.target.va)}
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                <InputAdornment position="end">
-                                  <PersonPinIcon />
-                                </InputAdornment>
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                        />
-                      )}
-                    />
+                    {nationalityOptions ? (
+                      <Autocomplete
+                        value={PaxNationality}
+                        onChange={(event, newValue) => {
+                          setPaxNationality(newValue);
+                        }}
+                        options={nationalityOptions.map(
+                          (item) => item.description
+                        )}
+                        id="Nationality"
+                        sx={{ width: isMobile ? "auto" : "12vw" }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Nationality"
+                            name="Nationality"
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  <InputAdornment position="end">
+                                    <PersonPinIcon />
+                                  </InputAdornment>
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                    ) : (
+                      <Skeleton
+                        variant="rectangular"
+                        width={isMobile ? "auto" : "12vw"}
+                        height={60}
+                        animation={"wave"}
+                      />
+                    )}
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="Occupation"
                       label="Occupation"
                       value={PaxOccupation}
@@ -514,7 +573,7 @@ const PaxModal = ({
 
                     <TextField
                       select
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="ResiStatus"
                       label="Residential Status"
                       value={paxResiStatus}
@@ -529,98 +588,131 @@ const PaxModal = ({
                     </TextField>
 
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="Bldg"
                       label="Building / Flat"
                       value={PaxBldg}
                       onChange={(e) => setPaxBldg(e.target.value)}
                     />
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="StreetName"
                       value={PaxStreet}
                       onChange={(e) => setPaxStreet(e.target.value)}
                       label="Street"
                     />
-                    <Autocomplete
-                      // disablePortal
 
-                      id="City"
-                      options={cities && cities.map((item) => item.description)}
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="City"
-                          name="City"
-                          InputProps={{
-                            ...params.InputProps,
+                    {cities ? (
+                      <Autocomplete
+                        // disablePortal
 
-                            endAdornment: (
-                              <>
-                                <InputAdornment position="end">
-                                  <LocationCityIcon />
-                                </InputAdornment>
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
+                        id="City"
+                        value={PaxCity}
+                        onChange={(event, newValue) => {
+                          setPaxCity(newValue);
+                        }}
+                        options={cities.map((item) => item.description)}
+                        sx={{ width: isMobile ? "auto" : "12vw" }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="City"
+                            name="City"
+                            InputProps={{
+                              ...params.InputProps,
 
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
-                    <Autocomplete
-                      // disablePortal
+                              endAdornment: (
+                                <>
+                                  <InputAdornment position="end">
+                                    <LocationCityIcon />
+                                  </InputAdornment>
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                    ) : (
+                      <Skeleton
+                        variant="rectangular"
+                        width={isMobile ? "auto" : "12vw"}
+                        height={60}
+                        animation={"wave"}
+                      />
+                    )}
+                    {stateOptions ? (
+                      <Autocomplete
+                        // disablePortal
 
-                      id="State"
-                      options={
-                        stateOptions &&
-                        stateOptions.map((item) => item.description)
-                      }
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="State"
-                          name="State"
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
-                    <Autocomplete
-                      // disablePortal
-                      id="Country"
-                      options={
-                        countries && countries.map((item) => item.description)
-                      }
-                      // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                      sx={{ width: "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Country"
-                          name="Country"
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                <InputAdornment position="end">
-                                  <FlagIcon />
-                                </InputAdornment>
+                        id="State"
+                        value={PaxState}
+                        onChange={(event, newValue) => {
+                          setPaxState(newValue);
+                        }}
+                        options={stateOptions.map((item) => item.description)}
+                        // onChange={(e, newValue) => setCalculationMethod(newValue)}
+                        sx={{ width: isMobile ? "auto" : "12vw" }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="State"
+                            name="State"
+                            // value={calculationMethod}
+                          />
+                        )}
+                      />
+                    ) : (
+                      <Skeleton
+                        variant="rectangular"
+                        width={isMobile ? "auto" : "12vw"}
+                        height={60}
+                        animation={"wave"}
+                      />
+                    )}
+                    {countries ? (
+                      <Autocomplete
+                        // disablePortal
+                        id="Country"
+                        value={PaxCountry}
+                        onChange={(event, newValue) => {
+                          setPaxCountry(newValue);
+                        }}
+                        options={countries.map((item) => item.description)}
+                        // onChange={(e, newValue) => setCalculationMethod(newValue)}
+                        sx={{ width: isMobile ? "auto" : "12vw" }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Country"
+                            name="Country"
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  <InputAdornment position="end">
+                                    <FlagIcon />
+                                  </InputAdornment>
 
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                          // value={calculationMethod}
-                        />
-                      )}
-                    />
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                            // value={calculationMethod}
+                          />
+                        )}
+                      />
+                    ) : (
+                      <Skeleton
+                        variant="rectangular"
+                        width={isMobile ? "auto" : "12vw"}
+                        height={60}
+                        animation={"wave"}
+                      />
+                    )}
+
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="PanNo"
                       label="Pan Number"
                       value={PaxPanNumber}
@@ -634,7 +726,7 @@ const PaxModal = ({
                       }}
                     />
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="PanName"
                       label="Pan Holder Name"
                       value={PaxPanName}
@@ -642,7 +734,7 @@ const PaxModal = ({
                     />
                     <TextField
                       select
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="PanHolderRelation"
                       label="Pan Holder Relation"
                       value={paxRelation}
@@ -657,21 +749,22 @@ const PaxModal = ({
                     </TextField>
 
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="UIN"
                       label="UIN"
                       value={paxUIN}
                       onChange={(e) => setpaxUIN(e.target.value)}
                     />
+
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="PaidPanNumber"
                       label="Paid Pan Number"
                       value={paxPaidPanNumber}
                       onChange={(e) => setpaxPaidPanNumber(e.target.value)}
                     />
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="PaidPanName"
                       label="Paid By"
                       value={paxPaidPanName}
@@ -679,7 +772,7 @@ const PaxModal = ({
                     />
 
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="LoanAmount"
                       label="Loan Amount"
                       value={paxLoanAmount}
@@ -694,7 +787,7 @@ const PaxModal = ({
                     />
 
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="DeclaredAmount"
                       label="Declared Amount"
                       value={paxDeclaredAmount}
@@ -724,14 +817,14 @@ const PaxModal = ({
                       />
                     </Box>
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="GSTIN"
                       label="GSTIN"
                       value={paxGSTIN}
                       onChange={(e) => setpaxGSTIN(e.target.value)}
                     />
                     <TextField
-                      sx={{ width: "12vw" }}
+                      sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="GSTState"
                       label="GST State"
                       value={paxGSTState}
@@ -760,7 +853,13 @@ const PaxModal = ({
                   flexDirection={"column"}
                   gap={2}
                   border={`1px solid ${COLORS.secondaryBG}`}
-                  sx={{ padding: 4, overflow: "scroll", overflowX: "hidden" }}
+                  sx={{
+                    padding: 4,
+                    overflow: "scroll",
+                    overflowX: "hidden",
+                    width: isMobile ? "70vw" : "auto",
+                    marginTop: isMobile ? "40px" : "auto",
+                  }}
                   borderRadius={"5px"}
                 >
                   <Box>
@@ -786,7 +885,7 @@ const PaxModal = ({
                         rowGap={"20px"}
                       >
                         <TextField
-                          sx={{ width: "12vw" }}
+                          sx={{ width: isMobile ? "auto" : "12vw" }}
                           name="PassNumber"
                           label="Passport Number"
                           value={paxPassNumber}
@@ -801,7 +900,7 @@ const PaxModal = ({
                         />
 
                         <TextField
-                          sx={{ width: "12vw" }}
+                          sx={{ width: isMobile ? "auto" : "12vw" }}
                           name="PassIssueAt"
                           label="Issued At"
                           value={paxPassIssuedAt}
@@ -822,14 +921,29 @@ const PaxModal = ({
                     /> */}
 
                         <DatePicker
-                          slotProps={{
-                            textField: { name: "PassIssuedDate" },
-                          }}
                           label="Issued Date"
-                          // value={selectedDate}
-                          // onChange={handleDateChange}
-                          format="DD-MM-YYYY"
-                          sx={{ width: "12vw" }}
+                          slotProps={{
+                            textField: { name: "Issued Date" },
+                          }}
+                          value={
+                            PaxPassIssuedDate
+                              ? dayjs(PaxPassIssuedDate, "YYYY-MM-DD")
+                              : null
+                          } // Parse PaxDOB with 'YYYY-MM-DD' format
+                          onChange={(newValue) => {
+                            setPaxPassIssuedDate(
+                              newValue ? newValue.format("YYYY-MM-DD") : null
+                            );
+                          }}
+                          sx={{ width: isMobile ? "auto" : "12vw" }}
+                          renderInput={(params) => (
+                            <TextField {...params} variant="standard" />
+                          )}
+                          inputFormat="YYYY-MM-DD" // Specify the format expected for input
+                          renderDay={(day, _value, _DayComponentProps) => (
+                            <span>{dayjs(day).format("D")}</span>
+                          )}
+                          format="DD/MM/YYYY"
                         />
 
                         {/* <TextField
@@ -839,14 +953,29 @@ const PaxModal = ({
                     /> */}
 
                         <DatePicker
-                          slotProps={{
-                            textField: { name: "PassExpiryDate" },
-                          }}
                           label="Expiry Date"
-                          // value={selectedDate}
-                          // onChange={handleDateChange}
-                          format="DD-MM-YYYY"
-                          sx={{ width: "12vw" }}
+                          slotProps={{
+                            textField: { name: "Expiry Date" },
+                          }}
+                          value={
+                            PaxPassExpiryDate
+                              ? dayjs(PaxPassExpiryDate, "YYYY-MM-DD")
+                              : null
+                          } // Parse PaxDOB with 'YYYY-MM-DD' format
+                          onChange={(newValue) => {
+                            setPaxPassExpiryDate(
+                              newValue ? newValue.format("YYYY-MM-DD") : null
+                            );
+                          }}
+                          sx={{ width: isMobile ? "auto" : "12vw" }}
+                          renderInput={(params) => (
+                            <TextField {...params} variant="standard" />
+                          )}
+                          inputFormat="YYYY-MM-DD" // Specify the format expected for input
+                          renderDay={(day, _value, _DayComponentProps) => (
+                            <span>{dayjs(day).format("D")}</span>
+                          )}
+                          format="DD/MM/YYYY"
                         />
                       </Box>
                     </Box>
@@ -869,27 +998,37 @@ const PaxModal = ({
                         columnGap={"40px"}
                         rowGap={"20px"}
                       >
-                        <Autocomplete
-                          disablePortal
-                          id="OtherIDType"
-                          options={
-                            idOptions &&
-                            idOptions.map((item) => item.description)
-                          }
-                          // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                          sx={{ width: "12vw" }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="ID Type"
-                              name="OtherIDType"
-                              // value={calculationMethod}
-                            />
-                          )}
-                        />
+                        {idOptions ? (
+                          <Autocomplete
+                            disablePortal
+                            id="OtherIDType"
+                            value={paxOtherIDType}
+                            onChange={(event, newValue) => {
+                              setPaxOtherIDType(newValue);
+                            }}
+                            options={idOptions.map((item) => item.description)}
+                            isOptionEqualToValue={(option, value) =>
+                              option === value
+                            } // Custom equality test
+                            sx={{ width: isMobile ? "auto" : "12vw" }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="ID Type"
+                                name="OtherIDType"
+                              />
+                            )}
+                          />
+                        ) : (
+                          <Skeleton
+                            variant="rectangular"
+                            width={isMobile ? "auto" : "12vw"}
+                            height={60}
+                          />
+                        )}
 
                         <TextField
-                          sx={{ width: "12vw" }}
+                          sx={{ width: isMobile ? "auto" : "12vw" }}
                           name="OtherIDNo"
                           label="ID Number"
                           value={otherIDNumber}
@@ -905,12 +1044,29 @@ const PaxModal = ({
                         <DatePicker
                           label="Expiry Date"
                           slotProps={{
-                            textField: { name: "OtherIDExpiry" },
+                            textField: { name: "Expiry Date" },
                           }}
-                          // value={selectedDate}
-                          // onChange={handleDateChange}
-                          format="DD-MM-YYYY"
-                          sx={{ width: "12vw" }}
+                          value={
+                            PaxOtherIDExpiryDate
+                              ? dayjs(PaxOtherIDExpiryDate, "YYYY-MM-DD")
+                              : null
+                          } // Parse PaxDOB with 'YYYY-MM-DD' format
+                          onChange={(newValue) => {
+                            setPaxOtherIDExpiryDate(
+                              newValue ? newValue.format("YYYY-MM-DD") : null
+                            );
+                          }}
+                          sx={{
+                            width: isMobile ? "auto" : "12vw",
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} variant="standard" />
+                          )}
+                          inputFormat="YYYY-MM-DD" // Specify the format expected for input
+                          renderDay={(day, _value, _DayComponentProps) => (
+                            <span>{dayjs(day).format("D")}</span>
+                          )}
+                          format="DD/MM/YYYY"
                         />
                       </Box>
                     </Box>
@@ -934,13 +1090,17 @@ const PaxModal = ({
                         <Box display={"flex"} alignItems={"center"}>
                           <p>Government TCS Exemption</p>
                           <Checkbox
-                            sx={{ width: "2vw", height: "3vh" }}
+                            sx={{
+                              width: "2vw",
+                              height: "3vh",
+                              marginLeft: isMobile ? "10px" : "auto",
+                            }}
                             name="TCSExemption"
                           />
                         </Box>
 
                         <TextField
-                          sx={{ width: "25vw" }}
+                          sx={{ width: isMobile ? "auto" : "25vw" }}
                           name="ExemptionRemarks"
                           label="Exemption Remarks"
                           value={exemptionRemarks}
@@ -954,16 +1114,28 @@ const PaxModal = ({
                   // position={"absolute"}
                   // bottom={"8vh"}
                   // right={"38vw"}
-                  display={"flex"}
+                  display={isMobile ? "block" : "flex"}
                   flexDirection={"column"}
+                  marginLeft={isMobile ? "25%" : "auto"}
                   gap={5}
-                  marginTop={20}
+                  marginTop={isMobile ? 5 : 20}
                 >
-                  <button className="SavePax" type="submit">
-                    {isLoading ? <CircularProgress /> : "Create"}
+                  <button
+                    className="SavePax"
+                    type="submit"
+                    style={{ width: isMobile ? "20vw" : "8vw" }}
+                  >
+                    {isLoading ? <CircularProgress /> : "Save"}
                   </button>
 
-                  <button className="SavePax" onClick={handleSearchPaxClick}>
+                  <button
+                    className="SavePax"
+                    onClick={handleSearchPaxClick}
+                    style={{
+                      width: isMobile ? "20vw" : "8vw",
+                      marginLeft: isMobile ? 20 : "auto",
+                    }}
+                  >
                     {isLoading ? <CircularProgress /> : "Search"}
                   </button>
                 </Box>
@@ -971,71 +1143,65 @@ const PaxModal = ({
             )}
             {/* ------------------------------------------------------------SEARCHPAX START-------------------------------------------------------------- */}
 
-            {searchPax === true &&
-              createPax === false &&
-              paxDetailsFullMain && (
-                <>
-                  <KeyboardBackspaceIcon
-                    onClick={handlebackClickOnPaxSearch}
-                    fontSize="large"
-                    sx={{
-                      alignSelf: "flex-start",
-                      color: COLORS.secondaryBG,
-                      position: "absolute",
-                      cursor: "pointer",
-                    }}
-                  />
+            {searchPax === true && createPax === false && (
+              <>
+                <KeyboardBackspaceIcon
+                  onClick={handlebackClickOnPaxSearch}
+                  fontSize="large"
+                  sx={{
+                    alignSelf: "flex-start",
+                    color: COLORS.secondaryBG,
+                    position: "absolute",
+                    cursor: "pointer",
+                  }}
+                />
 
-                  <TextField
-                    placeholder="Search.."
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
-                    sx={{
-                      "& fieldset": { border: "none" },
-                    }}
-                    style={{
-                      display: "flex",
-                      width: "16vw",
-                      backgroundColor: COLORS.text,
-                      borderRadius: "20px",
-                      border: `2px solid ${COLORS.secondaryBG}`,
-                      height: 50,
-                      justifyContent: "center",
-                      boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
-                      alignSelf: "center",
-                    }}
-                    InputProps={
-                      searchKeyword.length > 0
-                        ? {
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <SearchIcon />
-                              </InputAdornment>
-                            ),
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <ClearIcon
-                                  onClick={() => setSearchKeyword("")}
-                                  style={{ cursor: "pointer" }}
-                                />
-                              </InputAdornment>
-                            ),
-                          }
-                        : {
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <SearchIcon />
-                              </InputAdornment>
-                            ),
-                          }
-                    }
-                  />
-                  <Box
-                    display={"flex"}
-                    mt={5}
-                    width={"95%"}
-                    alignSelf={"center"}
-                  >
+                <TextField
+                  placeholder="Search.."
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  sx={{
+                    "& fieldset": { border: "none" },
+                  }}
+                  style={{
+                    display: "flex",
+                    width: isMobile ? "auto" : "16vw",
+                    backgroundColor: COLORS.text,
+                    borderRadius: "20px",
+                    border: `2px solid ${COLORS.secondaryBG}`,
+                    height: 50,
+                    justifyContent: "center",
+                    boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
+                    alignSelf: "center",
+                  }}
+                  InputProps={
+                    searchKeyword.length > 0
+                      ? {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <ClearIcon
+                                onClick={() => setSearchKeyword("")}
+                                style={{ cursor: "pointer" }}
+                              />
+                            </InputAdornment>
+                          ),
+                        }
+                      : {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon />
+                            </InputAdornment>
+                          ),
+                        }
+                  }
+                />
+                <Box display={"flex"} mt={5} width={"95%"} alignSelf={"center"}>
+                  {paxDetailsFullMain ? (
                     <DataGrid
                       disableRowSelectionOnClick
                       disableColumnFilter
@@ -1062,10 +1228,19 @@ const PaxModal = ({
                           return false;
                         })
                       }
-                      columnVisibilityModel={{
-                        // Hide columns status and traderName, the other columns will remain visible
-                        paxid: false,
-                      }}
+                      columnVisibilityModel={
+                        isMobile
+                          ? {
+                              paxid: false,
+                              pan_number: false,
+                              address: false,
+                              p_number: false,
+                            }
+                          : {
+                              // Hide columns status and traderName, the other columns will remain visible
+                              paxid: false,
+                            }
+                      }
                       getRowId={(row) => row.paxid}
                       rowSelectionModel={selectionModel}
                       onRowSelectionModelChange={handleSelectionModelChange}
@@ -1090,8 +1265,8 @@ const PaxModal = ({
                       sx={{
                         backgroundColor: COLORS.text,
                         p: "20px",
-                        maxHeight: "400px",
-                        height: "400px",
+                        maxHeight: isMobile ? "500px" : "400px",
+                        height: isMobile ? "500px" : "400px",
                         // width: "50vw",
                         boxShadow: 3,
                         border: "2px solid",
@@ -1109,9 +1284,14 @@ const PaxModal = ({
                       pageSizeOptions={[5, 10]}
                       // checkboxSelection
                     />
-                  </Box>
-                </>
-              )}
+                  ) : (
+                    <CircularProgress
+                      style={{ marginLeft: "50%", marginTop: "10%" }}
+                    />
+                  )}
+                </Box>
+              </>
+            )}
 
             {/* ------------------------------------------------------------SEARCHPAX END-------------------------------------------------------------- */}
           </Box>

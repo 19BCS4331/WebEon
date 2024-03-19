@@ -37,7 +37,10 @@ const TestPage = () => {
       <MainContentLayout>
         <SideNavbar />
         <MainContentBox>
-          <InnerUrlGrid InnerUrlGridData={InnerUrlGridData} />
+          <InnerUrlGrid
+            InnerUrlGridData={InnerUrlGridData}
+            title={"master-profiles"}
+          />
         </MainContentBox>
       </MainContentLayout>
     </MainBackBox>

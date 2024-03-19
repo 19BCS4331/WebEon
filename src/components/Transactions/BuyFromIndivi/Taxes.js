@@ -4,7 +4,6 @@ import {
   MenuItem,
   Skeleton,
   TextField,
-  Tooltip,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -16,15 +15,8 @@ import { motion } from "framer-motion";
 import "../../../css/components/buyfromindiv.css";
 import SouthIcon from "@mui/icons-material/South";
 import { useActionModal } from "../../../contexts/ActionModal";
-import InfoIcon from "@mui/icons-material/Info";
-import Dialog from "@mui/material/Dialog";
-import DialogContent from "@mui/material/DialogContent";
 
-const TransacDetails = ({
-  isTransacDetailsView,
-  handlebackClickOnTransacView,
-  comission,
-}) => {
+const Taxes = ({ isTaxView, handlebackClickOnTaxView }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { openModal, closeModal } = useActionModal();
@@ -36,27 +28,9 @@ const TransacDetails = ({
   const [finalAmountText, setFinalAmountText] = useState("");
   const [feAmountVisible, setFeAmountVisible] = useState(false);
 
-  const [commType, setCommType] = useState("");
-  const [commVal, setCommVal] = useState("");
-  const [commAmount, setCommAmount] = useState("");
-
-  const commTypeOptions = [
-    {
-      value: "Ps",
-      label: "Ps.",
-    },
-    {
-      value: "Percent",
-      label: "%",
-    },
-  ];
-
   const [transactions, setTransactions] = useState([]);
   const [editedTransaction, setEditedTransaction] = useState(null);
   const [nextId, setNextId] = useState(1);
-
-  const [showCommModal, setShowCommModal] = useState(false);
-  const [selectedTransac, setSelectedTransac] = useState(null);
 
   const addTransaction = () => {
     // Logic to add a new transaction
@@ -68,10 +42,7 @@ const TransacDetails = ({
         Type: transacType,
         FeAmount: feAmount,
         Rate: rateCurr,
-        FinalAmount: finalAmount,
-        CommAmt: commAmount,
-        CommType: commType,
-        CommVal: commVal,
+        FinalAmount: finalAmountText,
       };
       setTransactions([...transactions, newTransaction]);
       setNextId(nextId + 1);
@@ -80,9 +51,6 @@ const TransacDetails = ({
       setFeAmount("");
       setFinalAmountText("");
       setRateCurr(null);
-      setCommAmount("");
-      setCommType("");
-      setCommVal("");
     }
   };
 
@@ -177,7 +145,6 @@ const TransacDetails = ({
       console.log(newValue);
     } else {
       setRateCurr(null);
-      setSelectedCurrency(null);
     }
   };
 
@@ -215,19 +182,7 @@ const TransacDetails = ({
   }, [transacType]);
 
   const calculateFinalAmount = (FeAmount, Rate) => {
-    const finalAmountFloat = FeAmount * Rate;
-
-    // Calculate rounded final amount
-    const roundedFinalAmount = Math.floor(finalAmountFloat);
-
-    // Calculate rounded-off amount
-    const roundedOffAmount = finalAmountFloat - roundedFinalAmount;
-
-    // Return final amount and rounded-off amount in an object
-    return {
-      finalAmount: roundedFinalAmount,
-      roundedOffAmount: roundedOffAmount.toFixed(2), // Round to 2 decimal places
-    };
+    return (FeAmount * Rate).toFixed(2); // You can add any additional calculations here
   };
 
   const handleAddClick = (event) => {
@@ -235,50 +190,9 @@ const TransacDetails = ({
     addTransaction();
   };
 
-  const handleCommissionTypeChange = (e) => {
-    const newCommType = e.target.value;
-    setCommType(newCommType); // Update the Commission Type state
-
-    // Calculate Commission Amount based on the new Commission Type and existing Commission Value
-    if (newCommType === "Ps") {
-      const calculatedCommAmountPs = commVal
-        ? parseFloat(commVal) * feAmount
-        : "";
-      setCommAmount(calculatedCommAmountPs); // Update the Commission Amount state
-    } else {
-      const calculatedCommAmountPercent = commVal
-        ? feAmount * rateCurr * (parseFloat(commVal) / 100)
-        : "";
-      setCommAmount(calculatedCommAmountPercent); // Update the Commission Amount state
-    }
-  };
-
-  const handleCommissionValueChange = (e) => {
-    const newValue = e.target.value;
-    setCommVal(newValue); // Update the Commission Value state
-
-    // Calculate Commission Amount based on the Commission Value and existing Commission Type
-    if (commType === "Ps") {
-      const calculatedCommAmountPs = newValue
-        ? parseFloat(newValue) * feAmount
-        : "";
-      setCommAmount(calculatedCommAmountPs); // Update the Commission Amount state
-    } else {
-      const calculatedCommAmountPercent = newValue
-        ? feAmount * rateCurr * (parseFloat(newValue) / 100)
-        : "";
-      setCommAmount(calculatedCommAmountPercent); // Update the Commission Amount state
-    }
-  };
-
-  const handleShowCommModal = (transaction) => {
-    setShowCommModal(true);
-    setSelectedTransac(transaction);
-  };
-
   return (
     <>
-      {isTransacDetailsView && (
+      {isTaxView && (
         <Box
           display={"flex"}
           component={motion.div}
@@ -401,7 +315,6 @@ const TransacDetails = ({
               display={"flex"}
               flexDirection={isMobile ? "column" : "row"}
               gap={5}
-              justifyContent={comission ? "none" : "center"}
             >
               <TextField
                 label="Rate"
@@ -409,49 +322,29 @@ const TransacDetails = ({
                 sx={{ width: isMobile ? "auto" : "9vw" }}
                 value={rateCurr ? rateCurr : ""}
               />
-              {comission && (
-                <TextField
-                  select
-                  label="Commission Type"
-                  value={commType}
-                  onChange={handleCommissionTypeChange}
-                  sx={{ width: isMobile ? "auto" : "11vw" }}
-                  disabled={!comission}
-                >
-                  {commTypeOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-
-              {comission && (
-                <TextField
-                  label="Commission Value"
-                  value={commVal}
-                  onChange={handleCommissionValueChange}
-                  sx={{ width: isMobile ? "auto" : "10vw" }}
-                  disabled={!comission}
-                />
-              )}
+              <TextField
+                label="Commission Type"
+                sx={{ width: isMobile ? "auto" : "9vw" }}
+                disabled={!comission}
+              />
+              <TextField
+                label="Commission Per 1"
+                sx={{ width: isMobile ? "auto" : "9vw" }}
+                disabled={!comission}
+              />
             </Box>
             <Box
               display={"flex"}
               flexDirection={isMobile ? "column" : "row"}
               gap={5}
-              justifyContent={comission ? "none" : "center"}
             >
-              {comission && (
-                <TextField
-                  label="Commission Amount (Rs.)"
-                  value={commAmount}
-                  sx={{ width: isMobile ? "auto" : "11vw" }}
-                />
-              )}
-
               <TextField
-                label="Final Amount (Rs.)"
+                label="Commission Amount"
+                sx={{ width: isMobile ? "auto" : "9vw" }}
+                disabled={!comission}
+              />
+              <TextField
+                label="Final Amount"
                 sx={{ width: isMobile ? "auto" : "9vw" }}
                 value={finalAmountText}
               />
@@ -502,35 +395,13 @@ const TransacDetails = ({
                       <th style={{ width: 100, maxWidth: 100 }}>
                         Amount (Rs.)
                       </th>
-                      <th>Round Off</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {transactions.map((transaction) => (
                       <tr key={transaction.id}>
-                        <td>
-                          <Box
-                            display={"flex"}
-                            justifyContent={"center"}
-                            gap={1}
-                          >
-                            {transaction.id}
-                            {comission && (
-                              <Tooltip title="Commission Details">
-                                <InfoIcon
-                                  style={{
-                                    color: COLORS.secondaryBG,
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={() =>
-                                    handleShowCommModal(transaction)
-                                  }
-                                />
-                              </Tooltip>
-                            )}
-                          </Box>
-                        </td>
+                        <td>{transaction.id}</td>
                         <td>
                           {" "}
                           {editedTransaction &&
@@ -575,20 +446,10 @@ const TransacDetails = ({
                         </td>
                         <td>{transaction.Rate}</td>
                         <td>
-                          {
-                            calculateFinalAmount(
-                              transaction.FeAmount,
-                              transaction.Rate
-                            ).finalAmount
-                          }
-                        </td>
-                        <td>
-                          {
-                            calculateFinalAmount(
-                              transaction.FeAmount,
-                              transaction.Rate
-                            ).roundedOffAmount
-                          }
+                          {calculateFinalAmount(
+                            transaction.FeAmount,
+                            transaction.Rate
+                          )}
                         </td>
                         {/* Render other cells with transaction details */}
                         <td style={{ display: "flex", gap: 10 }}>
@@ -642,68 +503,8 @@ const TransacDetails = ({
           )}
         </Box>
       )}
-
-      <Dialog
-        open={showCommModal}
-        onClose={() => setShowCommModal(false)}
-        maxWidth={false}
-      >
-        <DialogContent style={isMobile ? { width: "70vw" } : { width: "40vw" }}>
-          {selectedTransac && (
-            <Box
-              width={isMobile ? "70vw" : "40vw"}
-              height={"25vh"}
-              className="table-container"
-            >
-              <Box
-                id="title"
-                display={"flex"}
-                justifyContent={"center"}
-                fontWeight={"bold"}
-                color={COLORS.secondaryBG}
-              >
-                Commission Details ( Sr.No : {selectedTransac.id} )
-              </Box>
-              {/* <Box mt={5}>Transaction ID: {selectedTransac.id}</Box>
-              <Box>FE Amount: {selectedTransac.FeAmount}</Box>
-              <Box>Commission Type: {selectedTransac.CommType}</Box>
-              <Box>Commission Value: {selectedTransac.CommVal}</Box>
-              <Box>Commission Amount: {selectedTransac.CommAmt}</Box> */}
-              <table style={{ marginTop: 40 }}>
-                <thead>
-                  <tr>
-                    {/* <th>Sr.No</th> */}
-                    {/* Other header cells */}
-                    <th>Currency Code</th>
-                    <th>Fe Amount</th>
-                    <th>Rate</th>
-                    <th>Commission Type</th>
-                    <th>Commission Value</th>
-                    <th>Commission Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr key={selectedTransac.id}>
-                    {/* <td>
-                      <Box display={"flex"} justifyContent={"center"} gap={1}>
-                        {selectedTransac.id}
-                      </Box>
-                    </td> */}
-                    <td>{selectedTransac.CNCode}</td>
-                    <td>{selectedTransac.FeAmount}</td>
-                    <td>{selectedTransac.Rate}</td>
-                    <td>{selectedTransac.CommType}</td>
-                    <td>{selectedTransac.CommVal}</td>
-                    <td>{selectedTransac.CommAmt}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
 
-export default TransacDetails;
+export default Taxes;

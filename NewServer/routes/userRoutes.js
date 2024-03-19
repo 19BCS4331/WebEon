@@ -26,20 +26,45 @@ router.get("/", authenticate, async (req, res) => {
   }
 });
 
+// router.get("/UserData/:userid", authenticate, async (req, res) => {
+//   const { userid } = req.params;
+
+//   try {
+//     const userData = await User.findOne({ where: { userid } });
+//     res.json(userData);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Server error");
+//   }
+// });
+
 router.get("/UserData/:userid", authenticate, async (req, res) => {
   const { userid } = req.params;
 
   try {
-    const userData = await User.findOne({ where: { userid } });
-    res.json(userData);
+    // Retrieve user data from the database
+    const userData = await User.findOne({
+      where: { userid },
+      attributes: { exclude: ["password"] }, // Exclude sensitive fields
+    });
+
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return sanitized user data
+    const sanitizedUserData = {
+      userid: userData.userid,
+      username: userData.username,
+      role: userData.role,
+      // Other non-sensitive fields
+    };
+
+    res.json(sanitizedUserData);
   } catch (error) {
     console.error(error);
     res.status(500).send("Server error");
   }
 });
-
-
-
-
 
 module.exports = router;

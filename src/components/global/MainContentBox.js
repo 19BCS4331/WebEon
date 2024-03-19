@@ -1,13 +1,17 @@
-import React from "react";
-import { Box } from "@mui/material";
+import React, { useContext } from "react";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import ThemeContext from "../../contexts/ThemeContext";
 
 const MainContentBox = ({ children }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { Colortheme } = useContext(ThemeContext);
   return (
     <Box
       height={"85vh"}
-      width={"80vw"}
+      width={isMobile ? "90vw" : "80vw"}
       borderRadius={"20px"}
-      sx={{ backgroundColor: "#8d99ae" }}
+      sx={{ backgroundColor: Colortheme.secondaryBG }}
       mt={2}
       ml={2}
       display={"flex"}

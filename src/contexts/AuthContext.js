@@ -88,6 +88,8 @@ const AuthProvider = ({ children }) => {
   const logout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem("isAuth");
+    localStorage.removeItem("menuData");
+    localStorage.removeItem("userData");
     setUserId(null);
     setToken(null);
   };

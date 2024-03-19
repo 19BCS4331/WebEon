@@ -355,6 +355,28 @@ router.get("/PaxDataFullMain", authenticate, async (req, res) => {
   }
 });
 
+router.post("/CheckPax", authenticate, async (req, res) => {
+  const { name, contactno } = req.body;
+  try {
+    // Query the database to check if a PAX with the same name or number exists
+    const queryResult = await pool.query(
+      `SELECT * FROM paxmaster WHERE name = $1 OR contactno = $2`,
+      [name, contactno]
+    );
+
+    // If a PAX with the same name or number exists, return a response indicating its existence
+    if (queryResult.rows.length > 0) {
+      res.status(200).json({ exists: true, existingPax: queryResult.rows[0] });
+    } else {
+      // If no matching PAX is found, indicate that no PAX exists
+      res.status(200).json({ exists: false });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
 // -------------------------------BUYFROMINDIVI------------------------------------
 
 module.exports = router;

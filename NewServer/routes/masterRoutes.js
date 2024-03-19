@@ -49,6 +49,66 @@ router.get("/CurrencyMasterOne", authenticate, async (req, res) => {
   }
 });
 
+router.get("/AgentsMaster", authenticate, async (req, res) => {
+  const query = `
+  SELECT * FROM agents_master
+  `;
+
+  try {
+    pool.query(query, (error, results) => {
+      if (error) {
+        console.error("Error fetching rows:", error);
+        res.status(500).json({ error: "Error fetching rows" });
+      }
+      console.log("Data fetched successfully");
+      res.status(200).json(results.rows);
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get("/MarktRefMaster", authenticate, async (req, res) => {
+  const query = `
+  SELECT name FROM markt_ref_master ORDER BY id ASC
+  `;
+
+  try {
+    pool.query(query, (error, results) => {
+      if (error) {
+        console.error("Error fetching rows:", error);
+        res.status(500).json({ error: "Error fetching rows" });
+      }
+      console.log("Data fetched successfully");
+      res.status(200).json(results.rows);
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get("/DeliAgentMaster", authenticate, async (req, res) => {
+  const query = `
+  SELECT name FROM delivery_agent_master ORDER BY id ASC
+  `;
+
+  try {
+    pool.query(query, (error, results) => {
+      if (error) {
+        console.error("Error fetching rows:", error);
+        res.status(500).json({ error: "Error fetching rows" });
+      }
+      console.log("Data fetched successfully");
+      res.status(200).json(results.rows);
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
 // -----------------------------FETCH END-------------------------
 
 // -----------------INSERT---------------------

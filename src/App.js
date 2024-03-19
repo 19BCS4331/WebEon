@@ -7,96 +7,161 @@ import TestPage from "./pages/TestPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/global/ProtectedRoute";
 import "./css/global.css";
-import CurrencyProfile from "./pages/Master/CurrencyProfile";
-import FinancialCodes from "./pages/Master/FinancialCodes";
-import FinancialSubProfile from "./pages/Master/FinancialSubProfile";
-import DivisionProfile from "./pages/Master/DivisionProfile";
-import DivisionDetails from "./pages/Master/DivisionDetails";
-import AccountsProfile from "./pages/Master/AccountsProfile";
-import Ad1Provider from "./pages/Master/Ad1Provider";
+import CurrencyProfile from "./pages/Master/Master Profiles/CurrencyProfile";
+import FinancialCodes from "./pages/Master/Master Profiles/FinancialCodes";
+import FinancialSubProfile from "./pages/Master/Master Profiles/FinancialSubProfile";
+import DivisionProfile from "./pages/Master/Master Profiles/DivisionProfile";
+import DivisionDetails from "./pages/Master/Master Profiles/DivisionDetails";
+import AccountsProfile from "./pages/Master/Master Profiles/AccountsProfile";
+import Ad1Provider from "./pages/Master/Master Profiles/Ad1Provider";
 import BuySellOptions from "./pages/Transactions/BuySellTransactions";
 import BuyFromIndivi from "./pages/Transactions/BuySellTransactions/BuyFromIndiviOrCorp";
 import LocalizationProvider from "./contexts/LocalizationProvider";
+import { ModalProvider } from "./contexts/ActionModal";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { BaseUrlProvider } from "./contexts/BaseUrl";
+import SysSetupIndex from "./pages/Master/System Setup";
 
 const App = () => {
   return (
-    <AuthProvider>
-      <LocalizationProvider>
-        <BrowserRouter>
-          <ToastProvider>
-            <Toast />
+    <BaseUrlProvider>
+      <AuthProvider>
+        <LocalizationProvider>
+          <ThemeProvider>
+            <BrowserRouter>
+              <ModalProvider>
+                <ToastProvider>
+                  <Toast />
 
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/Dashboard" element={<ProtectedRoute />}>
-                <Route path="/Dashboard" element={<Dashboard />} />
-              </Route>
+                  <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/Dashboard" element={<ProtectedRoute />}>
+                      <Route path="/Dashboard" element={<Dashboard />} />
+                    </Route>
 
-              <Route path="/master-profiles" element={<ProtectedRoute />}>
-                <Route path="/master-profiles" element={<TestPage />} />
-              </Route>
+                    <Route
+                      path="/Masters/master-profiles"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/Masters/master-profiles"
+                        element={<TestPage />}
+                      />
+                    </Route>
 
-              {/* ------------MASTERS--------------------- */}
-              <Route path="/currency-profile" element={<ProtectedRoute />}>
-                <Route path="/currency-profile" element={<CurrencyProfile />} />
-              </Route>
+                    <Route
+                      path="/Masters/system-setup"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/Masters/system-setup"
+                        element={<SysSetupIndex />}
+                      />
+                    </Route>
 
-              <Route path="/financial-codes" element={<ProtectedRoute />}>
-                <Route path="/financial-codes" element={<FinancialCodes />} />
-              </Route>
+                    {/* ------------MASTERS--------------------- */}
+                    <Route
+                      path="/master-profiles/currency-profile"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/currency-profile"
+                        element={<CurrencyProfile />}
+                      />
+                    </Route>
 
-              <Route path="/financial-sub-profile" element={<ProtectedRoute />}>
-                <Route
-                  path="/financial-sub-profile"
-                  element={<FinancialSubProfile />}
-                />
-              </Route>
+                    <Route
+                      path="/master-profiles/financial-codes"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/financial-codes"
+                        element={<FinancialCodes />}
+                      />
+                    </Route>
 
-              <Route path="/division-profile" element={<ProtectedRoute />}>
-                <Route path="/division-profile" element={<DivisionProfile />} />
-              </Route>
+                    <Route
+                      path="/master-profiles/financial-sub-profile"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/financial-sub-profile"
+                        element={<FinancialSubProfile />}
+                      />
+                    </Route>
 
-              <Route path="/division-details" element={<ProtectedRoute />}>
-                <Route path="/division-details" element={<DivisionDetails />} />
-              </Route>
+                    <Route
+                      path="/master-profiles/division-profile"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/division-profile"
+                        element={<DivisionProfile />}
+                      />
+                    </Route>
 
-              <Route path="/accounts-profile" element={<ProtectedRoute />}>
-                <Route path="/accounts-profile" element={<AccountsProfile />} />
-              </Route>
+                    <Route
+                      path="/master-profiles/division-details"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/division-details"
+                        element={<DivisionDetails />}
+                      />
+                    </Route>
 
-              <Route path="/ad1-provider" element={<ProtectedRoute />}>
-                <Route path="/ad1-provider" element={<Ad1Provider />} />
-              </Route>
+                    <Route
+                      path="/master-profiles/accounts-profile"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/accounts-profile"
+                        element={<AccountsProfile />}
+                      />
+                    </Route>
 
-              {/* ------------MASTERS--------------------- */}
+                    <Route
+                      path="/master-profiles/ad1-provider"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/master-profiles/ad1-provider"
+                        element={<Ad1Provider />}
+                      />
+                    </Route>
 
-              {/* --------------Transactions-------------------- */}
-              <Route
-                path="/buy-/-sell-transactions"
-                element={<ProtectedRoute />}
-              >
-                <Route
-                  path="/buy-/-sell-transactions"
-                  element={<BuySellOptions />}
-                />
-              </Route>
+                    {/* ------------MASTERS--------------------- */}
 
-              <Route
-                path="/buy-from-individual-/-corporates"
-                element={<ProtectedRoute />}
-              >
-                <Route
-                  path="/buy-from-individual-/-corporates"
-                  element={<BuyFromIndivi />}
-                />
-              </Route>
+                    {/* --------------Transactions-------------------- */}
+                    <Route
+                      path="/Transactions/buy-sell-transactions"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/Transactions/buy-sell-transactions"
+                        element={<BuySellOptions />}
+                      />
+                    </Route>
 
-              {/* --------------Transactions-------------------- */}
-            </Routes>
-          </ToastProvider>
-        </BrowserRouter>
-      </LocalizationProvider>
-    </AuthProvider>
+                    <Route
+                      path="/buy-sell-transactions/buy-from-individual-corporates"
+                      element={<ProtectedRoute />}
+                    >
+                      <Route
+                        path="/buy-sell-transactions/buy-from-individual-corporates"
+                        element={<BuyFromIndivi />}
+                      />
+                    </Route>
+
+                    {/* --------------Transactions-------------------- */}
+                  </Routes>
+                </ToastProvider>
+              </ModalProvider>
+            </BrowserRouter>
+          </ThemeProvider>
+        </LocalizationProvider>
+      </AuthProvider>
+    </BaseUrlProvider>
   );
 };
 
