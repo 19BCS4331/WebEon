@@ -61,6 +61,7 @@ const PaxModal = ({
   const { showToast, hideToast } = useToast();
   const [isLoading, setisLoading] = useState(false);
 
+  const [paxID, setPaxID] = useState("");
   const [paxName, setPaxName] = useState("");
   const [PaxEmail, setPaxEmail] = useState("");
   const [PaxDOB, setPaxDOB] = useState(null);
@@ -127,7 +128,7 @@ const PaxModal = ({
     { field: "name", headerName: "Name", width: 200 },
     { field: "pan_number", headerName: "Pan Number", width: 180 },
     { field: "address", headerName: "Address", width: 600 },
-    { field: "p_number", headerName: "Passport Number", width: 180 },
+    { field: "contactno", headerName: "Mobile Number", width: 180 },
 
     {
       field: "actions",
@@ -165,8 +166,11 @@ const PaxModal = ({
   const handleSelectClickOnRow = (row) => {
     // ----------------------Setting States for pax form-----------------------------------
     console.log("rowData", row);
-    setPaxName(row.name);
-    setPaxEmail(row.email);
+    if (row) {
+      setPaxID(row.paxid);
+      setPaxName(row.name);
+      setPaxEmail(row.email);
+    }
     // const datePart = row.dob.split("T")[0];
 
     // ----------------------------DATEPICKERS----------------------------
@@ -276,14 +280,38 @@ const PaxModal = ({
       PaxformObject.ContactNo
     );
     console.log(response.data.exists);
-    if (response.data.exists) {
+    console.log("response for saveclick", response.data);
+    if (
+      response.data.exists &&
+      response.data.message ==
+        "A PAX with the same name or mobile number already exists."
+    ) {
       // If a matching PAX exists, update the view accordingly
       //   alert("A PAX with the same name and number already exists.");
       // Optionally, you can navigate to the existing PAX details page
       // history.push(`/pax/${response.data.existingPaxId}`);
       setIsPaxSaved(true);
-      setPaxData({ name: paxName /* other pax data */ });
+      setPaxData({ paxid: paxID, name: paxName /* other pax data */ });
       setisLoading(false);
+    } else if (
+      response.data.exists &&
+      response.data.message ==
+        "Mobile number already exists with a different name."
+    ) {
+      setisLoading(false);
+      showToast("Mobile Number Already Exists!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+    } else if (
+      response.data.exists &&
+      response.data.message == "Pax already exists with a different Number."
+    ) {
+      setisLoading(false);
+      showToast("Pax Already Exists With Different Number!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
     } else {
       // If no matching PAX exists, proceed to save the PAX details
 
@@ -357,9 +385,11 @@ const PaxModal = ({
       }
       //   alert("PAX details saved successfully!");
       setIsPaxSaved(true);
-      setPaxData({ name: paxName /* other pax data */ });
+      setPaxData({ paxid: paxID, name: paxName /* other pax data */ });
     }
   };
+
+  // console.log("paxid", paxID);
 
   return (
     <AnimatePresence>
@@ -923,7 +953,7 @@ const PaxModal = ({
                         <DatePicker
                           label="Issued Date"
                           slotProps={{
-                            textField: { name: "Issued Date" },
+                            textField: { name: "PassIssuedDate" },
                           }}
                           value={
                             PaxPassIssuedDate
@@ -955,7 +985,7 @@ const PaxModal = ({
                         <DatePicker
                           label="Expiry Date"
                           slotProps={{
-                            textField: { name: "Expiry Date" },
+                            textField: { name: "PassExpiryDate" },
                           }}
                           value={
                             PaxPassExpiryDate
@@ -1044,7 +1074,7 @@ const PaxModal = ({
                         <DatePicker
                           label="Expiry Date"
                           slotProps={{
-                            textField: { name: "Expiry Date" },
+                            textField: { name: "OtherIDExpiry" },
                           }}
                           value={
                             PaxOtherIDExpiryDate

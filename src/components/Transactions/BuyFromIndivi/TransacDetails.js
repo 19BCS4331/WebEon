@@ -11,7 +11,10 @@ import {
 import React, { useEffect, useState } from "react";
 import { COLORS } from "../../../assets/colors/COLORS";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
-import { fetchCurrencyRate } from "../../../apis/OptionsMaster";
+import {
+  fetchCurrencyNames,
+  fetchCurrencyRates,
+} from "../../../apis/OptionsMaster";
 import { motion } from "framer-motion";
 import "../../../css/components/buyfromindiv.css";
 import SouthIcon from "@mui/icons-material/South";
@@ -19,14 +22,26 @@ import { useActionModal } from "../../../contexts/ActionModal";
 import InfoIcon from "@mui/icons-material/Info";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
+import Taxes from "./Taxes";
+import {
+  FormDataProvider,
+  useFormData,
+} from "../../../contexts/FormDataContext";
+import RecPay from "./RecPay";
+// import CustomSearch from "../../global/CustomSearch";
 
 const TransacDetails = ({
   isTransacDetailsView,
   handlebackClickOnTransacView,
+  setIsTransacDetailsView,
   comission,
 }) => {
+  const { updateFormData } = useFormData();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const [isTaxView, setIsTaxView] = useState(false);
+  const [isRecPay, setIsRecPay] = useState(false);
   const { openModal, closeModal } = useActionModal();
   const [currencyRateOptions, setCurrencyRateOptions] = useState(null);
   const [transacType, setTransacType] = useState("");
@@ -64,7 +79,7 @@ const TransacDetails = ({
       const newTransaction = {
         id: nextId, // Generate a unique ID (you may have a better way to generate IDs)
         // Other transaction details like date, amount, etc.
-        CNCode: selectedCurrency,
+        CNCode: selectedCurrency.currency_code,
         Type: transacType,
         FeAmount: feAmount,
         Rate: rateCurr,
@@ -106,15 +121,32 @@ const TransacDetails = ({
       return transaction;
     });
     setTransactions(updatedTransactions);
+    console.log("Trnasac After Save Click", transactions);
     setEditedTransaction(null);
   };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditedTransaction((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setEditedTransaction((prevState) => {
+      const updatedTransaction = {
+        ...prevState,
+        [name]: value,
+      };
+
+      // Calculate final amount whenever FeAmount changes
+      if (name === "FeAmount") {
+        const finalAmount = calculateFinalAmount(
+          value,
+          prevState.Rate
+        ).finalAmount;
+        return {
+          ...updatedTransaction,
+          FinalAmount: finalAmount,
+        };
+      }
+
+      return updatedTransaction;
+    });
   };
 
   const handleDelete = (id) => {
@@ -155,8 +187,8 @@ const TransacDetails = ({
   useEffect(() => {
     if (isTransacDetailsView) {
       const OptionsFetch = async () => {
-        const CurrencyRateOptions = await fetchCurrencyRate();
-        setCurrencyRateOptions(CurrencyRateOptions);
+        const CurrencyNameOptions = await fetchCurrencyNames();
+        setCurrencyRateOptions(CurrencyNameOptions);
 
         // setOptionsDataLoading(false);
       };
@@ -164,43 +196,83 @@ const TransacDetails = ({
     }
   }, [isTransacDetailsView]);
 
-  const handleCurrencyChange = (event, newValue) => {
-    if (newValue !== null) {
-      const selectedCurrency = newValue;
-      const selectedRate = currencyRateOptions.find(
-        (currency) => currency.currencycode === selectedCurrency
-      ).rate;
+  const handleCurrencyChange = async (event, newValue) => {
+    setSelectedCurrency(newValue); // Update selected currency
 
-      setSelectedCurrency(selectedCurrency);
-      setRateCurr(selectedRate);
-      console.log(selectedRate);
-      console.log(newValue);
+    // Fetch currency rate when a currency is selected
+    if (newValue) {
+      try {
+        const response = await fetchCurrencyRates(newValue.currencyid); // Replace '/api/CurrencyRates' with your actual endpoint
+        if (response.data.length > 0) {
+          setRateCurr(response.data[0].rate); // Assuming the response contains rate data
+        }
+      } catch (error) {
+        console.error("Error fetching currency rate:", error);
+      }
     } else {
-      setRateCurr(null);
-      setSelectedCurrency(null);
+      setRateCurr(null); // Reset currency rate if no currency is selected
     }
   };
 
-  const handleEditCurrencyChange = (event, newValue) => {
-    if (newValue !== null) {
-      const selectedCurrency = newValue;
-      const selectedRate = currencyRateOptions.find(
-        (currency) => currency.currencycode === selectedCurrency
-      ).rate;
+  const handleEditCurrencyChange = async (event, newValue) => {
+    if (newValue) {
+      try {
+        const response = await fetchCurrencyRates(newValue.currencyid); // Replace '/api/CurrencyRates' with your actual endpoint
+        const rateData = response.data;
 
-      setEditedTransaction((prevState) => ({
-        ...prevState,
-        CNCode: selectedCurrency,
-        Rate: selectedRate,
-      }));
-    } else {
-      setEditedTransaction((prevState) => ({
-        ...prevState,
-        CNCode: null,
-        Rate: null,
-      }));
+        if (response.data.length > 0) {
+          setEditedTransaction((prevState) => ({
+            ...prevState,
+            CNCode: newValue.currency_code,
+            Rate: rateData[0].rate,
+            FinalAmount: calculateFinalAmount(
+              prevState.FeAmount,
+              rateData[0].rate
+            ).finalAmount,
+          }));
+        } else {
+          setEditedTransaction((prevState) => ({
+            ...prevState,
+            CNCode: null,
+            Rate: null,
+            FinalAmount: null,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching currency rate:", error);
+      }
     }
   };
+
+  // const handleEditCurrencyChange = async (event, newValue) => {
+  //   if (newValue !== null) {
+  //     try {
+  //       const response = await fetchCurrencyRates(newValue.currencyid);
+  //       const rateData = response.data;
+  //       if (response.data.length > 0) {
+  //         setEditedTransaction((prevState) => ({
+  //           ...prevState,
+  //           CNCode: newValue.currency_code, // Update CNCode with the selected currency code
+  //           Rate: rateData[0].rate,
+  //         }));
+  //       } else {
+  //         setEditedTransaction((prevState) => ({
+  //           ...prevState,
+  //           CNCode: null,
+  //           Rate: null,
+  //         }));
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching currency rate:", error);
+  //     }
+  //   } else {
+  //     setEditedTransaction((prevState) => ({
+  //       ...prevState,
+  //       CNCode: null,
+  //       Rate: null,
+  //     }));
+  //   }
+  // };
 
   useEffect(() => {
     setFinalAmountText(`Rs. ${finalAmount}`);
@@ -276,6 +348,52 @@ const TransacDetails = ({
     setSelectedTransac(transaction);
   };
 
+  const handleNextOnTransac = () => {
+    // Calculate the sum of finalAmount in transactions array
+    const finalAmountTotal = transactions.reduce((total, transaction) => {
+      // Ensure transaction.finalAmount is parsed as number
+      const finalAmount = parseFloat(transaction.FinalAmount);
+      console.log("Transaction finalAmount:", finalAmount);
+      return total + finalAmount;
+    }, 0);
+
+    console.log("Final Amount Total:", finalAmountTotal);
+
+    try {
+      const formDataObject = {
+        transaction: transactions,
+        FinalAmountTotal: finalAmountTotal,
+        // Add other form data here
+      };
+
+      const formDataJSON = JSON.stringify(formDataObject);
+      updateFormData(formDataObject);
+
+      console.log("TransacCurrencyForm", formDataJSON);
+      // Attempt to store the JSON string in local storage
+      // localStorage.setItem("TransacCurrencyForm", formDataJSON);
+      setIsTaxView(true);
+      setIsTransacDetailsView(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handlebackClickOnTaxView = () => {
+    setIsTaxView(false);
+    setIsTransacDetailsView(true);
+  };
+
+  const handlebackClickOnRecPay = () => {
+    setIsTaxView(true);
+    setIsRecPay(false);
+  };
+
+  const handleRecPayView = () => {
+    setIsRecPay(true);
+    setIsTaxView(false);
+  };
+
   return (
     <>
       {isTransacDetailsView && (
@@ -340,20 +458,45 @@ const TransacDetails = ({
               gap={4}
             >
               {currencyRateOptions ? (
+                // <Autocomplete
+                //   disablePortal
+                //   id="CurrencyCodeRate"
+                //   value={selectedCurrency}
+                //   options={currencyRateOptions.map((item) => ({
+                //     label: item.currency_code,
+                //     value: item.currencyid,
+                //   }))}
+                //   getOptionLabel={(option) => option.label || ""}
+                //   isOptionEqualToValue={(option, value) =>
+                //     option.label === value
+                //   } // Compare option's value with selected value
+                //   onChange={handleCurrencyChangeNew}
+                //   renderInput={(params) => (
+                //     <TextField
+                //       {...params}
+                //       label="Currency Code"
+                //       name="CurrencyCodeRate"
+                //       required
+                //     />
+                //   )}
+                // />
                 <Autocomplete
                   disablePortal
                   id="CurrencyCodeRate"
                   value={selectedCurrency}
-                  options={currencyRateOptions.map((item) => item.currencycode)}
+                  options={currencyRateOptions}
+                  getOptionLabel={(option) => option.currency_code || ""}
+                  isOptionEqualToValue={(option, value) =>
+                    option.currency_code === value.currency_code
+                  }
                   onChange={handleCurrencyChange}
-                  sx={{ width: isMobile ? "auto" : "9vw" }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       label="Currency Code"
                       name="CurrencyCodeRate"
                       required
-                      // value={calculationMethod}
+                      style={{ width: isMobile ? "auto" : "10vw" }}
                     />
                   )}
                 />
@@ -411,6 +554,7 @@ const TransacDetails = ({
               />
               {comission && (
                 <TextField
+                  required
                   select
                   label="Commission Type"
                   value={commType}
@@ -428,6 +572,7 @@ const TransacDetails = ({
 
               {comission && (
                 <TextField
+                  required
                   label="Commission Value"
                   value={commVal}
                   onChange={handleCommissionValueChange}
@@ -444,6 +589,7 @@ const TransacDetails = ({
             >
               {comission && (
                 <TextField
+                  required
                   label="Commission Amount (Rs.)"
                   value={commAmount}
                   sx={{ width: isMobile ? "auto" : "11vw" }}
@@ -531,18 +677,55 @@ const TransacDetails = ({
                             )}
                           </Box>
                         </td>
+                        {/* <Autocomplete
+                          disablePortal
+                          id="CurrencyCodeRate"
+                          value={selectedCurrency}
+                          options={currencyRateOptions}
+                          getOptionLabel={(option) =>
+                            option.currency_code || ""
+                          }
+                          isOptionEqualToValue={(option, value) =>
+                            option.currency_code === value.currency_code
+                          }
+                          onChange={handleCurrencyChange}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Currency Code"
+                              name="CurrencyCodeRate"
+                              required
+                              style={{ width: isMobile ? "auto" : "10vw" }}
+                            />
+                          )}
+                        /> */}
                         <td>
-                          {" "}
                           {editedTransaction &&
                           editedTransaction.id === transaction.id ? (
                             <Autocomplete
-                              value={editedTransaction.CNCode}
+                              value={
+                                editedTransaction
+                                  ? currencyRateOptions.find(
+                                      (option) =>
+                                        option.currency_code ===
+                                        editedTransaction.CNCode
+                                    )
+                                  : null
+                              } // Explicitly set the input value to the selected currency code
                               onChange={handleEditCurrencyChange}
-                              options={currencyRateOptions.map(
-                                (option) => option.currencycode
-                              )}
+                              options={currencyRateOptions}
+                              getOptionLabel={(option) =>
+                                option.currency_code || ""
+                              }
+                              isOptionEqualToValue={(option, value) =>
+                                option.currency_code === value.currency_code
+                              }
                               renderInput={(params) => (
-                                <TextField {...params} style={{ width: 120 }} />
+                                <TextField
+                                  {...params}
+                                  style={{ width: 120 }}
+                                  label="Currency Code"
+                                />
                               )}
                             />
                           ) : (
@@ -635,12 +818,31 @@ const TransacDetails = ({
                   </tbody>
                 </table>
               </Box>
-              <button className="NextOnCreate" style={{ width: "10vw" }}>
+              <button
+                className="NextOnCreate"
+                style={{ width: "10vw" }}
+                onClick={handleNextOnTransac}
+              >
                 Next
               </button>
             </>
           )}
         </Box>
+      )}
+
+      {isTaxView && (
+        <Taxes
+          isTaxView={isTaxView}
+          handlebackClickOnTaxView={handlebackClickOnTaxView}
+          handleRecPayView={handleRecPayView}
+        />
+      )}
+
+      {isRecPay && (
+        <RecPay
+          isRecPay={isRecPay}
+          handlebackClickOnRecPay={handlebackClickOnRecPay}
+        />
       )}
 
       <Dialog

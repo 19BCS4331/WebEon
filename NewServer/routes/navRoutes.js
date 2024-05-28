@@ -13,6 +13,20 @@ const pool = new Pool({
   port: 5432,
 });
 
+router.get("/AuthCheck", authenticate, async (req, res) => {
+  try {
+    pool.query(`SELECT isverified from authverify`, (error, results) => {
+      if (error) {
+        throw error;
+      }
+      res.status(200).json(results.rows);
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
 router.get("/NavMenu", authenticate, async (req, res) => {
   try {
     pool.query(
@@ -117,6 +131,42 @@ router.get("/IDOptions", authenticate, async (req, res) => {
   }
 });
 
+router.get("/CurrencyNames", authenticate, async (req, res) => {
+  try {
+    pool.query(
+      `SELECT currencyid,currency_code,currency_name from currencymaster WHERE isdeleted = false ORDER BY currencyid ASC`,
+      (error, results) => {
+        if (error) {
+          throw error;
+        }
+        res.status(200).json(results.rows);
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+router.post("/CurrencyRates", authenticate, async (req, res) => {
+  const { currencyid } = req.body;
+  try {
+    pool.query(
+      `SELECT rate from forexrate WHERE m_currencyid = $1`,
+      [currencyid],
+      (error, results) => {
+        if (error) {
+          throw error;
+        }
+        res.status(200).json(results.rows);
+        console.log("CURRENCYRATE SENT");
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
 router.get("/CurrencyRate", authenticate, async (req, res) => {
   try {
     pool.query(`select * from forexrate`, (error, results) => {
@@ -355,6 +405,28 @@ router.get("/PaxDataFullMain", authenticate, async (req, res) => {
   }
 });
 
+// router.post("/CheckPax", authenticate, async (req, res) => {
+//   const { name, contactno } = req.body;
+//   try {
+//     // Query the database to check if a PAX with the same name or number exists
+//     const queryResult = await pool.query(
+//       `SELECT * FROM paxmaster WHERE name = $1 OR contactno = $2`,
+//       [name, contactno]
+//     );
+
+//     // If a PAX with the same name or number exists, return a response indicating its existence
+//     if (queryResult.rows.length > 0) {
+//       res.status(200).json({ exists: true, existingPax: queryResult.rows[0] });
+//     } else {
+//       // If no matching PAX is found, indicate that no PAX exists
+//       res.status(200).json({ exists: false });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Server error");
+//   }
+// });
+
 router.post("/CheckPax", authenticate, async (req, res) => {
   const { name, contactno } = req.body;
   try {
@@ -364,13 +436,55 @@ router.post("/CheckPax", authenticate, async (req, res) => {
       [name, contactno]
     );
 
-    // If a PAX with the same name or number exists, return a response indicating its existence
+    // If a PAX with the same name or number exists
     if (queryResult.rows.length > 0) {
-      res.status(200).json({ exists: true, existingPax: queryResult.rows[0] });
+      const existingPax = queryResult.rows[0];
+      if (existingPax.name !== name && existingPax.contactno === contactno) {
+        // If mobile number exists but the name is different
+        return res.status(200).json({
+          exists: true,
+          message: "Mobile number already exists with a different name.",
+          existingPax,
+        });
+      } else if (
+        existingPax.name === name &&
+        existingPax.contactno !== contactno
+      ) {
+        // If name exists but number is different
+        return res.status(200).json({
+          exists: true,
+          message: "Pax already exists with a different Number.",
+          existingPax,
+        });
+      } else {
+        // If same name or mobile number exists
+        return res.status(200).json({
+          exists: true,
+          message: "A PAX with the same name or mobile number already exists.",
+          existingPax,
+        });
+      }
     } else {
       // If no matching PAX is found, indicate that no PAX exists
-      res.status(200).json({ exists: false });
+      return res.status(200).json({ exists: false });
     }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Server error");
+  }
+});
+
+router.get("/AccProfileFetchBuyFromIndi", authenticate, async (req, res) => {
+  try {
+    pool.query(
+      `SELECT id,acc_code,acc_name FROM accountsprofile_master WHERE acc_type = 'GL' AND ispurchase = true AND isactive = true AND isdeleted = false`,
+      (error, results) => {
+        if (error) {
+          throw error;
+        }
+        res.status(200).json(results.rows);
+      }
+    );
   } catch (error) {
     console.error(error);
     res.status(500).send("Server error");

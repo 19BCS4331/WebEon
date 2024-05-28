@@ -19,15 +19,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import MenuIcon from "@mui/icons-material/Menu";
 import ThemeContext from "../../contexts/ThemeContext";
 import { useBaseUrl } from "../../contexts/BaseUrl";
+import useAxiosInterceptor from "./AxiosIntercept";
 
 const SideNavbar = () => {
   const { baseUrl } = useBaseUrl();
   const { Colortheme } = useContext(ThemeContext);
   const [menuData, setMenuData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { userRole } = useAuth();
+  const { userRole, branch } = useAuth();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useAxiosInterceptor();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -42,6 +45,32 @@ const SideNavbar = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetchAuthCheck(token);
+  }, []);
+
+  const fetchAuthCheck = async (token) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${baseUrl}/api/nav/AuthCheck`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response.data);
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        // Handle unauthorized access, e.g., log out the user
+        console.log("Unauthorized access, logging out...", error);
+      } else {
+        console.log("An error occurred:", error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchNavMenu = async (token) => {
     setIsLoading(true);
     try {
@@ -50,9 +79,16 @@ const SideNavbar = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      // if (userRole === "Admin") {
       const organizedMenuData = organizeMenuData(response.data);
       setMenuData(organizedMenuData);
       localStorage.setItem("menuData", JSON.stringify(organizedMenuData));
+      // } else {
+      //   const filteredMenuItems = filterMenuItems(response.data, branch); // Filter menu items based on branch ID
+      //   const organizedMenuData = organizeMenuData(filteredMenuItems);
+      //   setMenuData(organizedMenuData);
+      //   localStorage.setItem("menuData", JSON.stringify(organizedMenuData));
+      // }
     } catch (error) {
       console.log(error);
     } finally {
@@ -60,31 +96,16 @@ const SideNavbar = () => {
     }
   };
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-
-  //   const fetchNavMenu = async () => {
-  //     setIsLoading(true);
-  //     try {
-  //       const response = await axios.get(
-  //         `http://localhost:5001/api/nav/NavMenu`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-  //       const organizedMenuData = organizeMenuData(response.data);
-  //       setMenuData(organizedMenuData);
-  //       setIsLoading(false);
-  //     } catch (error) {
-  //       console.log(error);
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   fetchNavMenu();
-  // }, []);
+  const filterMenuItems = (menuItems, branchId) => {
+    // Filter menu items based on the branch ID
+    return menuItems.filter((item) => {
+      if (!item.branchids) {
+        return true; // If branchids is not specified, show the menu item
+      }
+      const allowedBranches = item.branchids.split(",").map((id) => id.trim());
+      return allowedBranches.includes(branchId); // Check if the branchId is present in the allowed branches
+    });
+  };
 
   const organizeMenuData = (menuItems, parentId = null) => {
     const organizedData = menuItems

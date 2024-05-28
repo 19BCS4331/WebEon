@@ -85,6 +85,38 @@ const fetchCurrencyRate = async () => {
   }
 };
 
+const fetchCurrencyNames = async () => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.get(`${baseUrl}/api/nav/CurrencyNames`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const fetchCurrencyRates = async (selectedcurrency) => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.post(
+      `${baseUrl}/api/nav/CurrencyRates`,
+      { currencyid: selectedcurrency },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   fetchCountryOptions,
   fetchCityOptions,
@@ -92,4 +124,6 @@ export {
   fetchStateOptions,
   fetchIDOptions,
   fetchCurrencyRate,
+  fetchCurrencyNames,
+  fetchCurrencyRates,
 };

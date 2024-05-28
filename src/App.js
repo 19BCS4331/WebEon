@@ -1,6 +1,6 @@
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ToastProvider, useToast } from "./contexts/ToastContext";
 import Toast from "./components/Toast";
 import TestPage from "./pages/TestPage";
@@ -20,149 +20,179 @@ import LocalizationProvider from "./contexts/LocalizationProvider";
 import { ModalProvider } from "./contexts/ActionModal";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BaseUrlProvider } from "./contexts/BaseUrl";
-import SysSetupIndex from "./pages/Master/System Setup";
+import SysSetupIndex from "./pages/Master/SystemSetup";
+import TaxMaster from "./pages/Master/SystemSetup/TaxMaster";
+import { FormDataProvider } from "./contexts/FormDataContext";
+import LoginNew from "./pages/LoginNew";
+import NewSidebar from "./components/global/NewSideBar";
+import useAuthHook from "./hooks/useAuthHook";
 
 const App = () => {
   return (
-    <BaseUrlProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <BaseUrlProvider>
         <LocalizationProvider>
           <ThemeProvider>
-            <BrowserRouter>
-              <ModalProvider>
-                <ToastProvider>
-                  <Toast />
+            <FormDataProvider>
+              <BrowserRouter>
+                <ModalProvider>
+                  <ToastProvider>
+                    <Toast />
+                    <AuthBasedSidebar />
+                    <Routes>
+                      <Route path="/" element={<LoginNew />} />
+                      <Route path="/Dashboard" element={<ProtectedRoute />}>
+                        <Route path="/Dashboard" element={<Dashboard />} />
+                      </Route>
 
-                  <Routes>
-                    <Route path="/" element={<Login />} />
-                    <Route path="/Dashboard" element={<ProtectedRoute />}>
-                      <Route path="/Dashboard" element={<Dashboard />} />
-                    </Route>
-
-                    <Route
-                      path="/Masters/master-profiles"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/Masters/master-profiles"
-                        element={<TestPage />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/Masters/master-profiles"
+                          element={<TestPage />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/Masters/system-setup"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/Masters/system-setup"
-                        element={<SysSetupIndex />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/Masters/system-setup"
+                          element={<SysSetupIndex />}
+                        />
+                      </Route>
 
-                    {/* ------------MASTERS--------------------- */}
-                    <Route
-                      path="/master-profiles/currency-profile"
-                      element={<ProtectedRoute />}
-                    >
+                      {/* ------------MASTERS--------------------- */}
+
+                      {/* Master Profiles */}
                       <Route
                         path="/master-profiles/currency-profile"
-                        element={<CurrencyProfile />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/currency-profile"
+                          element={<CurrencyProfile />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/master-profiles/financial-codes"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/master-profiles/financial-codes"
-                        element={<FinancialCodes />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/financial-codes"
+                          element={<FinancialCodes />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/master-profiles/financial-sub-profile"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/master-profiles/financial-sub-profile"
-                        element={<FinancialSubProfile />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/financial-sub-profile"
+                          element={<FinancialSubProfile />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/master-profiles/division-profile"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/master-profiles/division-profile"
-                        element={<DivisionProfile />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/division-profile"
+                          element={<DivisionProfile />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/master-profiles/division-details"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/master-profiles/division-details"
-                        element={<DivisionDetails />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/division-details"
+                          element={<DivisionDetails />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/master-profiles/accounts-profile"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/master-profiles/accounts-profile"
-                        element={<AccountsProfile />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/accounts-profile"
+                          element={<AccountsProfile />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/master-profiles/ad1-provider"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/master-profiles/ad1-provider"
-                        element={<Ad1Provider />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/master-profiles/ad1-provider"
+                          element={<Ad1Provider />}
+                        />
+                      </Route>
 
-                    {/* ------------MASTERS--------------------- */}
+                      {/* Master Profiles End */}
 
-                    {/* --------------Transactions-------------------- */}
-                    <Route
-                      path="/Transactions/buy-sell-transactions"
-                      element={<ProtectedRoute />}
-                    >
+                      {/* System Setup */}
+
+                      <Route
+                        path="/system-setup/tax-profile"
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/system-setup/tax-profile"
+                          element={<TaxMaster />}
+                        />
+                      </Route>
+
+                      {/* System Setup End */}
+
+                      {/* ------------MASTERS--------------------- */}
+
+                      {/* --------------Transactions-------------------- */}
                       <Route
                         path="/Transactions/buy-sell-transactions"
-                        element={<BuySellOptions />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/Transactions/buy-sell-transactions"
+                          element={<BuySellOptions />}
+                        />
+                      </Route>
 
-                    <Route
-                      path="/buy-sell-transactions/buy-from-individual-corporates"
-                      element={<ProtectedRoute />}
-                    >
                       <Route
                         path="/buy-sell-transactions/buy-from-individual-corporates"
-                        element={<BuyFromIndivi />}
-                      />
-                    </Route>
+                        element={<ProtectedRoute />}
+                      >
+                        <Route
+                          path="/buy-sell-transactions/buy-from-individual-corporates"
+                          element={<BuyFromIndivi />}
+                        />
+                      </Route>
 
-                    {/* --------------Transactions-------------------- */}
-                  </Routes>
-                </ToastProvider>
-              </ModalProvider>
-            </BrowserRouter>
+                      {/* --------------Transactions-------------------- */}
+                    </Routes>
+                  </ToastProvider>
+                </ModalProvider>
+              </BrowserRouter>
+            </FormDataProvider>
           </ThemeProvider>
         </LocalizationProvider>
-      </AuthProvider>
-    </BaseUrlProvider>
+      </BaseUrlProvider>
+    </AuthProvider>
   );
+};
+
+const AuthBasedSidebar = () => {
+  const { isAuthenticated } = useAuthHook();
+  return isAuthenticated ? <NewSidebar /> : null;
 };
 
 export default App;

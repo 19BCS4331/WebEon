@@ -37,9 +37,39 @@ import {
 } from "../../../apis/IndiviOrCorp/Buy/index.js";
 import PaxModal from "../../../components/Transactions/BuyFromIndivi/PaxModal.js";
 import TransacDetails from "../../../components/Transactions/BuyFromIndivi/TransacDetails.js";
+import useAxiosInterceptor from "../../../components/global/AxiosIntercept.js";
+import {
+  FormDataProvider,
+  useFormData,
+} from "../../../contexts/FormDataContext.js";
 
 const BuyFromIndivi = () => {
+  useAxiosInterceptor();
   // -----------------STATES START---------------------
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      // Cancel the event to prevent the browser from unloading the page immediately
+      event.preventDefault();
+      // Chrome requires returnValue to be set
+      event.returnValue = "";
+
+      // Show the alert to inform the user
+      const confirmationMessage = "This will reset your current transaction.";
+      event.returnValue = confirmationMessage;
+      return confirmationMessage;
+    };
+
+    // Add event listener for beforeunload
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup function to remove the event listener when the component is unmounted
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []); // Empty dependency array to ensure the effect runs only once
+
+  const { updateFormData } = useFormData();
   const baseUrl = process.env.REACT_APP_BASE_URL;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -60,13 +90,15 @@ const BuyFromIndivi = () => {
   const [isTransacDetailsView, setIsTransacDetailsView] = useState(false);
 
   // --------------create form states(values)--------------
-
+  const [entity, setEntity] = useState("Individual");
+  const [purpose, setPurpose] = useState("Encashment");
+  const [manualBillRef, setManualBillRef] = useState("");
   const [ratePer, setRatePer] = useState("");
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [isPartySelect, setIsPartySelect] = useState(false);
 
   const [behalf, setBehalf] = useState("");
-  const [category, setCategory] = useState(null);
+  const [category, setCategory] = useState("Low Risk");
   const [reference, setReference] = useState("");
   const [marktRef, setMarktRef] = useState(null);
   const [idText, setIdText] = useState("");
@@ -366,46 +398,6 @@ const BuyFromIndivi = () => {
     setSearchPax(false);
   };
 
-  const handleEditClickOnRow = (row) => {
-    // --------------setting all states-------------------------
-    setEditedSelectedId(row.currencyid);
-    setEditedCurrencyCode(row.currency_code);
-    setEditedCurrencyName(row.currency_name);
-    // setEditedCountry()
-    setEditedPriority(row.priority);
-    setEditedRatePer(row.rateper);
-    setEditedDefaultMinRate(row.defaultminrate);
-    setEditedDefaultMaxRate(row.defaultmaxrate);
-    setEditedCalculationMethod(
-      row.calculationmethod === "M" ? "Multiplication" : "Division"
-    );
-    setEditedOpenRatePremium(row.openratepremium);
-    setEditedGulfDiscFactor(row.gulfdiscfactor);
-    setEditedAmexMapCode(row.amexcode);
-    setEditedActiveStatus(row.isactive);
-
-    // setEditedGroup()
-
-    // --------------End of setting all data states-------------------------
-
-    setDataForEdit(row);
-    setIsEdit(true);
-    setIsCreateForm(false);
-    setIsSearch(false);
-    // setSearchKeyword("");
-    // Switch the view and fetch the corresponding row's data for editing
-    // You can set the data in your component's state for editing
-    console.log("Edit button clicked for currency ID:", row.currencyid);
-
-    // Add your logic to switch views and show the data in inputs
-  };
-
-  const handleDeleteClick = (row) => {
-    SetRowid(row.currencyid);
-    console.log("Delete button clicked for currency ID:", row.currencyid);
-    showAlertDialogCurrency(`Delete the record : ${row.currency_name} `);
-  };
-
   const handleCheckboxChange = (event) => {
     setEditedActiveStatus(event.target.checked); // Update the state when the checkbox is toggled
   };
@@ -422,21 +414,45 @@ const BuyFromIndivi = () => {
 
   // ------------------------------ states for PAX MODAL-------------------------------------
 
-  const handlePaxSubmit = () => {
-    setIsPartySelect(false);
-    setIsCreateForm(true);
-  };
-
   const handleNextForTransac = () => {
     if (!paxData) {
-      // alert("Please Select PAX First");
       showToast("Please Select PAX First!", "error");
       setTimeout(() => {
         hideToast();
       }, 2000);
     } else {
-      setIsTransacDetailsView(true);
-      setIsCreateForm(false);
+      try {
+        const formDataObject = {
+          paxID: paxData.paxid,
+          entity: entity,
+          purpose: purpose,
+          selectedDate: selectedDate,
+          manualBillRef: manualBillRef,
+          selectedAgent: selectedAgent ? selectedAgent.id : "",
+          behalf: behalf,
+          category: category,
+          reference: reference,
+          selectedMarktRef: selectedMarktRef ? selectedMarktRef.id : "",
+          idText: idText,
+          vendorInvNo: vendorInvNo,
+          remarks: remarks,
+          selectedDeliAgent: selectedDeliAgent ? selectedDeliAgent.id : "",
+          // Add other form data here
+        };
+
+        const formDataJSON = JSON.stringify(formDataObject);
+        updateFormData(formDataObject);
+        console.log("HeaderForm", formDataJSON);
+        // Attempt to store the JSON string in local storage
+        // localStorage.setItem("HeaderForm", formDataJSON);
+
+        setIsTransacDetailsView(true);
+        setIsCreateForm(false);
+      } catch (error) {
+        // Handle any errors that occur during storage
+        console.error("Error storing form data:", error);
+        // Optionally, show a message to the user indicating that there was an error
+      }
     }
   };
 
@@ -554,8 +570,9 @@ const BuyFromIndivi = () => {
 
   // -------------------------------------CONSOLE LOGS--------------------------------------------
 
-  console.log("Selected Agent: ", selectedAgent);
-  console.log("Selected Markt Ref: ", selectedMarktRef);
+  // console.log("Selected Agent: ", selectedAgent);
+  // console.log("Selected Markt Ref: ", selectedMarktRef);
+  // console.log("PAx Data", paxData);
 
   // -------------------------------------CONSOLE LOGS--------------------------------------------
 
@@ -628,6 +645,8 @@ const BuyFromIndivi = () => {
                 >
                   <TextField
                     select
+                    value={entity}
+                    onChange={(e) => setEntity(e.target.value)}
                     sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="Entity"
                     label="Entity"
@@ -643,6 +662,8 @@ const BuyFromIndivi = () => {
 
                   <TextField
                     select
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
                     sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="Purpose"
                     label="Purpose"
@@ -658,10 +679,26 @@ const BuyFromIndivi = () => {
 
                   <DatePicker
                     label="Date"
-                    value={selectedDate}
-                    onChange={handleDateChange}
-                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: { name: "Date" },
+                    }}
+                    value={
+                      selectedDate ? dayjs(selectedDate, "YYYY-MM-DD") : null
+                    } // Parse PaxDOB with 'YYYY-MM-DD' format
+                    onChange={(newValue) => {
+                      setSelectedDate(
+                        newValue ? newValue.format("YYYY-MM-DD") : null
+                      );
+                    }}
                     sx={{ width: isMobile ? "auto" : "12vw" }}
+                    renderInput={(params) => (
+                      <TextField {...params} variant="standard" />
+                    )}
+                    inputFormat="YYYY-MM-DD" // Specify the format expected for input
+                    renderDay={(day, _value, _DayComponentProps) => (
+                      <span>{dayjs(day).format("D")}</span>
+                    )}
+                    format="DD/MM/YYYY"
                   />
 
                   {isPaxSaved && paxData ? (
@@ -711,8 +748,8 @@ const BuyFromIndivi = () => {
                     name="ManualBillRef"
                     sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Manual Bill Ref"
-                    value={ratePer}
-                    onChange={(e) => setRatePer(e.target.value)}
+                    value={manualBillRef}
+                    onChange={(e) => setManualBillRef(e.target.value)}
                   />
                   {/* <TextField
                     select
@@ -738,7 +775,10 @@ const BuyFromIndivi = () => {
                     }}
                     options={agentsLoading ? [1] : agentOptions} // Skeleton placeholders when loading
                     loading={agentsLoading}
-                    getOptionLabel={(option) => option.name}
+                    getOptionLabel={(option) => option.name || ""}
+                    isOptionEqualToValue={(option, value) =>
+                      option.id === value.id
+                    }
                     renderOption={(props, option) => {
                       if (agentsLoading) {
                         return (
@@ -775,6 +815,11 @@ const BuyFromIndivi = () => {
                         setCategory(newValue);
                       }}
                       options={CategoryOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" || option instanceof String
+                          ? option
+                          : ""
+                      }
                       // onChange={(e, newValue) => setCalculationMethod(newValue)}
                       sx={{ width: isMobile ? "auto" : "12vw" }}
                       renderInput={(params) => (
@@ -831,7 +876,10 @@ const BuyFromIndivi = () => {
                     }}
                     options={marktRefLoading ? [1] : marktRefOptions} // Skeleton placeholders when loading
                     loading={marktRefLoading}
-                    getOptionLabel={(option) => option.name}
+                    getOptionLabel={(option) => option.name || ""}
+                    isOptionEqualToValue={(option, value) =>
+                      option.id === value.id
+                    }
                     renderOption={(props, option) => {
                       if (marktRefLoading) {
                         return (
@@ -912,7 +960,10 @@ const BuyFromIndivi = () => {
                     }}
                     options={deliAgentLoading ? [1] : deliAgentOptions} // Skeleton placeholders when loading
                     loading={deliAgentLoading}
-                    getOptionLabel={(option) => option.name}
+                    getOptionLabel={(option) => option.name || ""}
+                    isOptionEqualToValue={(option, value) =>
+                      option.id === value.id
+                    }
                     renderOption={(props, option) => {
                       if (deliAgentLoading) {
                         return (
@@ -1063,6 +1114,11 @@ const BuyFromIndivi = () => {
                       onChange={(e, newValue) =>
                         setEditedCalculationMethod(newValue)
                       }
+                      getOptionLabel={(option) =>
+                        typeof option === "string" || option instanceof String
+                          ? option
+                          : ""
+                      }
                       sx={{ width: "12vw" }}
                       renderInput={(params) => (
                         <TextField
@@ -1160,6 +1216,7 @@ const BuyFromIndivi = () => {
       {/* --------------------------Transac Details Start----------------------- */}
       <TransacDetails
         isTransacDetailsView={isTransacDetailsView}
+        setIsTransacDetailsView={setIsTransacDetailsView}
         handlebackClickOnTransacView={handlebackClickOnTransacView}
         comission={comission}
       />

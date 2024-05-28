@@ -183,3 +183,28 @@
     color: white;
     /* border: 2px solid white; */
   }
+
+  .TaxesMainButtons{
+    cursor: pointer;
+    transition: 0.2s;
+    border: none;
+    width: 15vw;
+    height: 50px;
+    border-radius: 20px;
+    background-color:#8d99ae;
+    color: white;
+  }
+
+  .TaxesMainButtons:hover{
+    background-color: #2b2d42;
+  }
+
+  .TaxSaveButton{
+transition: 0.4s;
+background-color: #8d99ae;
+  }
+
+  .TaxSaveButton:hover{
+    
+    background-color: #2b2d42;
+  }

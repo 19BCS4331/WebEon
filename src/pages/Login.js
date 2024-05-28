@@ -53,7 +53,9 @@ const Login = () => {
       branch !== null &&
       branch !== "" &&
       finyear !== null &&
-      finyear !== ""
+      finyear !== "" &&
+      counter !== null &&
+      counter !== ""
     ) {
       try {
         const response = await axios.post(`${baseUrl}/api/auth/login`, {
@@ -73,13 +75,10 @@ const Login = () => {
         localStorage.setItem("finyear", finyear);
 
         // Handle login success here
-        // console.log(response.data);
         showToast("Successfully Logged In !", "success");
         navigate("/Dashboard");
-        setTimeout(() => {
-          logout();
-          showToast("Token Expired, Logged Out !", "error");
-        }, 60 * 60 * 1000);
+
+        // Schedule logout after 1 hour
       } catch (error) {
         // Handle login failure here
         console.error(error);
@@ -123,7 +122,7 @@ const Login = () => {
         const response = await axios.get(`${baseUrl}/api/auth/branch`);
         setBranches(response.data);
       } catch (err) {
-        console.log("errorr", err);
+        console.log("error", err);
       }
     };
     fetchBranches();
@@ -260,12 +259,26 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </Box>
+          <button
+            className="loginButton"
+            style={{
+              // backgroundColor: COLORS.secondaryBG,
+              border: "none",
+              color: "white",
+              borderRadius: 15,
+              width: "40%",
+              height: "5vh",
+              marginTop: 20,
+            }}
+          >
+            Proceed
+          </button>
 
           <Box
             display={"flex"}
             gap={5}
             width={"25vw"}
-            mt={5}
+            mt={3}
             className="Inputs"
           >
             <Autocomplete
@@ -273,6 +286,9 @@ const Login = () => {
               disablePortal
               id="BranchSelect"
               options={branches.map((branch) => branch.name)}
+              isOptionEqualToValue={(option, value) =>
+                option.branchid === value.branchid
+              }
               value={branch || ""} // Set the value to the selectedBranch state
               onChange={(event, newValue) => {
                 setBranch(newValue); // Update the selectedBranch state
@@ -286,6 +302,9 @@ const Login = () => {
               disablePortal
               id="CounterSelect"
               options={counters.map((counter) => counter.name)}
+              isOptionEqualToValue={(option, value) =>
+                option.counterid === value.counterid
+              }
               value={counter || ""} // Set the value to the selectedBranch state
               onChange={(event, newValue) => {
                 setCounter(newValue); // Update the selectedBranch state
@@ -309,6 +328,9 @@ const Login = () => {
               disablePortal
               id="PurposeSelect"
               options={counters.map((counter) => counter.name)}
+              isOptionEqualToValue={(option, value) =>
+                option.counterid === value.counterid
+              }
               value={counter || ""}
               sx={{ width: isMobile ? "25vw" : "16vw" }}
               renderInput={(params) => (
@@ -321,6 +343,9 @@ const Login = () => {
               disablePortal
               id="FinYearSelect"
               options={finYear.map((finyear) => finyear.value)}
+              isOptionEqualToValue={(option, value) =>
+                option.finyearid === value.finyearid
+              }
               value={finyear} // Set the value to the selectedBranch state
               onChange={(event, newValue) => {
                 setFinyear(newValue); // Update the selectedBranch state

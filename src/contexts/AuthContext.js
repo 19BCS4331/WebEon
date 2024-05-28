@@ -16,15 +16,17 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [branch, setBranch] = useState("");
   const [counter, setCounter] = useState("");
-  const [finyear, setFinyear] = useState("");
+  const [finyear, setFinyear] = useState(null);
   const [userRole, setUserRole] = useState("");
   const [state, setState] = useState("Active");
   const [count, setCount] = useState(0);
   const [remaining, setRemaining] = useState(0);
+  const [loginData, setLoginData] = useState({});
   let [show, setShow] = useState(false);
 
   const onIdle = () => {
     setState("Idle");
+
     logout();
 
     setShow(true);
@@ -94,12 +96,6 @@ const AuthProvider = ({ children }) => {
     setToken(null);
   };
 
-  // const toastShow = () => {
-  //   return (
-
-  //   );
-  // };
-
   return (
     <AuthContext.Provider
       value={{
@@ -120,6 +116,10 @@ const AuthProvider = ({ children }) => {
         state,
         count,
         remaining,
+        loginData,
+        setLoginData,
+        token,
+        setToken,
       }}
     >
       <AnimatePresence>
@@ -154,4 +154,4 @@ const AuthProvider = ({ children }) => {
   );
 };
 
-export { AuthContext, AuthProvider };
+export { AuthContext, AuthProvider }; // Export the useLogout custom hook

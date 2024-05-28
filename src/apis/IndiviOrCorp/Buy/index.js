@@ -217,6 +217,24 @@ const getDeliAgent = async () => {
   }
 };
 
+const AccProfileFetchBuyFromIndi = async () => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.get(
+      `${baseUrl}/api/nav/AccProfileFetchBuyFromIndi`,
+
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   postPaxDetails,
   PaxDetailsID,
@@ -226,4 +244,5 @@ export {
   getAgents,
   getMarktRef,
   getDeliAgent,
+  AccProfileFetchBuyFromIndi,
 };

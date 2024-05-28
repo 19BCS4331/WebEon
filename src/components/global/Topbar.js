@@ -18,7 +18,18 @@ const Topbar = ({ title }) => {
   const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { logout, setUserRole } = useContext(AuthContext);
+  const {
+    logout,
+    setUserRole,
+    loginData,
+    setLoginData,
+    finyear,
+    setBranch,
+    setCounter,
+    setFinyear,
+
+    setToken,
+  } = useContext(AuthContext);
   const [isProfileVis, setIsProfileVis] = useState(false);
 
   const { showAlertDialog, hideAlertDialog, showToast, hideToast } = useToast();
@@ -32,49 +43,68 @@ const Topbar = ({ title }) => {
 
   const [userData, setUserData] = useState(null);
 
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     const token = localStorage.getItem("token");
+  //     const userid = localStorage.getItem("userid");
+
+  //     // Check if user data exists in local storage
+  //     const cachedUserData = JSON.parse(localStorage.getItem("userData"));
+
+  //     // If user data exists and is not expired, set it
+  //     if (cachedUserData) {
+  //       setUserRole(cachedUserData.role);
+  //       setUserData(cachedUserData);
+  //     } else {
+  //       try {
+  //         // Fetch user data from the server
+  //         const response = await axios.get(
+  //           `${baseUrl}/api/users/userData/${userid}`,
+  //           {
+  //             headers: {
+  //               Authorization: `Bearer ${token}`,
+  //             },
+  //           }
+  //         );
+
+  //         // Set user role and data from the response
+  //         setUserRole(response.data.role);
+  //         setUserData(response.data);
+
+  //         // Update local storage with the new user data
+  //         localStorage.setItem("userData", JSON.stringify(response.data));
+  //       } catch (err) {
+  //         console.error("Error", err);
+  //         logout();
+  //         showToast("Session Expired, Kindly Login Again", "Failed");
+  //         setTimeout(() => {
+  //           hideToast();
+  //         }, 2500);
+  //       }
+  //     }
+  //   };
+
+  //   fetchUserData();
+  // }, [setUserRole]);
+
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      const userid = localStorage.getItem("userid");
-
-      // Check if user data exists in local storage
-      const cachedUserData = JSON.parse(localStorage.getItem("userData"));
-
-      // If user data exists and is not expired, set it
-      if (cachedUserData) {
-        setUserRole(cachedUserData.role);
-        setUserData(cachedUserData);
-      } else {
-        try {
-          // Fetch user data from the server
-          const response = await axios.get(
-            `${baseUrl}/api/users/userData/${userid}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          // Set user role and data from the response
-          setUserRole(response.data.role);
-          setUserData(response.data);
-
-          // Update local storage with the new user data
-          localStorage.setItem("userData", JSON.stringify(response.data));
-        } catch (err) {
-          console.error("Error", err);
-          logout();
-          showToast("Session Expired, Kindly Login Again", "Failed");
-          setTimeout(() => {
-            hideToast();
-          }, 2500);
+      try {
+        if (loginData) {
+          setUserData(loginData);
         }
+      } catch (err) {
+        console.error("Error", err);
+        logout();
+        showToast("Session Expired, Kindly Login Again", "Failed");
+        setTimeout(() => {
+          hideToast();
+        }, 2500);
       }
     };
 
     fetchUserData();
-  }, [setUserRole]);
+  }, []);
 
   // useEffect(() => {
   //   const fetchUserData = async () => {
@@ -142,11 +172,15 @@ const Topbar = ({ title }) => {
       }, 1000);
       logout();
       localStorage.removeItem("branch");
+      setBranch("");
+      setCounter("");
+      setFinyear(null);
       localStorage.removeItem("finyear");
     } catch (error) {
       console.log("error occured", error);
     }
     localStorage.removeItem("token");
+    setToken(null);
     localStorage.removeItem("userid");
   };
 
@@ -246,7 +280,7 @@ const Topbar = ({ title }) => {
               <p className="ProfileInfo">
                 {localStorage.getItem("finyear") === null
                   ? "No FinYear"
-                  : localStorage.getItem("finyear")}
+                  : finyear.value}
               </p>
               <hr style={{ width: 100 }} />
               <Box
