@@ -15,7 +15,7 @@ const useAxiosInterceptor = () => {
         showToast("Token Expired, Please Login Again", "Fail");
         setTimeout(() => {
           hideToast();
-        }, 2000);
+        }, 5000);
       }
       return Promise.reject(error);
     }

@@ -168,11 +168,11 @@ const App = () => {
                       </Route>
 
                       <Route
-                        path="/buy-sell-transactions/buy-from-individual-corporates"
+                        path="/transactions/buying-selling/buy-from-individuals"
                         element={<ProtectedRoute />}
                       >
                         <Route
-                          path="/buy-sell-transactions/buy-from-individual-corporates"
+                          path="/transactions/buying-selling/buy-from-individuals"
                           element={<BuyFromIndivi />}
                         />
                       </Route>

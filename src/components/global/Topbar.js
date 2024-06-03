@@ -12,6 +12,7 @@ import axios from "axios";
 import CustomAlertModal from "../CustomAlertModal";
 import ThemeContext from "../../contexts/ThemeContext";
 import { useBaseUrl } from "../../contexts/BaseUrl";
+import ThemeToggleButton from "./ThemeToggleButton";
 
 const Topbar = ({ title }) => {
   const { baseUrl } = useBaseUrl();
@@ -20,14 +21,13 @@ const Topbar = ({ title }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const {
     logout,
-    setUserRole,
-    loginData,
-    setLoginData,
+    username,
+    counter,
     finyear,
+    branch,
     setBranch,
     setCounter,
     setFinyear,
-
     setToken,
   } = useContext(AuthContext);
   const [isProfileVis, setIsProfileVis] = useState(false);
@@ -40,98 +40,6 @@ const Topbar = ({ title }) => {
     e.stopPropagation();
     setIsProfileVis(!isProfileVis);
   };
-
-  const [userData, setUserData] = useState(null);
-
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     const token = localStorage.getItem("token");
-  //     const userid = localStorage.getItem("userid");
-
-  //     // Check if user data exists in local storage
-  //     const cachedUserData = JSON.parse(localStorage.getItem("userData"));
-
-  //     // If user data exists and is not expired, set it
-  //     if (cachedUserData) {
-  //       setUserRole(cachedUserData.role);
-  //       setUserData(cachedUserData);
-  //     } else {
-  //       try {
-  //         // Fetch user data from the server
-  //         const response = await axios.get(
-  //           `${baseUrl}/api/users/userData/${userid}`,
-  //           {
-  //             headers: {
-  //               Authorization: `Bearer ${token}`,
-  //             },
-  //           }
-  //         );
-
-  //         // Set user role and data from the response
-  //         setUserRole(response.data.role);
-  //         setUserData(response.data);
-
-  //         // Update local storage with the new user data
-  //         localStorage.setItem("userData", JSON.stringify(response.data));
-  //       } catch (err) {
-  //         console.error("Error", err);
-  //         logout();
-  //         showToast("Session Expired, Kindly Login Again", "Failed");
-  //         setTimeout(() => {
-  //           hideToast();
-  //         }, 2500);
-  //       }
-  //     }
-  //   };
-
-  //   fetchUserData();
-  // }, [setUserRole]);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        if (loginData) {
-          setUserData(loginData);
-        }
-      } catch (err) {
-        console.error("Error", err);
-        logout();
-        showToast("Session Expired, Kindly Login Again", "Failed");
-        setTimeout(() => {
-          hideToast();
-        }, 2500);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     const token = localStorage.getItem("token");
-  //     const userid = localStorage.getItem("userid");
-  //     try {
-  //       const response = await axios.get(
-  //         `${baseUrl}/api/users/userData/${userid}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-  //       setUserRole(response.data.role);
-  //       setUserData(response.data);
-  //     } catch (err) {
-  //       console.log("Error", err);
-  //       logout();
-  //       showToast("Session Expired, Kindly Login Again", "Failed");
-  //       setTimeout(() => {
-  //         hideToast();
-  //       }, 2500);
-  //     }
-  //   };
-  //   fetchUserData();
-  // }, [setUserRole]);
 
   useEffect(() => {
     const closeProfileDropdown = (e) => {
@@ -208,8 +116,16 @@ const Topbar = ({ title }) => {
       >
         {title !== "Dashboard" && (
           <HomeIcon
-            className="ProfileIcon"
-            style={{ marginLeft: 40, fontSize: isMobile ? 30 : 40 }}
+            sx={{
+              marginLeft: isMobile ? "40px" : "80px",
+              fontSize: isMobile ? 30 : 40,
+              color: Colortheme.text, // Use the text color from the ThemeContext
+              transition: "0.3s", // Add transition for smoother styles
+              "&:hover": {
+                opacity: 0.6, // Change color on hover
+                cursor: "pointer",
+              },
+            }}
             onClick={handleNavtoDash}
           />
         )}
@@ -234,9 +150,18 @@ const Topbar = ({ title }) => {
         </h1>
 
         <AccountCircleIcon
-          className="ProfileIcon"
+          // className="ProfileIcon"
           onClick={handleProfileToggle}
-          style={{ marginRight: 40, fontSize: isMobile ? 30 : 40 }}
+          sx={{
+            marginRight: "40px",
+            fontSize: isMobile ? 30 : 40,
+            color: Colortheme.text, // Use the text color from the ThemeContext
+            transition: "0.3s", // Add transition for smoother styles
+            "&:hover": {
+              opacity: 0.6, // Change color on hover
+              cursor: "pointer",
+            },
+          }}
         />
 
         <AnimatePresence>
@@ -250,12 +175,12 @@ const Topbar = ({ title }) => {
               exit={{ y: -20, opacity: 0 }}
               flexDirection={"column"}
               alignItems={"center"}
-              height={"30vh"}
+              height={"50%"}
               sx={{
                 border: "solid",
                 borderWidth: "2px",
                 borderColor: Colortheme.text,
-                backgroundColor: Colortheme.background,
+                backgroundColor: Colortheme.secondaryBG,
                 width: "auto",
                 position: "absolute",
                 top: 80,
@@ -268,25 +193,27 @@ const Topbar = ({ title }) => {
               }}
             >
               <p className="ProfileInfo" style={{ fontWeight: "bold" }}>
-                {userData?.username || "User"}
+                {username ? username : "User"}
               </p>
               <hr style={{ width: 100 }} />
               <p className="ProfileInfo">
-                {localStorage.getItem("branch") === null
-                  ? "No Branch"
-                  : localStorage.getItem("branch") + " Branch"}
+                {branch ? branch + " Branch" : "No Branch"}
               </p>
               <hr style={{ width: 100 }} />
               <p className="ProfileInfo">
-                {localStorage.getItem("finyear") === null
-                  ? "No FinYear"
-                  : finyear.value}
+                {counter ? "Counter " + counter : "No Counter"}
               </p>
               <hr style={{ width: 100 }} />
+              <p className="ProfileInfo">{finyear ? finyear : "No FinYear"}</p>
+              <hr style={{ width: 100 }} />
+              <Box mt={2}>
+                <ThemeToggleButton />
+              </Box>
+              <hr style={{ width: 100, marginTop: 20 }} />
               <Box
                 display={"flex"}
                 alignItems={"center"}
-                mt={1}
+                mt={2}
                 gap={2}
                 onClick={handleLogoutAuth}
                 sx={{ cursor: "pointer" }}

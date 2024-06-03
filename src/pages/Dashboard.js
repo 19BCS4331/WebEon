@@ -25,7 +25,7 @@ const Dashboard = () => {
       <Box
         display={"flex"}
         height={"80%"}
-        width={"90%"}
+        width={"95%"}
         justifyContent={"center"}
         alignItems={"center"}
         sx={{ backgroundColor: "#edf2f4" }}

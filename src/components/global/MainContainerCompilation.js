@@ -10,7 +10,7 @@ const MainContainerCompilation = ({ children, title }) => {
     <MainBackBox>
       <Topbar title={title} />
       <MainContentLayout>
-        <SideNavbar />
+        {/* <SideNavbar /> */}
         <MainContentBox>{children}</MainContentBox>
       </MainContentLayout>
     </MainBackBox>

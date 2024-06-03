@@ -13,6 +13,7 @@ export const useAuth = () => {
 const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [username, setUsername] = useState("");
   const [token, setToken] = useState(null);
   const [branch, setBranch] = useState("");
   const [counter, setCounter] = useState("");
@@ -65,15 +66,31 @@ const AuthProvider = ({ children }) => {
     const getTokenFromLocalStorage = async () => {
       const token = localStorage.getItem("token");
       const userid = localStorage.getItem("userid");
+      const username = localStorage.getItem("username");
       const isAuth = localStorage.getItem("isAuth");
-      if (token && userid && isAuth) {
+      const branch = localStorage.getItem("branch");
+      const counter = localStorage.getItem("counter");
+      const finyear = JSON.parse(localStorage.getItem("finyear"));
+
+      if (token && userid && isAuth && finyear) {
         setToken(token);
         setUserId(userid);
+        setUsername(username);
         setIsAuthenticated(true);
+        setBranch(branch);
+        setCounter(counter);
+        setFinyear(finyear.value);
       }
       if (!userid || !token) {
         setIsAuthenticated(false);
+        setToken(null);
+        setUserId(null);
+        setUsername("");
+        setBranch("");
+        setCounter("");
+        setFinyear(null);
         localStorage.removeItem("isAuth");
+        localStorage.removeItem("username");
       }
     };
 
@@ -92,8 +109,17 @@ const AuthProvider = ({ children }) => {
     localStorage.removeItem("isAuth");
     localStorage.removeItem("menuData");
     localStorage.removeItem("userData");
+    localStorage.removeItem("finyear");
+    localStorage.removeItem("username");
+    localStorage.removeItem("branch");
+    localStorage.removeItem("counter");
+
     setUserId(null);
     setToken(null);
+    setFinyear(null);
+    setUsername("");
+    setBranch("");
+    setCounter("");
   };
 
   return (
@@ -102,6 +128,9 @@ const AuthProvider = ({ children }) => {
         isAuthenticated,
         setIsAuthenticated,
         userId,
+        setUserId,
+        username,
+        setUsername,
         token,
         login,
         logout,

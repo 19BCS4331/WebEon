@@ -42,6 +42,7 @@ import {
   FormDataProvider,
   useFormData,
 } from "../../../contexts/FormDataContext.js";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 
 const BuyFromIndivi = () => {
   useAxiosInterceptor();
@@ -737,9 +738,16 @@ const BuyFromIndivi = () => {
                       // onClick={handlePaxview}
                       onClick={() => setShowPaxModal(true)}
                       className="PartySelect"
-                      style={{ height: isMobile ? "7vh" : "auto" }}
+                      style={{
+                        height: isMobile ? "7vh" : "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 10,
+                      }}
                     >
                       Select Party
+                      <PersonAddAlt1Icon style={{ color: COLORS.background }} />
                     </button>
                   )}
 

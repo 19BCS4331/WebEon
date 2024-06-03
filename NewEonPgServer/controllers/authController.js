@@ -31,13 +31,13 @@ const login = async (req, res) => {
     const user = await userModel.findUserByUsername(username);
 
     if (!user) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({ error: "User does not exist !" });
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.vPassword);
 
     if (!isPasswordMatch) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({ error: "Incorrect Passsword" });
     }
 
     const newToken = jwt.sign({ userId: user.nUserID }, secretKey, {

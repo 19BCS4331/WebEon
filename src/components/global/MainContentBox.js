@@ -9,7 +9,7 @@ const MainContentBox = ({ children }) => {
   return (
     <Box
       height={"85vh"}
-      width={isMobile ? "90vw" : "80vw"}
+      width={isMobile ? "90vw" : "98vw"}
       borderRadius={"20px"}
       sx={{ backgroundColor: Colortheme.secondaryBG }}
       mt={2}

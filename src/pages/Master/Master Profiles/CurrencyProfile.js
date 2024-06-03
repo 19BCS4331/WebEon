@@ -465,10 +465,13 @@ const CurrencyProfile = () => {
       {iscreateForm && (
         <AnimatePresence>
           <Box
+            display={"flex"}
             component={motion.div}
-            initial={{ x: -100 }}
+            initial={{ x: -50 }}
             animate={{ x: 0 }}
             exit={{ x: 100 }}
+            width={"100%"}
+            justifyContent={"center"}
           >
             <Box
               display={"flex"}
@@ -484,7 +487,7 @@ const CurrencyProfile = () => {
               }}
               height={"auto"}
               p={3}
-              width={isMobile ? "70vw" : "auto"}
+              width={isMobile ? "70vw" : "90%"}
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
@@ -517,7 +520,7 @@ const CurrencyProfile = () => {
                   mt={4}
                   display={"grid"}
                   gridTemplateColumns={
-                    isMobile ? "repeat(1, 1fr)" : "repeat(3, 1fr)"
+                    isMobile ? "repeat(1, 1fr)" : "repeat(5, 1fr)"
                   }
                   // gridTemplateColumns={"repeat(3, 1fr)"}
                   gridTemplateRows={"repeat(3, 1fr)"}
@@ -683,17 +686,17 @@ const CurrencyProfile = () => {
 
       {/* -------------------------SEARCH & DELETE) START------------------------------- */}
       {loading && isSearch ? (
-        <CircularProgress />
+        <CircularProgress style={{ color: "white" }} />
       ) : (
         <>
           {isSearch && (
             <Box
               component={motion.div}
-              initial={{ x: 150 }}
+              initial={{ x: 50 }}
               animate={{ x: 0 }}
               height={"auto"}
               minHeight={"40vh"}
-              width={isMobile ? "65vw" : "50vw"}
+              width={isMobile ? "65vw" : "80%"}
               display={"flex"}
               flexDirection={"column"}
               alignItems={"center"}
@@ -809,7 +812,7 @@ const CurrencyProfile = () => {
                   backgroundColor: COLORS.text,
                   p: isMobile ? "10px" : "20px",
                   maxHeight: "60vh",
-                  width: isMobile ? "70vw" : "50vw",
+                  width: isMobile ? "70vw" : "100%",
                   boxShadow: 3,
                   border: "2px solid",
                   borderColor: COLORS.secondaryBG,

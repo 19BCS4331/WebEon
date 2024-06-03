@@ -1155,7 +1155,7 @@ const PaxModal = ({
                     type="submit"
                     style={{ width: isMobile ? "20vw" : "8vw" }}
                   >
-                    {isLoading ? <CircularProgress /> : "Save"}
+                    {isLoading ? <CircularProgress size={"25px"} /> : "Save"}
                   </button>
 
                   <button
@@ -1166,7 +1166,7 @@ const PaxModal = ({
                       marginLeft: isMobile ? 20 : "auto",
                     }}
                   >
-                    {isLoading ? <CircularProgress /> : "Search"}
+                    {isLoading ? <CircularProgress size={"25px"} /> : "Search"}
                   </button>
                 </Box>
               </Box>
