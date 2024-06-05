@@ -3,8 +3,11 @@ import React from "react";
 import "../css/pages/Dashboard.css";
 import Marquee from "react-fast-marquee";
 import MainContainerCompilation from "../components/global/MainContainerCompilation";
+import ThemeContext from "../contexts/ThemeContext";
+import { useContext } from "react";
 
 const Dashboard = () => {
+  const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -13,7 +16,7 @@ const Dashboard = () => {
       <Marquee
         pauseOnHover={true}
         style={{
-          color: "#edf2f4",
+          color: Colortheme.text,
           userSelect: "none",
         }}
       >
@@ -28,13 +31,14 @@ const Dashboard = () => {
         width={"95%"}
         justifyContent={"center"}
         alignItems={"center"}
-        sx={{ backgroundColor: "#edf2f4" }}
+        sx={{ backgroundColor: Colortheme.background }}
         borderRadius={10}
+        boxShadow={"0px 5px 10px -2px rgba(0,0,0,0.30);"}
       >
         <h1
           style={{
             fontSize: isMobile ? 20 : 40,
-            color: " #8d99ae ",
+            color: Colortheme.text,
             userSelect: "none",
           }}
         >

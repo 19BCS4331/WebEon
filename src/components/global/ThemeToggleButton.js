@@ -6,7 +6,7 @@ import Brightness4Icon from "@mui/icons-material/Brightness4"; // Dark mode icon
 import Brightness7Icon from "@mui/icons-material/Brightness7"; // Light mode icon
 
 const ThemeToggleButton = () => {
-  const { toggleTheme, isDarkMode } = useContext(ThemeContext);
+  const { toggleTheme, isDarkMode, Colortheme } = useContext(ThemeContext);
 
   return (
     <Button
@@ -14,10 +14,11 @@ const ThemeToggleButton = () => {
       size="15px"
       //   startIcon={isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
       sx={{
-        backgroundColor: isDarkMode ? "#333" : "#ddd",
-        color: isDarkMode ? "#fff" : "#000",
+        backgroundColor: Colortheme.background,
+        color: Colortheme.text,
         "&:hover": {
-          backgroundColor: isDarkMode ? "#444" : "#ccc",
+          backgroundColor: Colortheme.text,
+          color: Colortheme.background,
         },
         padding: "10px 20px",
         borderRadius: "8px",

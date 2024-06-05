@@ -23,8 +23,15 @@ import "../../../css/pages/CurrencyProfile.css";
 import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
 import { useNavigate } from "react-router-dom";
+import ThemeContext from "../../../contexts/ThemeContext";
+import { useContext } from "react";
+import StyledButton from "../../../components/global/StyledButton";
+import CustomTextField from "../../../components/global/CustomTextField";
+import CustomAutocomplete from "../../../components/global/CustomAutocomplete";
+import CustomCheckbox from "../../../components/global/CustomCheckbox";
 
 const CurrencyProfile = () => {
+  const { Colortheme } = useContext(ThemeContext);
   // -----------------STATES START---------------------
   const baseUrl = process.env.REACT_APP_BASE_URL;
   const theme = useTheme();
@@ -104,24 +111,28 @@ const CurrencyProfile = () => {
       headerAlign: "center",
       renderCell: (params) => (
         <Box display={"flex"} gap={2}>
-          <button
-            className="ActionsButtonsEdit"
+          <StyledButton
+            // className="ActionsButtonsEdit"
+            style={{ width: 80, height: 35 }}
             onClick={() => handleEditClickOnRow(params.row)}
           >
             Edit
-          </button>
+          </StyledButton>
           {isLoading ? (
             <CircularProgress
               size="25px"
               style={{ color: COLORS.secondaryBG }}
             />
           ) : (
-            <button
-              className="ActionsButtonsDelete"
+            <StyledButton
+              // className="ActionsButtonsDelete"
+              bgColorHover={"red"}
+              textColOnHover={"white"}
+              style={{ width: 80, height: 35 }}
               onClick={() => handleDeleteClick(params.row)}
             >
               Delete
-            </button>
+            </StyledButton>
           )}
         </Box>
       ),
@@ -481,7 +492,7 @@ const CurrencyProfile = () => {
               component={"form"}
               onSubmit={handleSubmitCreate}
               sx={{
-                backgroundColor: COLORS.text,
+                backgroundColor: Colortheme.background,
                 overflow: isMobile ? "auto" : "visible",
                 maxHeight: isMobile ? "70vh" : "auto",
               }}
@@ -496,7 +507,7 @@ const CurrencyProfile = () => {
                 fontSize="large"
                 sx={{
                   alignSelf: "flex-start",
-                  color: COLORS.secondaryBG,
+                  color: Colortheme.text,
                   position: "absolute",
                   cursor: "pointer",
                 }}
@@ -506,10 +517,16 @@ const CurrencyProfile = () => {
                 textAlign={"center"}
                 fontSize={"20px"}
                 mt={0}
+                color={Colortheme.text}
               >
                 Currency Master
               </Box>
-              <Box name="HeaderSection" fontSize={"14px"} mt={2}>
+              <Box
+                name="HeaderSection"
+                fontSize={"14px"}
+                mt={2}
+                color={Colortheme.text}
+              >
                 (Create New)
               </Box>
               {isLoading ? (
@@ -527,16 +544,16 @@ const CurrencyProfile = () => {
                   columnGap={"40px"}
                   rowGap={"40px"}
                 >
-                  <TextField
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                  <CustomTextField
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="CurrencyCode"
                     value={currencyCode}
                     onChange={(e) => setCurrencyCode(e.target.value)}
                     label="Currency Code"
                   />
 
-                  <TextField
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                  <CustomTextField
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="CurrencyName"
                     label="Currency Name"
                     value={currencyName}
@@ -559,123 +576,111 @@ const CurrencyProfile = () => {
                       />
                     )}
                   />
-                  <TextField
+                  <CustomTextField
                     id="Priority"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Priority"
                     name="Priority"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
                   />
-                  <TextField
+                  <CustomTextField
                     id="Rateper"
                     name="Rateper"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Rate / per"
                     value={ratePer}
                     onChange={(e) => setRatePer(e.target.value)}
                   />
-                  <TextField
+                  <CustomTextField
                     id="DefaultMinRate"
                     name="DefaultMinRate"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Default Min Rate"
                     value={defaultMinRate}
                     onChange={(e) => setDefaultMinRate(e.target.value)}
                   />
-                  <TextField
+                  <CustomTextField
                     id="DefaultMaxRate"
                     name="DefaultMaxRate"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Default Max Rate"
                     value={defaultMaxRate}
                     onChange={(e) => setDefaultMaxRate(e.target.value)}
                   />
-                  <Autocomplete
+                  <CustomAutocomplete
                     disablePortal
                     id="CalculationMethod"
                     options={CalculationMethodOptions}
+                    label="Calculation Method"
+                    name="CalculationMethod"
                     // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Calculation Method"
-                        name="CalculationMethod"
-                        // value={calculationMethod}
-                      />
-                    )}
                   />
-                  <TextField
+                  <CustomTextField
                     id="OpenRatePremium"
                     name="OpenRatePremium"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Open Rate Premium"
                     value={openRatePremium}
                     onChange={(e) => setOpenRatePremium(e.target.value)}
                   />
-                  <TextField
+                  <CustomTextField
                     id="GulfDiscFactor"
                     name="GulfDiscFactor"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     label="Gulf Disc Factor"
                     value={gulfDiscFactor}
                     onChange={(e) => setGulfDiscFactor(e.target.value)}
                   />
-                  <TextField
+                  <CustomTextField
                     label="Amex Map Code"
                     name="AmexMapCode"
                     id="AmexMapCode"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     value={amexMapCode}
                     onChange={(e) => setAmexMapCode(e.target.value)}
                   />
-                  <Autocomplete
+                  <CustomAutocomplete
                     disabled
                     disablePortal
                     id="Group"
                     options={options}
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Group" name="Group" />
-                    )}
-                    // value={group}
-                    // onChange={(_, newValue) => setGroup(newValue)}
+                    label="Group"
+                    name="Group"
                   />
-                  <FormControlLabel
-                    control={<Checkbox name="Activate" />}
-                    label="Activate"
-                    sx={{ width: 50 }}
-                  />
-                  <FormControlLabel
-                    control={<Checkbox name="OnlyStocking" />}
-                    label="Only Stocking"
-                    sx={{ width: 50 }}
-                  />
+                  <CustomCheckbox name="Activate" label="Activate" />
+                  <CustomCheckbox name="OnlyStocking" label="Only Stocking" />
                 </Box>
               )}
 
               <Box display="flex" name="FooterSection" mt={4} gap={5}>
-                <button
+                <StyledButton
                   onClick={handleSearchClick}
-                  className="FormFooterButton"
+                  // className="FormFooterButton"
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 5,
+                    width: isMobile ? 120 : 200,
                   }}
                 >
                   <SearchIcon />
                   Search
-                </button>
+                </StyledButton>
 
                 {/* <button className="FormFooterButton" type="reset">
                   Cancel
                 </button> */}
-                <button className="FormFooterButton" type="submit">
+                <StyledButton
+                  className="FormFooterButton"
+                  type="submit"
+                  style={{
+                    width: isMobile ? 120 : 200,
+                  }}
+                >
                   Add
-                </button>
+                </StyledButton>
               </Box>
             </Box>
           </Box>
@@ -686,7 +691,7 @@ const CurrencyProfile = () => {
 
       {/* -------------------------SEARCH & DELETE) START------------------------------- */}
       {loading && isSearch ? (
-        <CircularProgress style={{ color: "white" }} />
+        <CircularProgress style={{ color: Colortheme.text }} />
       ) : (
         <>
           {isSearch && (
@@ -703,7 +708,7 @@ const CurrencyProfile = () => {
               gap={4}
               p={5}
               borderRadius={"20px"}
-              sx={{ backgroundColor: COLORS.text }}
+              sx={{ backgroundColor: Colortheme.background }}
               boxShadow={5}
             >
               <KeyboardBackspaceIcon
@@ -711,13 +716,14 @@ const CurrencyProfile = () => {
                 fontSize="large"
                 sx={{
                   alignSelf: "flex-start",
-                  color: COLORS.secondaryBG,
+                  color: Colortheme.text,
                   position: "absolute",
                   cursor: "pointer",
                 }}
               />
-              <TextField
+              <CustomTextField
                 placeholder="Search.."
+                placeholderTextColor="white"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 sx={{
@@ -726,9 +732,9 @@ const CurrencyProfile = () => {
                 style={{
                   display: "flex",
                   width: isMobile ? "40vw" : "16vw",
-                  backgroundColor: COLORS.text,
+                  backgroundColor: "white",
                   borderRadius: "20px",
-                  border: `2px solid ${COLORS.secondaryBG}`,
+                  border: `2px solid ${Colortheme.secondaryBG}`,
                   height: 50,
                   justifyContent: "center",
                   boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
@@ -809,17 +815,39 @@ const CurrencyProfile = () => {
                   }
                 }}
                 sx={{
-                  backgroundColor: COLORS.text,
+                  backgroundColor: Colortheme.background,
                   p: isMobile ? "10px" : "20px",
                   maxHeight: "60vh",
                   width: isMobile ? "70vw" : "100%",
-                  boxShadow: 3,
-                  border: "2px solid",
-                  borderColor: COLORS.secondaryBG,
+                  border: "none",
+                  // boxShadow: 3,
+
                   "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
                     {
                       display: "none",
                     },
+                  "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+                    backgroundColor: Colortheme.background,
+                    color: Colortheme.text,
+                  },
+                  "& .MuiDataGrid-root": {
+                    color: Colortheme.text,
+                  },
+                  "& .MuiTablePagination-root": {
+                    color: Colortheme.text,
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: Colortheme.text,
+                  },
+                  "& .MuiDataGrid-toolbarContainer": {
+                    color: Colortheme.text,
+                  },
+                  "& .MuiDataGrid-footerContainer": {
+                    backgroundColor: Colortheme.background,
+                  },
+                  "& .MuiButtonBase-root": {
+                    color: Colortheme.text,
+                  },
                 }}
                 initialState={{
                   pagination: {
@@ -854,18 +882,21 @@ const CurrencyProfile = () => {
               component={"form"}
               onSubmit={handleSubmitEdit}
               sx={{
-                backgroundColor: COLORS.text,
+                backgroundColor: Colortheme.background,
                 overflow: isMobile ? "auto" : "visible",
                 maxHeight: isMobile ? "70vh" : "auto",
               }}
               height={"auto"}
               p={3}
-              width={isMobile ? "70vw" : "auto"}
+              width={isLoading ? "10vw" : "70vw"}
               borderRadius={"40px"}
               boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
             >
               {isLoading ? (
-                <CircularProgress size={"30px"} />
+                <CircularProgress
+                  size={"30px"}
+                  style={{ color: Colortheme.text }}
+                />
               ) : (
                 <>
                   <Box
@@ -873,10 +904,16 @@ const CurrencyProfile = () => {
                     textAlign={"center"}
                     fontSize={"20px"}
                     mt={0}
+                    color={Colortheme.text}
                   >
                     Edit Data
                   </Box>
-                  <Box name="HeaderSection" fontSize={"14px"} mt={2}>
+                  <Box
+                    name="HeaderSection"
+                    fontSize={"14px"}
+                    mt={2}
+                    color={Colortheme.text}
+                  >
                     (Currency : {dataForEdit.currency_name})
                   </Box>
                   <Box
@@ -884,77 +921,72 @@ const CurrencyProfile = () => {
                     mt={4}
                     display={"grid"}
                     gridTemplateColumns={
-                      isMobile ? "repeat(1, 1fr)" : "repeat(3, 1fr)"
+                      isMobile ? "repeat(1, 1fr)" : "repeat(5, 1fr)"
                     }
                     gridTemplateRows={"repeat(3, 1fr)"}
                     columnGap={"40px"}
                     rowGap={"40px"}
                   >
-                    <TextField
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                    <CustomTextField
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="CurrencyCodeEdited"
                       value={editedcurrencyCode}
                       onChange={(e) => setEditedCurrencyCode(e.target.value)}
                       label="Currency Code"
                     />
 
-                    <TextField
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                    <CustomTextField
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       name="CurrencyNameEdited"
                       label="Currency Name"
                       value={editedcurrencyName}
                       onChange={(e) => setEditedCurrencyName(e.target.value)}
                     />
-                    <Autocomplete
+                    <CustomAutocomplete
                       disabled
                       disablePortal
                       id="Countries"
-                      name="CountriesEdited"
+                      // name="CountriesEdited"
                       onChange={(event, newValue) => setCountry(newValue)}
                       options={options}
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Countries"
-                          value={country}
-                          name="country"
-                        />
-                      )}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
+                      label="Countries"
+                      value={country}
+                      name="country"
                     />
-                    <TextField
+                    <CustomTextField
                       id="Priority"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       label={"Priority"}
                       name="PriorityEdited"
                       value={editedpriority}
                       onChange={(e) => setEditedPriority(e.target.value)}
                     />
-                    <TextField
+                    <CustomTextField
                       id="Rate/per"
                       name="RateperEdited"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Rate / per"
                       value={editedratePer}
                       onChange={(e) => setEditedRatePer(e.target.value)}
                     />
-                    <TextField
+                    <CustomTextField
                       id="DefaultMinRate"
                       name="DefaultMinRateEdited"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Default Min Rate"
                       value={editeddefaultMinRate}
                       onChange={(e) => setEditedDefaultMinRate(e.target.value)}
                     />
-                    <TextField
+                    <CustomTextField
                       id="DefaultMaxRate"
                       name="DefaultMaxRateEdited"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Default Max Rate"
                       value={editeddefaultMaxRate}
                       onChange={(e) => setEditedDefaultMaxRate(e.target.value)}
                     />
-                    <Autocomplete
+                    <CustomAutocomplete
                       disablePortal
                       id="CalculationMethod"
                       options={CalculationMethodOptions}
@@ -962,95 +994,82 @@ const CurrencyProfile = () => {
                       onChange={(e, newValue) =>
                         setEditedCalculationMethod(newValue)
                       }
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Calculation Method"
-                          name="CalculationMethodEdited"
-                          // value={calculationMethod}
-                        />
-                      )}
+                      label="Calculation Method"
+                      name="CalculationMethodEdited"
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                     />
-                    <TextField
+                    <CustomTextField
                       id="OpenRatePremium"
                       name="OpenRatePremiumEdited"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Open Rate Premium"
                       value={editedopenRatePremium}
                       onChange={(e) => setEditedOpenRatePremium(e.target.value)}
                     />
-                    <TextField
+                    <CustomTextField
                       id="GulfDiscFactor"
                       name="GulfDiscFactorEdited"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       label="Gulf Disc Factor"
                       value={editedgulfDiscFactor}
                       onChange={(e) => setEditedGulfDiscFactor(e.target.value)}
                     />
-                    <TextField
+                    <CustomTextField
                       label="Amex Map Code"
                       name="AmexMapCodeEdited"
                       id="AmexMapCode"
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
                       value={editedamexMapCode}
                       onChange={(e) => setEditedAmexMapCode(e.target.value)}
                     />
-                    <Autocomplete
+                    <CustomAutocomplete
                       disabled
                       disablePortal
                       id="Group"
                       options={options}
-                      sx={{ width: isMobile ? "auto" : "12vw" }}
-                      renderInput={(params) => (
-                        <TextField {...params} label="Group" name="Group" />
-                      )}
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
+                      label="Group"
+                      name="Group"
+                      // renderInput={(params) => (
+                      //   <TextField {...params} />
+                      // )}
                       // value={group}
                       // onChange={(_, newValue) => setGroup(newValue)}
                     />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          name="ActivateEdited"
-                          checked={editedActiveStatus}
-                          onChange={handleCheckboxChange}
-                        />
-                      }
+                    <CustomCheckbox
                       label="Active"
-                      sx={{ width: 50 }}
+                      name="ActivateEdited"
+                      checked={editedActiveStatus}
+                      onChange={handleCheckboxChange}
                     />
-                    <FormControlLabel
-                      control={<Checkbox name="OnlyStockingEdited" />}
+
+                    <CustomCheckbox
                       label="Only Stocking"
-                      sx={{ width: 50 }}
+                      name="OnlyStockingEdited"
                     />
                   </Box>
                   <Box display="flex" name="FooterSection" mt={4} gap={5}>
-                    <button
+                    <StyledButton
+                      bgColorHover={"darkred"}
+                      textColOnHover={"white"}
                       onClick={handleBackOnEdit}
-                      className="FormFooterButton"
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 5,
-                        width: isMobile ? "30vw" : "auto",
+                        width: isMobile ? 120 : 200,
                       }}
                     >
-                      <KeyboardBackspaceIcon />
-                      Go Back
-                    </button>
+                      Cancel
+                    </StyledButton>
 
                     {/* <button className="FormFooterButton" type="reset">
                     Cancel
                   </button> */}
-                    <button
+                    <StyledButton
                       className="FormFooterButton"
                       type="submit"
-                      style={{ width: isMobile ? "30vw" : "auto" }}
+                      style={{ width: isMobile ? 120 : 200 }}
                     >
                       Edit & Save
-                    </button>
+                    </StyledButton>
                   </Box>
                 </>
               )}

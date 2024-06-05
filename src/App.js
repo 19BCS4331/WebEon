@@ -26,6 +26,7 @@ import { FormDataProvider } from "./contexts/FormDataContext";
 import LoginNew from "./pages/LoginNew";
 import NewSidebar from "./components/global/NewSideBar";
 import useAuthHook from "./hooks/useAuthHook";
+import AxiosInterceptorProvider from "./hooks/interceptorAxios";
 
 const App = () => {
   return (
@@ -39,146 +40,148 @@ const App = () => {
                   <ToastProvider>
                     <Toast />
                     <AuthBasedSidebar />
-                    <Routes>
-                      <Route path="/" element={<LoginNew />} />
-                      <Route path="/Dashboard" element={<ProtectedRoute />}>
-                        <Route path="/Dashboard" element={<Dashboard />} />
-                      </Route>
+                    <AxiosInterceptorProvider>
+                      <Routes>
+                        <Route path="/" element={<LoginNew />} />
+                        <Route path="/Dashboard" element={<ProtectedRoute />}>
+                          <Route path="/Dashboard" element={<Dashboard />} />
+                        </Route>
 
-                      <Route
-                        path="/Masters/master-profiles"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/Masters/master-profiles"
-                          element={<TestPage />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/Masters/master-profiles"
+                            element={<TestPage />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/Masters/system-setup"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/Masters/system-setup"
-                          element={<SysSetupIndex />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/Masters/system-setup"
+                            element={<SysSetupIndex />}
+                          />
+                        </Route>
 
-                      {/* ------------MASTERS--------------------- */}
+                        {/* ------------MASTERS--------------------- */}
 
-                      {/* Master Profiles */}
-                      <Route
-                        path="/master-profiles/currency-profile"
-                        element={<ProtectedRoute />}
-                      >
+                        {/* Master Profiles */}
                         <Route
                           path="/master-profiles/currency-profile"
-                          element={<CurrencyProfile />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/currency-profile"
+                            element={<CurrencyProfile />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/master-profiles/financial-codes"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/master-profiles/financial-codes"
-                          element={<FinancialCodes />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/financial-codes"
+                            element={<FinancialCodes />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/master-profiles/financial-sub-profile"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/master-profiles/financial-sub-profile"
-                          element={<FinancialSubProfile />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/financial-sub-profile"
+                            element={<FinancialSubProfile />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/master-profiles/division-profile"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/master-profiles/division-profile"
-                          element={<DivisionProfile />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/division-profile"
+                            element={<DivisionProfile />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/master-profiles/division-details"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/master-profiles/division-details"
-                          element={<DivisionDetails />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/division-details"
+                            element={<DivisionDetails />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/master-profiles/accounts-profile"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/master-profiles/accounts-profile"
-                          element={<AccountsProfile />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/accounts-profile"
+                            element={<AccountsProfile />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/master-profiles/ad1-provider"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/master-profiles/ad1-provider"
-                          element={<Ad1Provider />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/master-profiles/ad1-provider"
+                            element={<Ad1Provider />}
+                          />
+                        </Route>
 
-                      {/* Master Profiles End */}
+                        {/* Master Profiles End */}
 
-                      {/* System Setup */}
+                        {/* System Setup */}
 
-                      <Route
-                        path="/system-setup/tax-profile"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/system-setup/tax-profile"
-                          element={<TaxMaster />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/system-setup/tax-profile"
+                            element={<TaxMaster />}
+                          />
+                        </Route>
 
-                      {/* System Setup End */}
+                        {/* System Setup End */}
 
-                      {/* ------------MASTERS--------------------- */}
+                        {/* ------------MASTERS--------------------- */}
 
-                      {/* --------------Transactions-------------------- */}
-                      <Route
-                        path="/Transactions/buy-sell-transactions"
-                        element={<ProtectedRoute />}
-                      >
+                        {/* --------------Transactions-------------------- */}
                         <Route
                           path="/Transactions/buy-sell-transactions"
-                          element={<BuySellOptions />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/Transactions/buy-sell-transactions"
+                            element={<BuySellOptions />}
+                          />
+                        </Route>
 
-                      <Route
-                        path="/transactions/buying-selling/buy-from-individuals"
-                        element={<ProtectedRoute />}
-                      >
                         <Route
                           path="/transactions/buying-selling/buy-from-individuals"
-                          element={<BuyFromIndivi />}
-                        />
-                      </Route>
+                          element={<ProtectedRoute />}
+                        >
+                          <Route
+                            path="/transactions/buying-selling/buy-from-individuals"
+                            element={<BuyFromIndivi />}
+                          />
+                        </Route>
 
-                      {/* --------------Transactions-------------------- */}
-                    </Routes>
+                        {/* --------------Transactions-------------------- */}
+                      </Routes>
+                    </AxiosInterceptorProvider>
                   </ToastProvider>
                 </ModalProvider>
               </BrowserRouter>

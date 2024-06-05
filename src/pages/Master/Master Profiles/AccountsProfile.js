@@ -12,6 +12,7 @@ import {
   Autocomplete,
   InputAdornment,
 } from "@mui/material";
+
 import {
   AccountsProfileCreate,
   FincodeFetch,
@@ -31,8 +32,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
 import { useNavigate } from "react-router-dom";
+import ThemeContext from "../../../contexts/ThemeContext";
+import { useContext } from "react";
+import CustomTextField from "../../../components/global/CustomTextField";
+import CustomAutocomplete from "../../../components/global/CustomAutocomplete";
+import CustomCheckbox from "../../../components/global/CustomCheckbox";
+import StyledButton from "../../../components/global/StyledButton";
 
 const AccountsProfile = () => {
+  const { Colortheme } = useContext(ThemeContext);
   const baseUrl = process.env.REACT_APP_BASE_URL;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -662,24 +670,28 @@ const AccountsProfile = () => {
       headerAlign: "center",
       renderCell: (params) => (
         <Box display={"flex"} gap={2}>
-          <button
-            className="ActionsButtonsEdit"
+          <StyledButton
+            // className="ActionsButtonsEdit"
             onClick={() => handleEditClickOnRow(params.row)}
+            style={{ width: 80, height: 35 }}
           >
             Edit
-          </button>
+          </StyledButton>
           {isLoading ? (
             <CircularProgress
               size="25px"
               style={{ color: COLORS.secondaryBG }}
             />
           ) : (
-            <button
-              className="ActionsButtonsDelete"
+            <StyledButton
+              // className="ActionsButtonsDelete"
               onClick={() => handleDeleteClick(params.row)}
+              style={{ width: 80, height: 35 }}
+              bgColorHover={"red"}
+              textColOnHover={"white"}
             >
               Delete
-            </button>
+            </StyledButton>
           )}
         </Box>
       ),
@@ -721,13 +733,13 @@ const AccountsProfile = () => {
           gap={4}
           p={5}
           borderRadius={10}
-          sx={{ backgroundColor: "white" }}
+          sx={{ backgroundColor: Colortheme.background }}
           boxShadow={5}
         >
           <Box
             component={"form"}
             onSubmit={handleSubmitCreate}
-            sx={{ backgroundColor: "white" }}
+            sx={{ backgroundColor: Colortheme.background }}
             borderRadius={10}
             p={2}
             display={"flex"}
@@ -739,15 +751,19 @@ const AccountsProfile = () => {
               fontSize="large"
               sx={{
                 alignSelf: "flex-start",
-                color: COLORS.secondaryBG,
+                color: Colortheme.text,
                 position: "absolute",
                 cursor: "pointer",
               }}
             />
-            <p style={{ fontSize: 20 }}> Account Details (Create)</p>
+            <p style={{ fontSize: 20, color: Colortheme.text }}>
+              {" "}
+              Account Details (Create)
+            </p>
             <Box
               // mt={2}
               display={"grid"}
+              pt={2}
               overflow={isMobile ? "scroll" : "none"}
               sx={{ overflowX: "hidden" }}
               gridTemplateColumns={
@@ -758,11 +774,11 @@ const AccountsProfile = () => {
               columnGap={"60px"}
               rowGap={"30px"}
             >
-              <TextField
+              <CustomTextField
                 name="division"
                 select
                 label="Division / Dept"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
                 value={selectedDiv}
                 onChange={(e) => setSelectedDiv(e.target.value)}
               >
@@ -771,24 +787,24 @@ const AccountsProfile = () => {
                     {item.label}
                   </MenuItem>
                 ))}
-              </TextField>
-              <TextField
+              </CustomTextField>
+              <CustomTextField
                 required
                 name="AccCode"
                 label="Account Code"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
               />
-              <TextField
+              <CustomTextField
                 required
                 name="Accname"
                 label="Account Name"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
               />
-              <TextField
+              <CustomTextField
                 name="accType"
                 select
                 label="Account Type"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
                 value={selectedAccType}
                 onChange={(e) => setSelectedAccType(e.target.value)}
               >
@@ -797,13 +813,13 @@ const AccountsProfile = () => {
                     {item.label}
                   </MenuItem>
                 ))}
-              </TextField>
+              </CustomTextField>
               {selectedAccType === "SL" && (
-                <TextField
+                <CustomTextField
                   name="SL"
                   select
                   label="Sub Ledger"
-                  sx={{ width: isMobile ? "auto" : "12vw" }}
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
                   value={selectedSL}
                   onChange={(e) => setSelectedSL(e.target.value)}
                 >
@@ -812,14 +828,14 @@ const AccountsProfile = () => {
                       {item.label}
                     </MenuItem>
                   ))}
-                </TextField>
+                </CustomTextField>
               )}
               {selectedAccType === "B" && (
-                <TextField
+                <CustomTextField
                   name="BN"
                   select
                   label="Bank Nature"
-                  sx={{ width: isMobile ? "auto" : "12vw" }}
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
                   value={selectedBN}
                   onChange={(e) => setSelectedBN(e.target.value)}
                 >
@@ -828,12 +844,13 @@ const AccountsProfile = () => {
                       {item.label}
                     </MenuItem>
                   ))}
-                </TextField>
+                </CustomTextField>
               )}
+
               {selectedAccType === "B" &&
                 selectedBN === "N" &&
                 currencyOptions && (
-                  <Autocomplete
+                  <CustomAutocomplete
                     id="CurrencyCodeRate"
                     value={selectedCurrency}
                     options={currencyOptions}
@@ -841,24 +858,19 @@ const AccountsProfile = () => {
                     isOptionEqualToValue={(option, value) =>
                       option.currency_code === value.currency_code
                     }
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     onChange={handleCurrencyChange}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Currency"
-                        name="Currency"
-                        required
-                      />
-                    )}
+                    label="Currency"
+                    name="Currency"
+                    required
                   />
                 )}
-              <TextField
+              <CustomTextField
                 required
                 name="finType"
                 select
                 label="Financial Type"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
                 value={selectedFinType}
                 onChange={handleFinTypeChange}
               >
@@ -867,12 +879,12 @@ const AccountsProfile = () => {
                     {item.label}
                   </MenuItem>
                 ))}
-              </TextField>
-              <TextField
+              </CustomTextField>
+              <CustomTextField
                 // name="finCode"
                 select
                 label="Financial Code"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
                 value={selectedFinCode}
                 onChange={(e) => {
                   const selectedId = e.target.value; // Get the id of the selected item
@@ -900,11 +912,11 @@ const AccountsProfile = () => {
                     </MenuItem>
                   ))
                 )}
-              </TextField>
-              <TextField
+              </CustomTextField>
+              <CustomTextField
                 select
-                label="Financial SubCode"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                label="Financial Sub Code"
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
                 value={selectedSubFinCode}
                 onChange={(e) => {
                   const selectedId = e.target.value; // Get the id of the selected item
@@ -932,31 +944,25 @@ const AccountsProfile = () => {
                     </MenuItem>
                   ))
                 )}
-              </TextField>
-              <TextField
+              </CustomTextField>
+              <CustomTextField
                 name="PCExpID"
                 label="Petty Cash Expense ID"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // sx={{ width: isMobile ? "auto" : "12vw" }}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isEodBalZero"
-                    checked={isEodBalZero}
-                    onChange={(e) => setIsEodBalZero(e.target.checked)}
-                  />
-                }
+              <CustomCheckbox
                 label="Zero Balance At EOD"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                checked={isEodBalZero}
+                onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
               {isEodBalZero && branches && (
                 <>
-                  <TextField
+                  <CustomTextField
                     name="BranchIdTransfer"
                     disabled={!isEodBalZero}
                     select
                     label="Branch ID To Transfer"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                   >
                     {loading ? (
                       <MenuItem
@@ -972,128 +978,86 @@ const AccountsProfile = () => {
                         </MenuItem>
                       ))
                     )}
-                  </TextField>
-                  <TextField
+                  </CustomTextField>
+                  <CustomTextField
                     select
                     label="Map To Account"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
                     name="mapAcc"
                   />
                 </>
               )}
 
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doSale"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"DoSale"}
                 label="Do Sale"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doPurchase"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"doPurchase"}
                 label="Do Purchase"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doReceipt"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"doReceipt"}
                 label="Do Receipt"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doPayment"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"doPayment"}
                 label="Do Payment"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isActive"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"isActive"}
                 label="Active"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isCMSBank"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"isCMSBank"}
                 label="CMS Bank"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isDirRemit"
-                    // checked={editedActiveStatus}
-                    // onChange={handleCheckboxChange}
-                  />
-                }
+              <CustomCheckbox
+                name={"isDirRemit"}
                 label="Direct Remittance"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
+                // checked={isEodBalZero}
+                // onChange={(e) => setIsEodBalZero(e.target.checked)}
               />
             </Box>
             <Box display={"flex"} gap={5}>
-              <button
+              <StyledButton
                 type="submit"
                 style={{
-                  border: "none",
-                  backgroundColor: COLORS.secondaryBG,
-                  color: "white",
-                  borderRadius: 20,
-                  width: 100,
+                  width: 150,
                   height: 45,
-                  fontSize: 18,
-                  cursor: "pointer",
-                  marginTop: 40,
+                  marginTop: "40px",
                 }}
               >
                 Create
-              </button>
+              </StyledButton>
 
-              <button
+              <StyledButton
                 onClick={handleSearchClick}
                 style={{
-                  border: "none",
-                  backgroundColor: COLORS.secondaryBG,
-                  color: "white",
-                  borderRadius: 20,
-                  width: 100,
+                  width: 150,
                   height: 45,
-                  fontSize: 18,
-                  cursor: "pointer",
-                  marginTop: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                  marginTop: "40px",
                 }}
               >
+                <SearchIcon />
                 Search
-              </button>
+              </StyledButton>
             </Box>
           </Box>
         </Box>
@@ -1117,7 +1081,7 @@ const AccountsProfile = () => {
               gap={4}
               p={5}
               borderRadius={"20px"}
-              sx={{ backgroundColor: COLORS.text }}
+              sx={{ backgroundColor: Colortheme.background }}
               boxShadow={5}
             >
               <KeyboardBackspaceIcon
@@ -1125,7 +1089,7 @@ const AccountsProfile = () => {
                 fontSize="large"
                 sx={{
                   alignSelf: "flex-start",
-                  color: COLORS.secondaryBG,
+                  color: Colortheme.text,
                   position: "absolute",
                   cursor: "pointer",
                 }}
@@ -1142,7 +1106,7 @@ const AccountsProfile = () => {
                   width: isMobile ? "40vw" : "16vw",
                   backgroundColor: COLORS.text,
                   borderRadius: "20px",
-                  border: `2px solid ${COLORS.secondaryBG}`,
+                  border: `2px solid ${Colortheme.secondaryBG}`,
                   height: 50,
                   justifyContent: "center",
                   boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
@@ -1241,17 +1205,39 @@ const AccountsProfile = () => {
                     }
                   }}
                   sx={{
-                    backgroundColor: COLORS.text,
+                    backgroundColor: Colortheme.background,
                     p: isMobile ? "10px" : "20px",
                     maxHeight: "60vh",
                     width: isMobile ? "70vw" : "50vw",
-                    boxShadow: 3,
+                    // boxShadow: 3,
                     border: "2px solid",
-                    borderColor: COLORS.secondaryBG,
+                    borderColor: Colortheme.background,
                     "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
                       {
                         display: "none",
                       },
+                    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+                      backgroundColor: Colortheme.background,
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiTablePagination-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiSvgIcon-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-toolbarContainer": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                      backgroundColor: Colortheme.background,
+                    },
+                    "& .MuiButtonBase-root": {
+                      color: Colortheme.text,
+                    },
                   }}
                   initialState={{
                     pagination: {
@@ -1281,391 +1267,337 @@ const AccountsProfile = () => {
           gap={4}
           p={5}
           borderRadius={10}
-          sx={{ backgroundColor: "white" }}
+          sx={{ backgroundColor: Colortheme.background }}
           boxShadow={5}
         >
-          <Box
-            component={"form"}
-            onSubmit={handleSubmitEdit}
-            display={"flex"}
-            alignItems={"center"}
-            flexDirection={"column"}
-          >
-            <KeyboardBackspaceIcon
-              onClick={handleBackOnEdit}
-              fontSize="large"
-              sx={{
-                alignSelf: "flex-start",
-                color: COLORS.secondaryBG,
-                position: "absolute",
-                cursor: "pointer",
-              }}
-            />
-            <p style={{ fontSize: 20 }}>
-              Account Details (Edit : {editedAccName})
-            </p>
+          {isLoading ? (
+            <CircularProgress style={{ color: Colortheme.text }} />
+          ) : (
             <Box
-              mt={2}
-              display={"grid"}
-              overflow={isMobile ? "scroll" : "none"}
-              sx={{ overflowX: "hidden" }}
-              gridTemplateColumns={
-                isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"
-              }
-              // gridTemplateColumns={"repeat(3, 1fr)"}
-              gridTemplateRows={"repeat(3, 1fr)"}
-              columnGap={"60px"}
-              rowGap={"40px"}
+              component={"form"}
+              onSubmit={handleSubmitEdit}
+              display={"flex"}
+              alignItems={"center"}
+              flexDirection={"column"}
             >
-              <TextField
-                name="division"
-                select
-                label="Division / Dept"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={editedSelectedDiv}
-                onChange={(e) => setEditedSelectedDiv(e.target.value)}
-              >
-                {DivOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                required
-                value={editedAccCode}
-                onChange={(e) => setEditedAccCode(e.target.value)}
-                name="AccCode"
-                label="Account Code"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <TextField
-                required
-                value={editedAccName}
-                onChange={(e) => setEditedAccName(e.target.value)}
-                name="Accname"
-                label="Account Name"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <TextField
-                name="accType"
-                select
-                label="Account Type"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={editedSelectedAccType}
-                onChange={(e) => setEditedSelectedAccType(e.target.value)}
-              >
-                {AccTypeOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              {editedSelectedAccType === "SL" && (
-                <TextField
-                  name="SL"
-                  select
-                  label="Sub Ledger"
-                  sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedSL}
-                  onChange={(e) => setEditedSelectedSL(e.target.value)}
-                >
-                  {SLOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-              {editedSelectedAccType === "B" && (
-                <TextField
-                  name="BN"
-                  select
-                  label="Bank Nature"
-                  sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedBN}
-                  onChange={(e) => setEditedSelectedBN(e.target.value)}
-                >
-                  {BNOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-              {editedSelectedAccType === "B" &&
-                editedSelectedBN === "N" &&
-                currencyOptions && (
-                  <Autocomplete
-                    id="CurrencyCodeRate"
-                    value={editedSelectedCurrency}
-                    options={currencyOptions}
-                    getOptionLabel={(option) => option.currency_code || ""}
-                    isOptionEqualToValue={(option, value) =>
-                      option.currency_code === value.currency_code
-                    }
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
-                    onChange={handleEditedCurrencyChange}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Currency"
-                        name="Currency"
-                        required
-                      />
-                    )}
-                  />
-                )}
-              <TextField
-                required
-                name="finType"
-                select
-                label="Financial Type"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={editedSelectedFinType}
-                onChange={handleEditedFinTypeChange}
-              >
-                {FTypeOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                name="finCode"
-                select
-                label="Financial Code"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={editedSelectedFinCode}
-                onChange={(e) => {
-                  const editedSelectedId = e.target.value; // Get the id of the selected item
-                  setEditedSelectedFinCode(editedSelectedId); // Update state with the id
-                  setEditedSelectedSubFincode("");
-                  const selectedCode = editedFinCodeOptions.find(
-                    (item) => item.id === editedSelectedId
-                  )?.code; // Find the code corresponding to the selected id
-                  setEditedSelectedFinCodeObject({
-                    id: editedSelectedId,
-                    code: selectedCode,
-                  }); // Update the object with both id and code
-                }}
-              >
-                {loading ? (
-                  <MenuItem
-                    disabled
-                    sx={{ display: "flex", justifyContent: "center" }}
-                  >
-                    <CircularProgress />
-                  </MenuItem>
-                ) : (
-                  editedFinCodeOptions &&
-                  editedFinCodeOptions.map((item) => (
-                    <MenuItem key={item.id} value={item.code}>
-                      {`${item.code}-${item.name}`}
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
-              <TextField
-                name="finSubCode"
-                select
-                label="Financial SubCode"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={editedSelectedSubFinCode}
-                onChange={(e) => {
-                  const editedselectedId = e.target.value; // Get the id of the selected item
-                  setEditedSelectedSubFincode(editedselectedId); // Update state with the id
-                  const selectedSubCode = editedSubFinCodeOptions.find(
-                    (item) => item.id === editedselectedId
-                  )?.code; // Find the code corresponding to the selected id
-                  setEditedSelectedSubFinCodeObject({
-                    id: editedselectedId,
-                    code: selectedSubCode,
-                  }); // Update the object with both id and code
-                }}
-              >
-                {loading ? (
-                  <MenuItem
-                    disabled
-                    sx={{ display: "flex", justifyContent: "center" }}
-                  >
-                    <CircularProgress />
-                  </MenuItem>
-                ) : (
-                  editedSubFinCodeOptions &&
-                  editedSubFinCodeOptions.map((item) => (
-                    <MenuItem key={item.id} value={item.code}>
-                      {`${item.code} - ${item.name}`}
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
-              <TextField
-                name="PCExpID"
-                value={editedPCExpId}
-                onChange={(e) => setEditedPCExpId(e.target.value)}
-                label="Petty Cash Expense ID"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isEodBalZero"
-                    checked={editedIsEodBalZero}
-                    onChange={(e) => setEditedIsEodBalZero(e.target.checked)}
-                  />
-                }
-                label="Zero Balance At EOD"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              {editedIsEodBalZero && branches && (
-                <>
-                  <TextField
-                    name="BranchIdTransfer"
-                    disabled={!editedIsEodBalZero}
-                    value={branchToTransfer}
-                    onChange={(e) => setBranchToTransfer(e.target.value)}
-                    select
-                    label="Branch ID To Transfer"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
-                  >
-                    {loading ? (
-                      <MenuItem
-                        disabled
-                        sx={{ display: "flex", justifyContent: "center" }}
-                      >
-                        <CircularProgress />
-                      </MenuItem>
-                    ) : (
-                      branches.map((item) => (
-                        <MenuItem key={item.branchid} value={item.name}>
-                          {item.name}
-                        </MenuItem>
-                      ))
-                    )}
-                  </TextField>
-                  <TextField
-                    select
-                    label="Map To Account"
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
-                    name="mapAcc"
-                  />
-                </>
-              )}
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doSale"
-                    checked={editedDoSale}
-                    onChange={(e) => setEditedDoSale(e.target.checked)}
-                  />
-                }
-                label="Do Sale"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doPurchase"
-                    checked={editedDoPurchase}
-                    onChange={(e) => setEditedDoPurchase(e.target.checked)}
-                  />
-                }
-                label="Do Purchase"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doReceipt"
-                    checked={editedDoReceipt}
-                    onChange={(e) => setEditedDoReceipt(e.target.checked)}
-                  />
-                }
-                label="Do Receipt"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="doPayment"
-                    checked={editedDoPayment}
-                    onChange={(e) => setEditedDoPayment(e.target.checked)}
-                  />
-                }
-                label="Do Payment"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isActive"
-                    checked={editedIsActive}
-                    onChange={(e) => setEditedIsActive(e.target.checked)}
-                  />
-                }
-                label="Active"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isCMSBank"
-                    checked={editedIsCMSBank}
-                    onChange={(e) => setEditedIsCMSBank(e.target.checked)}
-                  />
-                }
-                label="CMS Bank"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="isDirRemit"
-                    checked={editedIsDirRemit}
-                    onChange={(e) => setEditedIsDirRemit(e.target.checked)}
-                  />
-                }
-                label="Direct Remittance"
-                sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-            </Box>
-            <Box display={"flex"} gap={5}>
-              <button
+              <KeyboardBackspaceIcon
                 onClick={handleBackOnEdit}
-                style={{
-                  border: "none",
-                  backgroundColor: COLORS.secondaryBG,
-                  color: "white",
-                  borderRadius: 20,
-                  width: 100,
-                  height: 45,
-                  fontSize: 18,
+                fontSize="large"
+                sx={{
+                  alignSelf: "flex-start",
+                  color: Colortheme.text,
+                  position: "absolute",
                   cursor: "pointer",
-                  marginTop: 40,
                 }}
+              />
+              <p style={{ fontSize: 20, color: Colortheme.text }}>
+                Account Details (Edit : {editedAccName})
+              </p>
+              <Box
+                mt={2}
+                pt={2}
+                display={"grid"}
+                overflow={isMobile ? "scroll" : "none"}
+                sx={{ overflowX: "hidden" }}
+                gridTemplateColumns={
+                  isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"
+                }
+                // gridTemplateColumns={"repeat(3, 1fr)"}
+                gridTemplateRows={"repeat(3, 1fr)"}
+                columnGap={"60px"}
+                rowGap={"40px"}
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                style={{
-                  border: "none",
-                  backgroundColor: COLORS.background,
-                  color: "white",
-                  borderRadius: 20,
-                  width: 100,
-                  height: 45,
-                  fontSize: 18,
-                  cursor: "pointer",
-                  marginTop: 40,
-                }}
-              >
-                Save
-              </button>
+                <CustomTextField
+                  name="division"
+                  select
+                  label="Division / Dept"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                  value={editedSelectedDiv}
+                  onChange={(e) => setEditedSelectedDiv(e.target.value)}
+                >
+                  {DivOptions.map((item) => (
+                    <MenuItem key={item.value} value={item.value}>
+                      {item.label}
+                    </MenuItem>
+                  ))}
+                </CustomTextField>
+                <CustomTextField
+                  required
+                  value={editedAccCode}
+                  onChange={(e) => setEditedAccCode(e.target.value)}
+                  name="AccCode"
+                  label="Account Code"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                />
+                <CustomTextField
+                  required
+                  value={editedAccName}
+                  onChange={(e) => setEditedAccName(e.target.value)}
+                  name="Accname"
+                  label="Account Name"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                />
+                <CustomTextField
+                  name="accType"
+                  select
+                  label="Account Type"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                  value={editedSelectedAccType}
+                  onChange={(e) => setEditedSelectedAccType(e.target.value)}
+                >
+                  {AccTypeOptions.map((item) => (
+                    <MenuItem key={item.value} value={item.value}>
+                      {item.label}
+                    </MenuItem>
+                  ))}
+                </CustomTextField>
+                {editedSelectedAccType === "SL" && (
+                  <CustomTextField
+                    name="SL"
+                    select
+                    label="Sub Ledger"
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
+                    value={editedSelectedSL}
+                    onChange={(e) => setEditedSelectedSL(e.target.value)}
+                  >
+                    {SLOptions.map((item) => (
+                      <MenuItem key={item.value} value={item.value}>
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                  </CustomTextField>
+                )}
+                {editedSelectedAccType === "B" && (
+                  <CustomTextField
+                    name="BN"
+                    select
+                    label="Bank Nature"
+                    // sx={{ width: isMobile ? "auto" : "12vw" }}
+                    value={editedSelectedBN}
+                    onChange={(e) => setEditedSelectedBN(e.target.value)}
+                  >
+                    {BNOptions.map((item) => (
+                      <MenuItem key={item.value} value={item.value}>
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                  </CustomTextField>
+                )}
+                {editedSelectedAccType === "B" &&
+                  editedSelectedBN === "N" &&
+                  currencyOptions && (
+                    <CustomAutocomplete
+                      id="CurrencyCodeRate"
+                      value={editedSelectedCurrency}
+                      options={currencyOptions}
+                      getOptionLabel={(option) => option.currency_code || ""}
+                      isOptionEqualToValue={(option, value) =>
+                        option.currency_code === value.currency_code
+                      }
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
+                      onChange={handleEditedCurrencyChange}
+                      label="Currency"
+                      name="Currency"
+                      required
+                    />
+                  )}
+                <CustomTextField
+                  required
+                  name="finType"
+                  select
+                  label="Financial Type"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                  value={editedSelectedFinType}
+                  onChange={handleEditedFinTypeChange}
+                >
+                  {FTypeOptions.map((item) => (
+                    <MenuItem key={item.value} value={item.value}>
+                      {item.label}
+                    </MenuItem>
+                  ))}
+                </CustomTextField>
+                <CustomTextField
+                  name="finCode"
+                  select
+                  label="Financial Code"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                  value={editedSelectedFinCode}
+                  onChange={(e) => {
+                    const editedSelectedId = e.target.value; // Get the id of the selected item
+                    setEditedSelectedFinCode(editedSelectedId); // Update state with the id
+                    setEditedSelectedSubFincode("");
+                    const selectedCode = editedFinCodeOptions.find(
+                      (item) => item.id === editedSelectedId
+                    )?.code; // Find the code corresponding to the selected id
+                    setEditedSelectedFinCodeObject({
+                      id: editedSelectedId,
+                      code: selectedCode,
+                    }); // Update the object with both id and code
+                  }}
+                >
+                  {loading ? (
+                    <MenuItem
+                      disabled
+                      sx={{ display: "flex", justifyContent: "center" }}
+                    >
+                      <CircularProgress />
+                    </MenuItem>
+                  ) : (
+                    editedFinCodeOptions &&
+                    editedFinCodeOptions.map((item) => (
+                      <MenuItem key={item.id} value={item.code}>
+                        {`${item.code}-${item.name}`}
+                      </MenuItem>
+                    ))
+                  )}
+                </CustomTextField>
+                <CustomTextField
+                  name="finSubCode"
+                  select
+                  label="Financial SubCode"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                  value={editedSelectedSubFinCode}
+                  onChange={(e) => {
+                    const editedselectedId = e.target.value; // Get the id of the selected item
+                    setEditedSelectedSubFincode(editedselectedId); // Update state with the id
+                    const selectedSubCode = editedSubFinCodeOptions.find(
+                      (item) => item.id === editedselectedId
+                    )?.code; // Find the code corresponding to the selected id
+                    setEditedSelectedSubFinCodeObject({
+                      id: editedselectedId,
+                      code: selectedSubCode,
+                    }); // Update the object with both id and code
+                  }}
+                >
+                  {loading ? (
+                    <MenuItem
+                      disabled
+                      sx={{ display: "flex", justifyContent: "center" }}
+                    >
+                      <CircularProgress />
+                    </MenuItem>
+                  ) : (
+                    editedSubFinCodeOptions &&
+                    editedSubFinCodeOptions.map((item) => (
+                      <MenuItem key={item.id} value={item.code}>
+                        {`${item.code} - ${item.name}`}
+                      </MenuItem>
+                    ))
+                  )}
+                </CustomTextField>
+                <CustomTextField
+                  name="PCExpID"
+                  value={editedPCExpId}
+                  onChange={(e) => setEditedPCExpId(e.target.value)}
+                  label="Petty Cash Expense ID"
+                  // sx={{ width: isMobile ? "auto" : "12vw" }}
+                />
+                <CustomCheckbox
+                  label="Zero Balance At EOD"
+                  name="isEodBalZero"
+                  checked={editedIsEodBalZero}
+                  onChange={(e) => setEditedIsEodBalZero(e.target.checked)}
+                />
+
+                {editedIsEodBalZero && branches && (
+                  <>
+                    <CustomTextField
+                      name="BranchIdTransfer"
+                      disabled={!editedIsEodBalZero}
+                      value={branchToTransfer}
+                      onChange={(e) => setBranchToTransfer(e.target.value)}
+                      select
+                      label="Branch ID To Transfer"
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
+                    >
+                      {loading ? (
+                        <MenuItem
+                          disabled
+                          sx={{ display: "flex", justifyContent: "center" }}
+                        >
+                          <CircularProgress />
+                        </MenuItem>
+                      ) : (
+                        branches.map((item) => (
+                          <MenuItem key={item.branchid} value={item.name}>
+                            {item.name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </CustomTextField>
+                    <CustomTextField
+                      select
+                      label="Map To Account"
+                      // sx={{ width: isMobile ? "auto" : "12vw" }}
+                      name="mapAcc"
+                    />
+                  </>
+                )}
+
+                <CustomCheckbox
+                  label="Do Sale"
+                  name="doSale"
+                  checked={editedDoSale}
+                  onChange={(e) => setEditedDoSale(e.target.checked)}
+                />
+
+                <CustomCheckbox
+                  label="Do Purchase"
+                  name="doPurchase"
+                  checked={editedDoPurchase}
+                  onChange={(e) => setEditedDoPurchase(e.target.checked)}
+                />
+
+                <CustomCheckbox
+                  label="Do Receipt"
+                  name="doReceipt"
+                  checked={editedDoReceipt}
+                  onChange={(e) => setEditedDoReceipt(e.target.checked)}
+                />
+
+                <CustomCheckbox
+                  label="Do Payment"
+                  name="doPayment"
+                  checked={editedDoPayment}
+                  onChange={(e) => setEditedDoPayment(e.target.checked)}
+                />
+                <CustomCheckbox
+                  label="Active"
+                  name="isActive"
+                  checked={editedIsActive}
+                  onChange={(e) => setEditedIsActive(e.target.checked)}
+                />
+                <CustomCheckbox
+                  label="CMS Bank"
+                  name="isCMSBank"
+                  checked={editedIsCMSBank}
+                  onChange={(e) => setEditedIsCMSBank(e.target.checked)}
+                />
+                <CustomCheckbox
+                  label="Direct Remittance"
+                  name="isDirRemit"
+                  checked={editedIsDirRemit}
+                  onChange={(e) => setEditedIsDirRemit(e.target.checked)}
+                />
+              </Box>
+              <Box display={"flex"} gap={5}>
+                <StyledButton
+                  onClick={handleBackOnEdit}
+                  style={{ marginTop: "40px", width: 200 }}
+                  bgColorHover={"darkred"}
+                  textColOnHover={"white"}
+                >
+                  Cancel
+                </StyledButton>
+                <StyledButton
+                  type="submit"
+                  style={{ marginTop: "40px", width: 200 }}
+                >
+                  Save
+                </StyledButton>
+              </Box>
             </Box>
-          </Box>
+          )}
         </Box>
       )}
       {/* -------------------------------------EDIT FORM------------------------------------------------ */}

@@ -5,9 +5,12 @@ import { COLORS } from "../assets/colors/COLORS";
 import { AnimatePresence, motion } from "framer-motion";
 import CancelIcon from "@mui/icons-material/Cancel";
 import Backdrop from "@mui/material/Backdrop";
+import ThemeContext from "../contexts/ThemeContext";
+import { useContext } from "react";
 
 export default function CustomAlertModalCurrency({ handleAction }) {
   const { alertModalCurrency, hideAlertDialogCurrency } = useToast();
+  const { Colortheme } = useContext(ThemeContext);
 
   const { open, title, DialogMsg } = alertModalCurrency;
   //   const [open, setOpen] = React.useState(false);
@@ -39,7 +42,7 @@ export default function CustomAlertModalCurrency({ handleAction }) {
             exit={{ y: -100, opacity: 0 }}
             display={"flex"}
             flexDirection={"column"}
-            sx={{ backgroundColor: COLORS.secondaryBG }}
+            sx={{ backgroundColor: Colortheme.secondaryBG }}
             width={"auto"}
             p={2}
             height={"20vh"}
@@ -57,7 +60,13 @@ export default function CustomAlertModalCurrency({ handleAction }) {
                 cursor: "pointer",
               }}
             />
-            <p style={{ color: "white", fontSize: 20, userSelect: "none" }}>
+            <p
+              style={{
+                color: Colortheme.text,
+                fontSize: 20,
+                userSelect: "none",
+              }}
+            >
               {title} ?
             </p>
             <Box>{DialogMsg}</Box>

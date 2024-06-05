@@ -19,6 +19,7 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import { AuthContext } from "../../contexts/AuthContext";
 import { COLORS } from "../../assets/colors/COLORS";
 import ThemeContext from "../../contexts/ThemeContext";
+import useAxiosInterceptor from "./AxiosIntercept";
 
 const SubItem = ({
   subItem,
@@ -110,6 +111,7 @@ const NewSidebar = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { Colortheme } = useContext(ThemeContext);
+  useAxiosInterceptor();
 
   const [open, setOpen] = useState(false);
   // const [items, setItems] = useState([]);

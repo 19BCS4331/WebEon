@@ -449,7 +449,7 @@ const LoginNew = () => {
                     }
                     value={finyear}
                     onChange={handleFinYearChange}
-                    sx={{ width: isMobile ? "40vw" : "16vw" }}
+                    // sx={{ width: isMobile ? "40vw" : "16vw" }}
                     label="Financial Year"
                   />
                 </Box>
@@ -459,7 +459,10 @@ const LoginNew = () => {
                   display={"flex"}
                   justifyContent={"center"}
                 >
-                  <StyledButton onClick={loginUser}>
+                  <StyledButton
+                    onClick={loginUser}
+                    style={{ marginTop: "40px" }}
+                  >
                     {isLoading ? (
                       <CircularProgress
                         size="25px"
@@ -513,7 +516,10 @@ const LoginNew = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Box>
-              <StyledButton onClick={ProceedClick}>
+              <StyledButton
+                onClick={ProceedClick}
+                style={{ marginTop: "40px" }}
+              >
                 {isLoading ? (
                   <CircularProgress style={{ color: "white" }} size={"25px"} />
                 ) : (

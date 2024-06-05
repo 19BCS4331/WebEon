@@ -1,17 +1,27 @@
 // CustomTextField.js
 import React, { useContext } from "react";
-import { TextField } from "@mui/material";
+import { TextField, useMediaQuery, useTheme } from "@mui/material";
 import ThemeContext from "../../contexts/ThemeContext";
 
-const CustomTextField = ({ value, error, onChange, label, ...props }) => {
+const CustomTextField = ({
+  value,
+  error,
+  onChange,
+  label,
+  select,
+  children,
+  ...props
+}) => {
   const { Colortheme } = useContext(ThemeContext);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <TextField
       label={label}
       variant="outlined"
+      select={select}
       sx={{
-        // width: { xs: "50vw", sm: "16vw" },
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
             borderColor: Colortheme.text,
@@ -24,6 +34,10 @@ const CustomTextField = ({ value, error, onChange, label, ...props }) => {
           },
           "&.Mui-error fieldset": {
             borderColor: "red",
+          },
+          "& .MuiSvgIcon-root": {
+            // This targets the dropdown arrow icon
+            color: Colortheme.text,
           },
         },
         "& .MuiInputLabel-root": {
@@ -41,12 +55,20 @@ const CustomTextField = ({ value, error, onChange, label, ...props }) => {
         "& .MuiOutlinedInput-input.Mui-error": {
           color: "red",
         },
+        "& .Mui-disabled": {
+          ":hover fieldset": {
+            borderColor: "gray",
+          },
+        },
+        width: isMobile ? "auto" : "12vw",
       }}
       value={value}
       error={error}
       onChange={onChange}
       {...props}
-    />
+    >
+      {select ? children : null}
+    </TextField>
   );
 };
 
