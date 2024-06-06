@@ -235,6 +235,7 @@ const NewSidebar = () => {
             width: isMobile ? "250px" : "300px",
             paddingTop: "20px",
             borderTopRightRadius: 40,
+            height: "98vh",
           },
         }}
       >
@@ -243,6 +244,7 @@ const NewSidebar = () => {
         >
           Navigation
         </h1>
+
         <List>
           {/* --------------SEARCH COMMENTED TEMP------------------------- */}
           {/* <ListItemButton>
