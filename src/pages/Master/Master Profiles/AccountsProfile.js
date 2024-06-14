@@ -1,1200 +1,576 @@
-import React, { useEffect, useState } from "react";
-import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
-import {
-  Box,
-  TextField,
-  useMediaQuery,
-  useTheme,
-  FormControlLabel,
-  Checkbox,
-  MenuItem,
-  CircularProgress,
-  Autocomplete,
-  InputAdornment,
-} from "@mui/material";
-
-import {
-  AccountsProfileCreate,
-  FincodeFetch,
-  FincodeFetchOnType,
-  SubFincodeFetchOnFinCode,
-  SubFincodeFetchOnFinCodeForEdit,
-  getFincodeAsId,
-} from "../../../apis/Master/MasterProfiles/AccountsProfile";
-import { useToast } from "../../../contexts/ToastContext";
-import { COLORS } from "../../../assets/colors/COLORS";
-import axios from "axios";
-import { fetchCurrencyNames } from "../../../apis/OptionsMaster";
+import React, { useState, useEffect, useContext } from "react";
+import { Box, MenuItem, useMediaQuery, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import { AnimatePresence, motion } from "framer-motion";
-import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
-import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
-import { useNavigate } from "react-router-dom";
-import ThemeContext from "../../../contexts/ThemeContext";
-import { useContext } from "react";
-import CustomTextField from "../../../components/global/CustomTextField";
 import CustomAutocomplete from "../../../components/global/CustomAutocomplete";
+import CustomTextField from "../../../components/global/CustomTextField";
 import CustomCheckbox from "../../../components/global/CustomCheckbox";
 import StyledButton from "../../../components/global/StyledButton";
+import ThemeContext from "../../../contexts/ThemeContext";
+import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
+import { formConfigs } from "../../../components/global/FormConfig/Master/Master Profiles/formConfig";
+import { AuthContext } from "../../../contexts/AuthContext";
+import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
+import { useToast } from "../../../contexts/ToastContext";
+import { MutatingDots } from "react-loader-spinner";
+import { AnimatePresence, motion } from "framer-motion";
 
 const AccountsProfile = () => {
-  const { Colortheme } = useContext(ThemeContext);
-  const baseUrl = process.env.REACT_APP_BASE_URL;
+  const { token } = useContext(AuthContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [isCreate, setIsCreate] = useState(true);
-  const [isEdit, setIsEdit] = useState(false);
-  const [isSearch, setIsSearch] = useState(false);
-  const {
-    showToast,
-    hideToast,
-    showAlertDialogCurrency,
-    hideAlertDialogCurrency,
-  } = useToast();
-  const [shouldFetchData, setShouldFetchData] = useState(false);
-  const [selectedAccType, setSelectedAccType] = useState("");
-  const [selectedFinType, setSelectedFinType] = useState("");
-  const [finCodeOptions, setFinCodeOptions] = useState([]);
-  const [subFinCodeOptions, setSubFinCodeOptions] = useState([]);
-  const [selectedFinCode, setSelectedFinCode] = useState("");
-  const [selectedBN, setSelectedBN] = useState("");
-  const [selectedSubFinCode, setSelectedSubFincode] = useState("");
-  const [selectedDiv, setSelectedDiv] = useState("");
-  const [selectedSL, setSelectedSL] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isLoading, setisLoading] = useState(false);
-  const [isEodBalZero, setIsEodBalZero] = useState("");
-  const [branches, setBranches] = useState("");
-  const [currencyOptions, setCurrencyOptions] = useState(null);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
-  const [selectedFinCodeObject, setSelectedFinCodeObject] = useState(null);
-  const [selectedSubFinCodeObject, setSelectedSubFinCodeObject] =
-    useState(null);
+  const { Colortheme } = useContext(ThemeContext);
+  const { showToast, hideToast } = useToast();
+  const formConfig = formConfigs.accountsProfileForm;
+
+  const [formData, setFormData] = useState({});
+  const [disabledFields, setDisabledFields] = useState({});
+  const [rows, setRows] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
-
-  const [APMasterData, setAPMasterData] = useState(null);
   const [selectionModel, setSelectionModel] = useState([]);
+  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [optionsData, setOptionsData] = useState({});
 
-  // ----------------EDIT FORM STATES--------------------
+  useEffect(() => {
+    const initialFormData = {};
+    const initialDisabledFields = {};
+    formConfig.fields.forEach((field) => {
+      initialFormData[field.name] = "";
+      if (field.disabled) initialDisabledFields[field.name] = true;
+    });
+    setFormData(initialFormData);
+    setDisabledFields(initialDisabledFields);
+  }, [formConfig]);
 
-  const [editedFinCodeOptions, setEditedFinCodeOptions] = useState(null);
-  const [editedSubFinCodeOptions, setEditedSubFinCodeOptions] = useState(null);
-  const [editedSelectedId, setEditedSelectedId] = useState(null);
-  const [editedAccCode, setEditedAccCode] = useState("");
-  const [editedAccName, setEditedAccName] = useState("");
-  const [editedSelectedAccType, setEditedSelectedAccType] = useState("");
-  const [editedSelectedFinType, setEditedSelectedFinType] = useState("");
-  const [editedSelectedFinCode, setEditedSelectedFinCode] = useState(null);
-  const [editedSelectedBN, setEditedSelectedBN] = useState("");
-  const [editedSelectedSubFinCode, setEditedSelectedSubFincode] = useState("");
-  const [editedSelectedDiv, setEditedSelectedDiv] = useState("");
-  const [editedSelectedSL, setEditedSelectedSL] = useState("");
-  const [editedPCExpId, setEditedPCExpId] = useState("");
-  const [editedIsEodBalZero, setEditedIsEodBalZero] = useState("");
-  const [editedSelectedCurrency, setEditedSelectedCurrency] = useState(null);
-  const [editedSelectedFinCodeObject, setEditedSelectedFinCodeObject] =
-    useState(null);
-  const [editedSelectedSubFinCodeObject, setEditedSelectedSubFinCodeObject] =
-    useState(null);
-  const [dataForEdit, setDataForEdit] = useState(null);
-  const [branchToTransfer, setBranchToTransfer] = useState(null);
+  const handleChange = (field, value) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [field.name]: value,
+    }));
 
-  const [editedDoSale, setEditedDoSale] = useState("");
-  const [editedDoPurchase, setEditedDoPurchase] = useState("");
-  const [editedDoReceipt, setEditedDoReceipt] = useState("");
-  const [editedDoPayment, setEditedDoPayment] = useState("");
-  const [editedIsActive, setEditedIsActive] = useState("");
-  const [editedIsCMSBank, setEditedIsCMSBank] = useState("");
-  const [editedIsDirRemit, setEditedIsDirRemit] = useState("");
-
-  // ----------------EDIT FORM STATES--------------------
-  // -----------------ROW Setters---------------
-  const [rowid, SetRowid] = useState(null);
-  // -----------------ROW Setters---------------
-  const navigate = useNavigate();
-
-  const handleSearchClick = () => {
-    setIsSearch(true);
-    setIsCreate(false);
-    setIsEdit(false);
-  };
-
-  const handleBackOnEdit = () => {
-    setIsEdit(false);
-    setIsSearch(true);
-    setIsCreate(false);
-    setShouldFetchData(false);
-  };
-
-  const handlebackClickOnCreate = () => {
-    navigate(-1);
+    // Handle dependencies
+    formConfig.fields.forEach((f) => {
+      if (f.dependencies && f.dependencies.includes(field.name)) {
+        setDisabledFields((prev) => ({
+          ...prev,
+          [f.name]: !value,
+        }));
+      }
+    });
   };
 
   useEffect(() => {
-    if (selectedBN) {
-      const OptionsFetch = async () => {
-        const CurrencyNameOptions = await fetchCurrencyNames();
-        setCurrencyOptions(CurrencyNameOptions);
+    const fetchAllOptions = async () => {
+      const optionsFetchPromises = formConfig.fields
+        .filter((field) => field.type === "select")
+        .map(async (field) => {
+          const options = await fetchOptions(field.fetchOptions, token);
+          return { [field.name]: options };
+        });
 
-        // setOptionsDataLoading(false);
-      };
-      OptionsFetch();
-    }
-  }, [selectedBN]);
-
-  useEffect(() => {
-    if (editedSelectedBN) {
-      const OptionsFetch = async () => {
-        const CurrencyNameOptions = await fetchCurrencyNames();
-        setCurrencyOptions(CurrencyNameOptions);
-
-        // setOptionsDataLoading(false);
-      };
-      OptionsFetch();
-    }
-  }, [editedSelectedBN]);
-
-  const DivOptions = [
-    {
-      value: "F",
-      label: "Forex Division",
-    },
-    {
-      value: "W",
-      label: "Western Union Division",
-    },
-  ];
-
-  const AccTypeOptions = [
-    {
-      value: "GL",
-      label: "General Ledger",
-    },
-    {
-      value: "SL",
-      label: "Sub Ledger",
-    },
-    {
-      value: "C",
-      label: "Cash",
-    },
-    {
-      value: "B",
-      label: "Bank",
-    },
-    {
-      value: "PC",
-      label: "Petty Cash",
-    },
-    {
-      value: "CC",
-      label: "Credit Card",
-    },
-  ];
-
-  const SLOptions = [
-    {
-      value: "AD",
-      label: "Auth. Dealer",
-    },
-    {
-      value: "BR",
-      label: "Branches",
-    },
-    {
-      value: "CC",
-      label: "Corporate Client",
-    },
-    {
-      value: "EM",
-      label: "Employee",
-    },
-    {
-      value: "EX",
-      label: "Exporter",
-    },
-    {
-      value: "FF",
-      label: "FFMC",
-    },
-    {
-      value: "TA",
-      label: "Forex Agent",
-    },
-    {
-      value: "FR",
-      label: "Franchisee",
-    },
-    {
-      value: "GS",
-      label: "GST States",
-    },
-    {
-      value: "MS",
-      label: "Misc. Supplier",
-    },
-    {
-      value: "RM",
-      label: "RMC",
-    },
-    {
-      value: "TC",
-      label: "TC Issuer",
-    },
-    {
-      value: "WA",
-      label: "W.U. Agent",
-    },
-  ];
-
-  const BNOptions = [
-    {
-      value: "L",
-      label: "Local",
-    },
-    {
-      value: "N",
-      label: "Nostro",
-    },
-  ];
-
-  const FTypeOptions = [
-    {
-      value: "TA",
-      label: "Trading Account",
-    },
-    {
-      value: "PL",
-      label: "Profit & Loss",
-    },
-    {
-      value: "BS",
-      label: "Balance Sheet",
-    },
-  ];
-
-  useEffect(() => {
-    const fetchFinCodeOptions = async () => {
-      setLoading(true);
-      // Make sure selectedFinType is not empty
-      if (!selectedFinType) return;
-
-      // Fetch data based on selected financial type (you need to implement this)
-      const response = await FincodeFetchOnType(selectedFinType);
-
-      // Update financial code options based on the response
-      setFinCodeOptions(response);
+      const optionsResults = await Promise.all(optionsFetchPromises);
+      const optionsObject = optionsResults.reduce(
+        (acc, curr) => ({ ...acc, ...curr }),
+        {}
+      );
+      setOptionsData(optionsObject);
     };
 
-    fetchFinCodeOptions();
-    setLoading(false);
-  }, [selectedFinType]);
+    fetchAllOptions();
+  }, [token, formConfig.fields]);
 
-  useEffect(() => {
-    const fetchSubFinCodeOptions = async () => {
-      setLoading(true);
-      // Make sure selectedFinCode is not empty
-      if (!selectedFinCode) return;
-
-      // Fetch data based on selected financial code (you need to implement this)
-      const response = await SubFincodeFetchOnFinCode(selectedFinCode);
-
-      // Update financial subcode options based on the response
-      setSubFinCodeOptions(response);
-    };
-
-    fetchSubFinCodeOptions();
-    setLoading(false);
-  }, [selectedFinCode]);
-
-  useEffect(() => {
-    // Fetch data based on selected financial type
-    if (shouldFetchData && editedSelectedFinType) {
-      const fetchEditFinCodeOptions = async () => {
-        setLoading(true);
-        const response = await FincodeFetchOnType(editedSelectedFinType);
-        setEditedFinCodeOptions(response);
-        setLoading(false);
-      };
-      fetchEditFinCodeOptions();
-    }
-  }, [shouldFetchData, editedSelectedFinType]);
-
-  useEffect(() => {
-    // Fetch data based on selected financial code
-    if (shouldFetchData && editedSelectedFinCode) {
-      const fetchEditSubFinCodeOptions = async () => {
-        setLoading(true);
-        const response = await SubFincodeFetchOnFinCodeForEdit(
-          editedSelectedFinCode
-        );
-        setEditedSubFinCodeOptions(response);
-        setLoading(false);
-      };
-      fetchEditSubFinCodeOptions();
-    }
-  }, [shouldFetchData, editedSelectedFinCode]);
-
-  const handleFinTypeChange = (event) => {
-    setSelectedFinType(event.target.value);
-
-    // setEditedSelectedSubFincode(null);
-  };
-
-  const handleEditedFinTypeChange = (event) => {
-    setEditedSelectedFinType(event.target.value);
-    setEditedSelectedFinCode("");
-    setEditedSelectedSubFincode("");
-  };
-  console.log("Selected FinType", selectedFinType);
-  console.log("Selected FinCode", selectedFinCode);
-  console.log("finOptions", finCodeOptions);
-  console.log("subfinOptions", subFinCodeOptions);
-
-  // --------------------------SUBMIT FUNCTIONS --------------------------------
-
-  const handleSubmitCreate = async (e) => {
-    setisLoading(true);
-    e.preventDefault();
-    const data = new FormData(e.target);
-    const formObject = Object.fromEntries(data.entries());
-
-    // Check if PCExpID is empty
-    if (!formObject.PCExpID) {
-      // Set PCExpID to 0 if it's empty
-      formObject.PCExpID = 0;
-    }
-
-    // Replace the id with the corresponding code
-    if (selectedFinCodeObject) {
-      formObject.finCode = selectedFinCodeObject.code;
-    }
-    if (selectedSubFinCodeObject) {
-      formObject.finSubCode = selectedSubFinCodeObject.code;
-    }
-
-    console.log(formObject);
-    if (formObject) {
-      const response = await AccountsProfileCreate(formObject);
-      if (response.data.message === "Data saved successfully") {
-        setisLoading(false);
-        showToast("Data Inserted Successfully", "success");
-        window.location.reload();
-        setTimeout(() => {
-          hideToast();
-        }, 1500);
-      } else {
-        console.log(response.data.message);
-      }
-    }
-  };
-
-  const handleSubmitEdit = async (event) => {
-    setisLoading(true);
-    const token = localStorage.getItem("token");
-    event.preventDefault();
-    var data = new FormData(event.target);
-    let formObject = Object.fromEntries(data.entries());
-    console.log("Edit Form Object: ", formObject);
-    if (editedAccCode !== "" && editedAccName !== "") {
-      try {
-        const response = await axios.post(
-          `${baseUrl}/api/master/APMasterEdit`,
-          {
-            id: editedSelectedId,
-            AccCode: formObject.AccCode,
-            Accname: formObject.Accname,
-            SL: formObject.SL,
-            BN: formObject.BN,
-            BranchIdTransfer: formObject.BranchIdTransfer,
-            Currency: formObject.Currency,
-            PCExpID: formObject.PCExpID,
-            accType: formObject.accType,
-            division: formObject.division,
-            doPayment: formObject.doPayment,
-            doPurchase: formObject.doPurchase,
-            doReceipt: formObject.doReceipt,
-            doSale: formObject.doSale,
-            finCode: formObject.finCode,
-            finSubCode: formObject.finSubCode,
-            finType: formObject.finType,
-            isActive: formObject.isActive,
-            isCMSBank: formObject.isCMSBank,
-            isDirRemit: formObject.isDirRemit,
-            isEodBalZero: formObject.isEodBalZero,
-            mapAcc: formObject.mapAcc,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        console.log(response.data);
-        showToast("Data Edited Successfully!", "success");
-        setTimeout(() => {
-          hideToast();
-        }, 1500);
-        const updatedData = await APMasterRefresh(); // Replace with your API call to fetch data
-        if (updatedData) {
-          setAPMasterData(updatedData);
-        }
-        setIsEdit(false);
-        setIsSearch(true);
-        setIsCreate(false);
-        setisLoading(false);
-      } catch (error) {
-        console.log(error);
-        setisLoading(false);
-      }
-    } else {
-      setisLoading(false);
-      showToast("Please Enter All Fields", "Fail");
-      setTimeout(() => {
-        hideToast();
-      }, 1500);
-    }
-  };
-
-  // --------------------------SUBMIT FUNCTIONS --------------------------------
-
-  useEffect(() => {
-    if (isEodBalZero) {
-      const fetchBranches = async () => {
-        try {
-          const response = await axios.get(`${baseUrl}/api/auth/branch`);
-          setBranches(response.data);
-        } catch (err) {
-          console.log("errorr", err);
-        }
-      };
-      fetchBranches();
-    }
-  }, [isEodBalZero]);
-
-  useEffect(() => {
-    if (editedIsEodBalZero) {
-      const fetchBranches = async () => {
-        try {
-          const response = await axios.get(`${baseUrl}/api/auth/branch`);
-          setBranches(response.data);
-        } catch (err) {
-          console.log("errorr", err);
-        }
-      };
-      fetchBranches();
-    }
-  }, [editedIsEodBalZero]);
-
-  const handleCurrencyChange = async (event, newValue) => {
-    setSelectedCurrency(newValue);
-  };
-
-  const handleEditedCurrencyChange = async (event, newValue) => {
-    setEditedSelectedCurrency(newValue);
-  };
-
-  // ----------------------FETCH MASTER--------------------------------
-
-  const APMasterRefresh = async () => {
-    const token = localStorage.getItem("token");
+  const fetchOptions = async (url, token) => {
     try {
-      const response = await axios.get(`${baseUrl}/api/master/APMasterFetch`, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setAPMasterData(response.data);
-      console.log(response.data);
+      if (!response.ok) {
+        throw new Error("Failed to fetch options");
+      }
+      return await response.json();
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching options:", error);
+      showToast("Error Fetching Options!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      return [];
+    }
+  };
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(formConfig.endpoint, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      setRows(result.filter((row) => row.nAccID));
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      showToast("Error Occurred!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchAPMaster = async () => {
-      setLoading(true);
-      if (isSearch === true) {
-        const token = localStorage.getItem("token");
-        try {
-          const response = await axios.get(
-            `${baseUrl}/api/master/APMasterFetch`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          setAPMasterData(response.data);
-          console.log(response.data);
-          setLoading(false);
-        } catch (error) {
-          console.log(error);
-          setLoading(false);
-        }
-      }
-    };
+    fetchData();
+  }, [token]);
 
-    fetchAPMaster();
-  }, [isSearch]);
+  const handleSubmit = async (e) => {
+    setIsLoading(true);
+    e.preventDefault();
+    const method = formData.nAccID ? "PUT" : "POST";
+    const endpoint = formConfig.endpoint;
 
-  // ----------------------FETCH MASTER--------------------------------
-
-  // ----------------------DATAGRID OPTIONS-----------------------------
-
-  // ----------------ROW EDIT FUNCTION-------------------------------
-
-  const handleEditClickOnRow = async (row) => {
-    // --------------setting all states-------------------------
-    setShouldFetchData(true);
-    setEditedSelectedId(row.id);
-    setEditedAccCode(row.acc_code);
-    setEditedAccName(row.acc_name);
-    setEditedSelectedAccType(row.acc_type);
-    setEditedSelectedFinType(row.fin_type);
-    setEditedSelectedFinCode(row.fin_code);
-    console.log("EditedSelectedFinCode", row.fin_code);
-    setEditedSelectedBN(row.banknature);
-    setEditedSelectedSubFincode(row.fin_sub_code);
-    setEditedSelectedDiv(row.division);
-    setEditedSelectedSL(row.subledger);
-    setBranchToTransfer(row.branch_id_transfer);
-    setEditedPCExpId(row.petty_cash_expense_id);
-    setEditedIsEodBalZero(row.iszerobal_eod);
-    setEditedSelectedCurrency(row.currency);
-    setEditedDoSale(row.issale);
-    setEditedDoPurchase(row.ispurchase);
-    setEditedDoReceipt(row.isreceipt);
-    setEditedDoPayment(row.ispayment);
-    setEditedIsActive(row.isactive);
-    setEditedIsCMSBank(row.iscms);
-    setEditedIsDirRemit(row.isdirremit);
-    // setEditedSelectedFinCodeObject(row.)
-    // setEditedSelectedSubFinCodeObject(row.)
-
-    // --------------End of setting all data states-------------------------
-
-    setIsEdit(true);
-    setIsCreate(false);
-    setIsSearch(false);
-    setSearchKeyword("");
-    setDataForEdit(row);
-
-    // Switch the view and fetch the corresponding row's data for editing
-    // You can set the data in your component's state for editing
-    console.log("Edit button clicked for currency ID:", row.id);
-    console.log("row Data:", row);
-    console.log("editedSelectedFinCode", editedSelectedFinCode);
-
-    // Add your logic to switch views and show the data in inputs
-  };
-
-  // ----------------ROW EDIT FUNCTION-------------------------------
-
-  // ----------------ROW Delete FUNCTION-------------------------------
-  const handleDeleteClick = (row) => {
-    SetRowid(row.id);
-    console.log("Delete button clicked for currency ID:", row.id);
-    showAlertDialogCurrency(`Delete the record : ${row.acc_code} `);
-  };
-
-  const APMasterDelete = async (id) => {
-    setisLoading(true);
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `${baseUrl}/api/master/APMasterDelete`,
-        { id: id },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log(result.message);
+        // Refresh data grid or perform other actions
+        if (!formData.nAccID) {
+          setRows((prevRows) => [...prevRows, result]);
+        } else {
+          setRows((prevRows) =>
+            prevRows.map((row) => (row.nAccID === result.nAccID ? result : row))
+          );
         }
-      );
-      console.log(response.data);
-      const updatedData = APMasterData.filter((item) => item.id !== id);
-      setAPMasterData(updatedData);
-      setisLoading(false);
-      showToast("Successfully Deleted!", "success");
+
+        setIsFormVisible(false);
+        fetchData();
+        setFormData({});
+        setIsLoading(false);
+        method === "PUT"
+          ? showToast("Data Edited Successfully!", "success")
+          : showToast("Data Inserted Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+      } else {
+        console.error(result.error);
+        showToast("Error Occurred!", "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showToast("Error Occurred!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
-      hideAlertDialogCurrency();
-      setSearchKeyword("");
-    } catch (error) {
-      console.log(error);
-      setisLoading(false);
-      hideAlertDialogCurrency();
+      setIsLoading(false);
     }
   };
-  // ----------------ROW Delete FUNCTION-------------------------------
+
+  const handleSearch = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(formConfig.endpoint, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+
+      // Filter out any invalid rows (rows that don't have a nAccID)
+      const validRows = result.filter((row) => row.nAccID);
+
+      setRows(validRows);
+      setIsFormVisible(false);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error:", error);
+      showToast("Error Occurred!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      setIsLoading(false);
+    }
+  };
 
   const columns = [
-    { field: "id", headerName: "ID", width: 140 },
-    {
-      field: "acc_code",
-      headerName: "Account Code",
-      width: isMobile ? 120 : 150,
-    },
-    { field: "acc_name", headerName: "Account Name", width: 180 },
-    {
-      field: "acc_type",
-      headerName: "Account Type",
-      width: isMobile ? 100 : 170,
-      valueGetter: (params) => {
-        switch (params.value) {
-          case "GL":
-            return "General Ledger";
-          case "SL":
-            return "Sub Ledger";
-          case "C":
-            return "Cash";
-          case "B":
-            return "Bank";
-          case "PC":
-            return "Petty Cash";
-          case "CC":
-            return "Credit Card";
-          default:
-            return params.value; // Default to the original value
-        }
-      },
-    },
+    { field: "vCode", headerName: "Account Code", width: 150 },
+    { field: "vName", headerName: "Account Name", width: 300 },
+    // Add other columns as needed
     {
       field: "actions",
       headerName: "Actions",
-      sortable: false,
       width: 200,
-      headerAlign: "center",
       renderCell: (params) => (
         <Box display={"flex"} gap={2}>
           <StyledButton
-            // className="ActionsButtonsEdit"
-            onClick={() => handleEditClickOnRow(params.row)}
-            style={{ width: 80, height: 35 }}
+            onClick={() => handleEdit(params.row)}
+            bgColor={Colortheme.buttonBg}
+            bgColorHover={Colortheme.buttonBgHover}
+            style={{ width: 80, height: 30 }}
           >
             Edit
           </StyledButton>
-          {isLoading ? (
-            <CircularProgress
-              size="25px"
-              style={{ color: COLORS.secondaryBG }}
-            />
-          ) : (
-            <StyledButton
-              // className="ActionsButtonsDelete"
-              onClick={() => handleDeleteClick(params.row)}
-              style={{ width: 80, height: 35 }}
-              bgColorHover={"red"}
-              textColOnHover={"white"}
-            >
-              Delete
-            </StyledButton>
-          )}
+          <StyledButton
+            onClick={() => handleDelete(params.row.nAccID)}
+            bgColor={Colortheme.buttonBg}
+            bgColorHover={"red"}
+            textColOnHover={"white"}
+            style={{ width: 80, height: 30 }}
+          >
+            Delete
+          </StyledButton>
         </Box>
       ),
     },
   ];
 
-  const handlebackClickOnSearch = () => {
-    setIsSearch(false);
-    setIsCreate(true);
+  const handleEdit = (row) => {
+    setFormData(row);
+    setIsFormVisible(true);
+    setSearchKeyword("");
   };
-  // const handleBackOnEdit = () => {
-  //   setIsSearch(true);
-  //   setIsEdit(false);
-  //   setIsCreate(false);
-  // };
-  const handleSelectionModelChange = (newSelection) => {
-    // Ensure that only one row is selected at a time
-    if (newSelection.length > 0) {
-      setSelectionModel([newSelection[newSelection.length - 1]]);
-    } else {
-      setSelectionModel(newSelection);
+
+  const handleDelete = async (nAccID) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${formConfig.endpoint}/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nAccID }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        console.log(result.message);
+        setRows((prevRows) => prevRows.filter((row) => row.nAccID !== nAccID));
+        setSearchKeyword("");
+        setIsLoading(false);
+        showToast("Data Deleted Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+      } else {
+        console.error(result.error);
+        setIsLoading(false);
+        showToast("Error Occurred!", "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setIsLoading(false);
+      showToast("Error Occurred!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
     }
   };
 
-  // ----------------------DATAGRID OPTIONS-----------------------------
+  const handleSelectionModelChange = (newSelection) => {
+    setSelectionModel(newSelection);
+  };
 
-  console.log("editedSelectedSubFinCode", editedSelectedSubFinCode);
+  const handleSearchChange = (event) => {
+    setSearchKeyword(event.target.value);
+  };
+
+  const filteredRows = rows
+    .filter((row) => row.nAccID) // Ensure each row has a nAccID
+    .map((row) => {
+      // Add any additional transformations needed for your data
+      return row;
+    })
+    .filter((row) => {
+      if (searchKeyword === "") {
+        return true;
+      }
+
+      const lowerSearchKeyword = searchKeyword.toLowerCase();
+      for (const column of columns) {
+        const cellValue = row[column.field]
+          ? row[column.field].toString().toLowerCase()
+          : "";
+        if (cellValue.includes(lowerSearchKeyword)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+  const handleBack = () => {
+    setIsFormVisible(true);
+    setSearchKeyword("");
+  };
+
+  const handleBackOnForm = () => {
+    setSearchKeyword("");
+    setFormData({});
+    setIsFormVisible(false);
+    // setTimeout(() => {
+    //   setIsFormVisible(true);
+    // }, 50);
+  };
+
   return (
-    <MainContainerCompilation title={"Accounts Profile"}>
-      {/* ---------------------------------------CREATION FORM---------------------------------------- */}
-      {isCreate && (
-        <Box
-          component={motion.div}
-          initial={{ x: 50 }}
-          animate={{ x: 0 }}
-          display={"flex"}
-          flexDirection={"column"}
-          alignItems={"center"}
-          gap={4}
-          p={5}
-          borderRadius={10}
-          sx={{ backgroundColor: Colortheme.background }}
-          boxShadow={5}
-        >
-          <Box
-            component={"form"}
-            onSubmit={handleSubmitCreate}
-            sx={{ backgroundColor: Colortheme.background }}
-            borderRadius={10}
-            p={2}
-            display={"flex"}
-            alignItems={"center"}
-            flexDirection={"column"}
-          >
-            <KeyboardBackspaceIcon
-              onClick={handlebackClickOnCreate}
-              fontSize="large"
-              sx={{
-                alignSelf: "flex-start",
-                color: Colortheme.text,
-                position: "absolute",
-                cursor: "pointer",
-              }}
-            />
-            <p style={{ fontSize: 20, color: Colortheme.text }}>
-              {" "}
-              Account Details (Create)
-            </p>
-            <Box
-              // mt={2}
-              display={"grid"}
-              pt={2}
-              overflow={isMobile ? "scroll" : "none"}
-              sx={{ overflowX: "hidden" }}
-              gridTemplateColumns={
-                isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"
-              }
-              // gridTemplateColumns={"repeat(3, 1fr)"}
-              gridTemplateRows={"repeat(3, 1fr)"}
-              columnGap={"60px"}
-              rowGap={"30px"}
-            >
-              <CustomTextField
-                name="division"
-                select
-                label="Division / Dept"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={selectedDiv}
-                onChange={(e) => setSelectedDiv(e.target.value)}
-              >
-                {DivOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-              <CustomTextField
-                required
-                name="AccCode"
-                label="Account Code"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <CustomTextField
-                required
-                name="Accname"
-                label="Account Name"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <CustomTextField
-                name="accType"
-                select
-                label="Account Type"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={selectedAccType}
-                onChange={(e) => setSelectedAccType(e.target.value)}
-              >
-                {AccTypeOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-              {selectedAccType === "SL" && (
-                <CustomTextField
-                  name="SL"
-                  select
-                  label="Sub Ledger"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={selectedSL}
-                  onChange={(e) => setSelectedSL(e.target.value)}
+    <MainContainerCompilation title="Accounts Profile">
+      <Box>
+        {isLoading ? (
+          <MutatingDots
+            visible={true}
+            height="100"
+            width="100"
+            color={Colortheme.text}
+            secondaryColor={Colortheme.text}
+            radius="12.5"
+            ariaLabel="mutating-dots-loading"
+          />
+        ) : (
+          <>
+            <Box display={"flex"} alignItems={"center"}>
+              {formData.nAccID && isFormVisible && (
+                <StyledButton
+                  onClick={handleBackOnForm}
+                  style={{
+                    width: 100,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  {SLOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </CustomTextField>
+                  <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+                </StyledButton>
               )}
-              {selectedAccType === "B" && (
-                <CustomTextField
-                  name="BN"
-                  select
-                  label="Bank Nature"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={selectedBN}
-                  onChange={(e) => setSelectedBN(e.target.value)}
+              {formData.nAccID && isFormVisible && (
+                <h1
+                  style={{
+                    color: Colortheme.text,
+                    marginLeft: isMobile ? "20%" : "35%",
+                  }}
                 >
-                  {BNOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </CustomTextField>
+                  Edit : {formData.vCode}
+                </h1>
               )}
+              {!formData.nAccID && isFormVisible && (
+                <h1 style={{ color: Colortheme.text, marginLeft: "45%" }}>
+                  Create
+                </h1>
+              )}
+            </Box>
 
-              {selectedAccType === "B" &&
-                selectedBN === "N" &&
-                currencyOptions && (
-                  <CustomAutocomplete
-                    id="CurrencyCodeRate"
-                    value={selectedCurrency}
-                    options={currencyOptions}
-                    getOptionLabel={(option) => option.currency_code || ""}
-                    isOptionEqualToValue={(option, value) =>
-                      option.currency_code === value.currency_code
+            {isFormVisible ? (
+              <AnimatePresence>
+                <Box
+                  component={motion.div}
+                  initial={{ x: 50 }}
+                  animate={{ x: 0 }}
+                >
+                  <Box
+                    component="form"
+                    onSubmit={handleSubmit}
+                    display={"grid"}
+                    maxHeight={"50vh"}
+                    overflow={isMobile ? "scroll" : "none"}
+                    sx={{
+                      overflowX: "hidden",
+                      backgroundColor: Colortheme.background,
+                    }}
+                    gridTemplateColumns={
+                      isMobile ? "repeat(1, 1fr)" : "repeat(5, 1fr)"
                     }
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    onChange={handleCurrencyChange}
-                    label="Currency"
-                    name="Currency"
-                    required
-                  />
-                )}
-              <CustomTextField
-                required
-                name="finType"
-                select
-                label="Financial Type"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={selectedFinType}
-                onChange={handleFinTypeChange}
-              >
-                {FTypeOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-              <CustomTextField
-                // name="finCode"
-                select
-                label="Financial Code"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={selectedFinCode}
-                onChange={(e) => {
-                  const selectedId = e.target.value; // Get the id of the selected item
-                  setSelectedFinCode(selectedId); // Update state with the id
-                  const selectedCode = finCodeOptions.find(
-                    (item) => item.id === selectedId
-                  )?.code; // Find the code corresponding to the selected id
-                  setSelectedFinCodeObject({
-                    id: selectedId,
-                    code: selectedCode,
-                  }); // Update the object with both id and code
-                }}
-              >
-                {loading ? (
-                  <MenuItem
-                    disabled
-                    sx={{ display: "flex", justifyContent: "center" }}
+                    gridTemplateRows={"repeat(3, 1fr)"}
+                    columnGap={"60px"}
+                    rowGap={"40px"}
+                    p={10}
+                    borderRadius={5}
                   >
-                    <CircularProgress />
-                  </MenuItem>
-                ) : (
-                  finCodeOptions.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {`${item.code} - ${item.name}`}
-                    </MenuItem>
-                  ))
-                )}
-              </CustomTextField>
-              <CustomTextField
-                select
-                label="Financial Sub Code"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-                value={selectedSubFinCode}
-                onChange={(e) => {
-                  const selectedId = e.target.value; // Get the id of the selected item
-                  setSelectedSubFincode(selectedId); // Update state with the id
-                  const selectedSubCode = subFinCodeOptions.find(
-                    (item) => item.id === selectedId
-                  )?.code; // Find the code corresponding to the selected id
-                  setSelectedSubFinCodeObject({
-                    id: selectedId,
-                    code: selectedSubCode,
-                  }); // Update the object with both id and code
-                }}
-              >
-                {loading ? (
-                  <MenuItem
-                    disabled
-                    sx={{ display: "flex", justifyContent: "center" }}
-                  >
-                    <CircularProgress />
-                  </MenuItem>
-                ) : (
-                  subFinCodeOptions.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {`${item.code} - ${item.name}`}
-                    </MenuItem>
-                  ))
-                )}
-              </CustomTextField>
-              <CustomTextField
-                name="PCExpID"
-                label="Petty Cash Expense ID"
-                // sx={{ width: isMobile ? "auto" : "12vw" }}
-              />
-              <CustomCheckbox
-                label="Zero Balance At EOD"
-                checked={isEodBalZero}
-                onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              {isEodBalZero && branches && (
-                <>
-                  <CustomTextField
-                    name="BranchIdTransfer"
-                    disabled={!isEodBalZero}
-                    select
-                    label="Branch ID To Transfer"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  >
-                    {loading ? (
-                      <MenuItem
-                        disabled
-                        sx={{ display: "flex", justifyContent: "center" }}
+                    {formConfig.fields.map((field) => (
+                      <div key={field.name}>
+                        {field.type === "text" ? (
+                          <CustomTextField
+                            label={field.label}
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.value)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                          />
+                        ) : field.type === "autocomplete" ? (
+                          <CustomAutocomplete
+                            label={field.label}
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e, newValue) =>
+                              handleChange(field, newValue)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                            options={countryOptions.map((item) => item.vCode)}
+                          />
+                        ) : field.type === "checkbox" ? (
+                          <CustomCheckbox
+                            name={field.name}
+                            label={field.label}
+                            checked={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.checked)
+                            }
+                            disabled={disabledFields[field.name]}
+                          />
+                        ) : field.type === "button" ? (
+                          <StyledButton
+                            onClick={field.onClick}
+                            bgColor={Colortheme.buttonBg}
+                            bgColorHover={Colortheme.buttonBgHover}
+                          >
+                            {field.label}
+                          </StyledButton>
+                        ) : field.type === "select" && field.fetchOptions ? (
+                          <CustomTextField
+                            label={field.label}
+                            select
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.value)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                          >
+                            {optionsData[field.name] &&
+                              optionsData[field.name].map((option) => (
+                                <MenuItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </MenuItem>
+                              ))}
+                          </CustomTextField>
+                        ) : field.type === "select" && field.options ? (
+                          <CustomTextField
+                            label={field.label}
+                            select
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.value)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                          >
+                            {field.options &&
+                              field.options.map((option) => (
+                                <MenuItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </MenuItem>
+                              ))}
+                          </CustomTextField>
+                        ) : null}
+                      </div>
+                    ))}
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <StyledButton
+                        type="submit"
+                        bgColor={Colortheme.buttonBg}
+                        bgColorHover={Colortheme.buttonBgHover}
                       >
-                        <CircularProgress />
-                      </MenuItem>
-                    ) : (
-                      branches.map((item) => (
-                        <MenuItem key={item.branchid} value={item.name}>
-                          {item.name}
-                        </MenuItem>
-                      ))
-                    )}
-                  </CustomTextField>
-                  <CustomTextField
-                    select
-                    label="Map To Account"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    name="mapAcc"
-                  />
-                </>
-              )}
-
-              <CustomCheckbox
-                name={"DoSale"}
-                label="Do Sale"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              <CustomCheckbox
-                name={"doPurchase"}
-                label="Do Purchase"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              <CustomCheckbox
-                name={"doReceipt"}
-                label="Do Receipt"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              <CustomCheckbox
-                name={"doPayment"}
-                label="Do Payment"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              <CustomCheckbox
-                name={"isActive"}
-                label="Active"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              <CustomCheckbox
-                name={"isCMSBank"}
-                label="CMS Bank"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-              <CustomCheckbox
-                name={"isDirRemit"}
-                label="Direct Remittance"
-                // checked={isEodBalZero}
-                // onChange={(e) => setIsEodBalZero(e.target.checked)}
-              />
-            </Box>
-            <Box display={"flex"} gap={5}>
-              <StyledButton
-                type="submit"
-                style={{
-                  width: 150,
-                  height: 45,
-                  marginTop: "40px",
-                }}
-              >
-                Create
-              </StyledButton>
-
-              <StyledButton
-                onClick={handleSearchClick}
-                style={{
-                  width: 150,
-                  height: 45,
+                        {formData.nAccID ? "Save" : "Create"}
+                      </StyledButton>
+                      <StyledButton
+                        type="button"
+                        onClick={handleSearch}
+                        bgColor={Colortheme.buttonBg}
+                        bgColorHover={Colortheme.buttonBgHover}
+                      >
+                        Search
+                      </StyledButton>
+                    </Box>
+                  </Box>
+                </Box>
+              </AnimatePresence>
+            ) : (
+              <Box
+                component={motion.div}
+                initial={{ x: -50 }}
+                animate={{ x: 0 }}
+                sx={{
+                  width: isMobile ? "80%" : "100%",
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: 5,
-                  marginTop: "40px",
+                  backgroundColor: Colortheme.background,
+                  p: 5,
+                  borderRadius: 10,
                 }}
               >
-                <SearchIcon />
-                Search
-              </StyledButton>
-            </Box>
-          </Box>
-        </Box>
-      )}
-      {/* ---------------------------------------CREATION FORM---------------------------------------- */}
-
-      {/* -----------------------------------SEARCH------------------------------------------------------------ */}
-      {isSearch && (
-        <>
-          {isSearch && APMasterData && (
-            <Box
-              component={motion.div}
-              initial={{ x: 150 }}
-              animate={{ x: 0 }}
-              height={"auto"}
-              minHeight={"40vh"}
-              width={isMobile ? "65vw" : "50vw"}
-              display={"flex"}
-              flexDirection={"column"}
-              alignItems={"center"}
-              gap={4}
-              p={5}
-              borderRadius={"20px"}
-              sx={{ backgroundColor: Colortheme.background }}
-              boxShadow={5}
-            >
-              <KeyboardBackspaceIcon
-                onClick={handlebackClickOnSearch}
-                fontSize="large"
-                sx={{
-                  alignSelf: "flex-start",
-                  color: Colortheme.text,
-                  position: "absolute",
-                  cursor: "pointer",
-                }}
-              />
-              <TextField
-                placeholder="Search.."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                sx={{
-                  "& fieldset": { border: "none" },
-                }}
-                style={{
-                  display: "flex",
-                  width: isMobile ? "40vw" : "16vw",
-                  backgroundColor: COLORS.text,
-                  borderRadius: "20px",
-                  border: `2px solid ${Colortheme.secondaryBG}`,
-                  height: 50,
-                  justifyContent: "center",
-                  boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
-                }}
-                InputProps={
-                  searchKeyword.length > 0
-                    ? {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <ClearIcon
-                              onClick={() => setSearchKeyword("")}
-                              style={{ cursor: "pointer" }}
-                            />
-                          </InputAdornment>
-                        ),
-                      }
-                    : {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                      }
-                }
-              />
-              {isLoading ? (
-                <CircularProgress sx={{ marginTop: 10 }} />
-              ) : (
+                <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
+                  <StyledButton
+                    onClick={handleBack}
+                    style={{
+                      width: 100,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+                  </StyledButton>
+                </Box>
+                <CustomTextField
+                  variant="outlined"
+                  placeholder="Search..."
+                  value={searchKeyword}
+                  onChange={handleSearchChange}
+                  style={{ marginBottom: "20px", width: "50%" }}
+                />
                 <DataGrid
+                  rows={filteredRows}
+                  columns={columns}
+                  pageSize={5}
                   disableRowSelectionOnClick
                   disableColumnFilter
-                  rows={APMasterData.map((row) => {
-                    // Add a new field to each row based on the acc_type value
-                    let accTypeLabel = "";
-                    switch (row.acc_type) {
-                      case "B":
-                        accTypeLabel = "Bank";
-                        break;
-                      // Add more cases for other acc_type values if needed
-                      default:
-                        accTypeLabel = row.acc_type; // Default to the original value
-                        break;
-                    }
-                    return { ...row, accTypeLabel };
-                  }).filter((row) => {
-                    if (searchKeyword === "") {
-                      return true; // No search keyword, so show all rows
-                    }
-
-                    const lowerSearchKeyword = searchKeyword.toLowerCase();
-
-                    // Check if any column value includes the search keyword (case-insensitive)
-                    for (const column of columns) {
-                      const cellValue = row[column.field]
-                        ? row[column.field].toString().toLowerCase()
-                        : "";
-                      if (cellValue.includes(lowerSearchKeyword)) {
-                        return true;
-                      }
-                    }
-
-                    return false;
-                  })}
-                  columnVisibilityModel={
-                    isMobile
-                      ? {
-                          // Hide columns status and traderName, the other columns will remain visible
-                          id: false,
-                        }
-                      : { id: false }
-                  }
-                  getRowId={(row) => row.id}
+                  getRowId={(row) => row.nAccID}
                   rowSelectionModel={selectionModel}
                   onRowSelectionModelChange={handleSelectionModelChange}
                   sortModel={[
                     {
-                      field: "id",
+                      field: "nAccID",
                       sort: "asc",
                     },
                   ]}
-                  columns={columns}
+                  columnVisibilityModel={
+                    isMobile ? { id: false } : { id: false }
+                  }
                   onModelChange={(model) => {
-                    // Update the search keyword when filtering is applied
                     if (
                       model.filterModel &&
                       model.filterModel.items.length > 0
@@ -1206,10 +582,9 @@ const AccountsProfile = () => {
                   }}
                   sx={{
                     backgroundColor: Colortheme.background,
-                    p: isMobile ? "10px" : "20px",
+                    p: isMobile ? "5px" : "20px",
                     maxHeight: "60vh",
                     width: isMobile ? "70vw" : "50vw",
-                    // boxShadow: 3,
                     border: "2px solid",
                     borderColor: Colortheme.background,
                     "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
@@ -1245,364 +620,12 @@ const AccountsProfile = () => {
                     },
                   }}
                   pageSizeOptions={[5, 10]}
-                  // checkboxSelection
-                />
-              )}
-            </Box>
-          )}
-        </>
-      )}
-
-      {/* -----------------------------------SEARCH------------------------------------------------------------ */}
-
-      {/* -------------------------------------EDIT FORM------------------------------------------------ */}
-      {isEdit && editedSelectedDiv && (
-        <Box
-          component={motion.div}
-          initial={{ x: 50 }}
-          animate={{ x: 0 }}
-          display={"flex"}
-          flexDirection={"column"}
-          alignItems={"center"}
-          gap={4}
-          p={5}
-          borderRadius={10}
-          sx={{ backgroundColor: Colortheme.background }}
-          boxShadow={5}
-        >
-          {isLoading ? (
-            <CircularProgress style={{ color: Colortheme.text }} />
-          ) : (
-            <Box
-              component={"form"}
-              onSubmit={handleSubmitEdit}
-              display={"flex"}
-              alignItems={"center"}
-              flexDirection={"column"}
-            >
-              <KeyboardBackspaceIcon
-                onClick={handleBackOnEdit}
-                fontSize="large"
-                sx={{
-                  alignSelf: "flex-start",
-                  color: Colortheme.text,
-                  position: "absolute",
-                  cursor: "pointer",
-                }}
-              />
-              <p style={{ fontSize: 20, color: Colortheme.text }}>
-                Account Details (Edit : {editedAccName})
-              </p>
-              <Box
-                mt={2}
-                pt={2}
-                display={"grid"}
-                overflow={isMobile ? "scroll" : "none"}
-                sx={{ overflowX: "hidden" }}
-                gridTemplateColumns={
-                  isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"
-                }
-                // gridTemplateColumns={"repeat(3, 1fr)"}
-                gridTemplateRows={"repeat(3, 1fr)"}
-                columnGap={"60px"}
-                rowGap={"40px"}
-              >
-                <CustomTextField
-                  name="division"
-                  select
-                  label="Division / Dept"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedDiv}
-                  onChange={(e) => setEditedSelectedDiv(e.target.value)}
-                >
-                  {DivOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </CustomTextField>
-                <CustomTextField
-                  required
-                  value={editedAccCode}
-                  onChange={(e) => setEditedAccCode(e.target.value)}
-                  name="AccCode"
-                  label="Account Code"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                />
-                <CustomTextField
-                  required
-                  value={editedAccName}
-                  onChange={(e) => setEditedAccName(e.target.value)}
-                  name="Accname"
-                  label="Account Name"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                />
-                <CustomTextField
-                  name="accType"
-                  select
-                  label="Account Type"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedAccType}
-                  onChange={(e) => setEditedSelectedAccType(e.target.value)}
-                >
-                  {AccTypeOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </CustomTextField>
-                {editedSelectedAccType === "SL" && (
-                  <CustomTextField
-                    name="SL"
-                    select
-                    label="Sub Ledger"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    value={editedSelectedSL}
-                    onChange={(e) => setEditedSelectedSL(e.target.value)}
-                  >
-                    {SLOptions.map((item) => (
-                      <MenuItem key={item.value} value={item.value}>
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                  </CustomTextField>
-                )}
-                {editedSelectedAccType === "B" && (
-                  <CustomTextField
-                    name="BN"
-                    select
-                    label="Bank Nature"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    value={editedSelectedBN}
-                    onChange={(e) => setEditedSelectedBN(e.target.value)}
-                  >
-                    {BNOptions.map((item) => (
-                      <MenuItem key={item.value} value={item.value}>
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                  </CustomTextField>
-                )}
-                {editedSelectedAccType === "B" &&
-                  editedSelectedBN === "N" &&
-                  currencyOptions && (
-                    <CustomAutocomplete
-                      id="CurrencyCodeRate"
-                      value={editedSelectedCurrency}
-                      options={currencyOptions}
-                      getOptionLabel={(option) => option.currency_code || ""}
-                      isOptionEqualToValue={(option, value) =>
-                        option.currency_code === value.currency_code
-                      }
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      onChange={handleEditedCurrencyChange}
-                      label="Currency"
-                      name="Currency"
-                      required
-                    />
-                  )}
-                <CustomTextField
-                  required
-                  name="finType"
-                  select
-                  label="Financial Type"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedFinType}
-                  onChange={handleEditedFinTypeChange}
-                >
-                  {FTypeOptions.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
-                    </MenuItem>
-                  ))}
-                </CustomTextField>
-                <CustomTextField
-                  name="finCode"
-                  select
-                  label="Financial Code"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedFinCode}
-                  onChange={(e) => {
-                    const editedSelectedId = e.target.value; // Get the id of the selected item
-                    setEditedSelectedFinCode(editedSelectedId); // Update state with the id
-                    setEditedSelectedSubFincode("");
-                    const selectedCode = editedFinCodeOptions.find(
-                      (item) => item.id === editedSelectedId
-                    )?.code; // Find the code corresponding to the selected id
-                    setEditedSelectedFinCodeObject({
-                      id: editedSelectedId,
-                      code: selectedCode,
-                    }); // Update the object with both id and code
-                  }}
-                >
-                  {loading ? (
-                    <MenuItem
-                      disabled
-                      sx={{ display: "flex", justifyContent: "center" }}
-                    >
-                      <CircularProgress />
-                    </MenuItem>
-                  ) : (
-                    editedFinCodeOptions &&
-                    editedFinCodeOptions.map((item) => (
-                      <MenuItem key={item.id} value={item.code}>
-                        {`${item.code}-${item.name}`}
-                      </MenuItem>
-                    ))
-                  )}
-                </CustomTextField>
-                <CustomTextField
-                  name="finSubCode"
-                  select
-                  label="Financial SubCode"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                  value={editedSelectedSubFinCode}
-                  onChange={(e) => {
-                    const editedselectedId = e.target.value; // Get the id of the selected item
-                    setEditedSelectedSubFincode(editedselectedId); // Update state with the id
-                    const selectedSubCode = editedSubFinCodeOptions.find(
-                      (item) => item.id === editedselectedId
-                    )?.code; // Find the code corresponding to the selected id
-                    setEditedSelectedSubFinCodeObject({
-                      id: editedselectedId,
-                      code: selectedSubCode,
-                    }); // Update the object with both id and code
-                  }}
-                >
-                  {loading ? (
-                    <MenuItem
-                      disabled
-                      sx={{ display: "flex", justifyContent: "center" }}
-                    >
-                      <CircularProgress />
-                    </MenuItem>
-                  ) : (
-                    editedSubFinCodeOptions &&
-                    editedSubFinCodeOptions.map((item) => (
-                      <MenuItem key={item.id} value={item.code}>
-                        {`${item.code} - ${item.name}`}
-                      </MenuItem>
-                    ))
-                  )}
-                </CustomTextField>
-                <CustomTextField
-                  name="PCExpID"
-                  value={editedPCExpId}
-                  onChange={(e) => setEditedPCExpId(e.target.value)}
-                  label="Petty Cash Expense ID"
-                  // sx={{ width: isMobile ? "auto" : "12vw" }}
-                />
-                <CustomCheckbox
-                  label="Zero Balance At EOD"
-                  name="isEodBalZero"
-                  checked={editedIsEodBalZero}
-                  onChange={(e) => setEditedIsEodBalZero(e.target.checked)}
-                />
-
-                {editedIsEodBalZero && branches && (
-                  <>
-                    <CustomTextField
-                      name="BranchIdTransfer"
-                      disabled={!editedIsEodBalZero}
-                      value={branchToTransfer}
-                      onChange={(e) => setBranchToTransfer(e.target.value)}
-                      select
-                      label="Branch ID To Transfer"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    >
-                      {loading ? (
-                        <MenuItem
-                          disabled
-                          sx={{ display: "flex", justifyContent: "center" }}
-                        >
-                          <CircularProgress />
-                        </MenuItem>
-                      ) : (
-                        branches.map((item) => (
-                          <MenuItem key={item.branchid} value={item.name}>
-                            {item.name}
-                          </MenuItem>
-                        ))
-                      )}
-                    </CustomTextField>
-                    <CustomTextField
-                      select
-                      label="Map To Account"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      name="mapAcc"
-                    />
-                  </>
-                )}
-
-                <CustomCheckbox
-                  label="Do Sale"
-                  name="doSale"
-                  checked={editedDoSale}
-                  onChange={(e) => setEditedDoSale(e.target.checked)}
-                />
-
-                <CustomCheckbox
-                  label="Do Purchase"
-                  name="doPurchase"
-                  checked={editedDoPurchase}
-                  onChange={(e) => setEditedDoPurchase(e.target.checked)}
-                />
-
-                <CustomCheckbox
-                  label="Do Receipt"
-                  name="doReceipt"
-                  checked={editedDoReceipt}
-                  onChange={(e) => setEditedDoReceipt(e.target.checked)}
-                />
-
-                <CustomCheckbox
-                  label="Do Payment"
-                  name="doPayment"
-                  checked={editedDoPayment}
-                  onChange={(e) => setEditedDoPayment(e.target.checked)}
-                />
-                <CustomCheckbox
-                  label="Active"
-                  name="isActive"
-                  checked={editedIsActive}
-                  onChange={(e) => setEditedIsActive(e.target.checked)}
-                />
-                <CustomCheckbox
-                  label="CMS Bank"
-                  name="isCMSBank"
-                  checked={editedIsCMSBank}
-                  onChange={(e) => setEditedIsCMSBank(e.target.checked)}
-                />
-                <CustomCheckbox
-                  label="Direct Remittance"
-                  name="isDirRemit"
-                  checked={editedIsDirRemit}
-                  onChange={(e) => setEditedIsDirRemit(e.target.checked)}
                 />
               </Box>
-              <Box display={"flex"} gap={5}>
-                <StyledButton
-                  onClick={handleBackOnEdit}
-                  style={{ marginTop: "40px", width: 200 }}
-                  bgColorHover={"darkred"}
-                  textColOnHover={"white"}
-                >
-                  Cancel
-                </StyledButton>
-                <StyledButton
-                  type="submit"
-                  style={{ marginTop: "40px", width: 200 }}
-                >
-                  Save
-                </StyledButton>
-              </Box>
-            </Box>
-          )}
-        </Box>
-      )}
-      {/* -------------------------------------EDIT FORM------------------------------------------------ */}
-
-      <CustomAlertModalCurrency handleAction={() => APMasterDelete(rowid)} />
+            )}
+          </>
+        )}
+      </Box>
     </MainContainerCompilation>
   );
 };

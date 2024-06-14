@@ -1,1088 +1,604 @@
-import React, { useEffect, useState } from "react";
-import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
-import {
-  Autocomplete,
-  Box,
-  CircularProgress,
-  InputAdornment,
-  TextField,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
-import { COLORS } from "../../../assets/colors/COLORS";
-import "../../../css/components/formComponent.css";
-import axios from "axios";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
+import React, { useState, useEffect, useContext } from "react";
+import { Box, MenuItem, useMediaQuery, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { AnimatePresence, motion } from "framer-motion";
-import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
-import "../../../css/pages/CurrencyProfile.css";
-import { useToast } from "../../../contexts/ToastContext";
-import CustomAlertModalCurrency from "../../../components/CustomerAlertModalCurrency";
-import { useNavigate } from "react-router-dom";
-import ThemeContext from "../../../contexts/ThemeContext";
-import { useContext } from "react";
-import StyledButton from "../../../components/global/StyledButton";
-import CustomTextField from "../../../components/global/CustomTextField";
 import CustomAutocomplete from "../../../components/global/CustomAutocomplete";
+import CustomTextField from "../../../components/global/CustomTextField";
 import CustomCheckbox from "../../../components/global/CustomCheckbox";
+import StyledButton from "../../../components/global/StyledButton";
+import ThemeContext from "../../../contexts/ThemeContext";
+import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
+import { formConfigs } from "../../../components/global/FormConfig/Master/Master Profiles/formConfig";
+import { AuthContext } from "../../../contexts/AuthContext";
+import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
+import { useToast } from "../../../contexts/ToastContext";
+import { MutatingDots } from "react-loader-spinner";
+import { AnimatePresence, motion } from "framer-motion";
 
 const CurrencyProfile = () => {
-  const { Colortheme } = useContext(ThemeContext);
-  // -----------------STATES START---------------------
-  const baseUrl = process.env.REACT_APP_BASE_URL;
+  const { token } = useContext(AuthContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const navigate = useNavigate();
-  const {
-    showAlertDialogCurrency,
-    hideAlertDialogCurrency,
-    showToast,
-    hideToast,
-  } = useToast();
-  const [isLoading, setisLoading] = useState(false);
-  const options = ["hello", "hi", "bye"];
+  const { Colortheme } = useContext(ThemeContext);
+  const { showToast, hideToast } = useToast();
+  const formConfig = formConfigs.currencyForm;
 
-  const CalculationMethodOptions = ["Multiplication", "Division"];
-  const [loading, setLoading] = useState(false);
-
-  const [allCurrencyData, setAllCurrencyData] = useState(null);
-  // const [currencyOneData, setCurrencyOneData] = useState(null);
-
-  // --------------create form states(values)--------------
-  const [currencyCode, setCurrencyCode] = useState("");
-  const [currencyName, setCurrencyName] = useState("");
-  const [country, setCountry] = useState("");
-  const [priority, setPriority] = useState("");
-  const [ratePer, setRatePer] = useState("");
-  const [defaultMinRate, setDefaultMinRate] = useState("");
-  const [defaultMaxRate, setDefaultMaxRate] = useState("");
-  const [calculationMethod, setCalculationMethod] = useState(null);
-  const [openRatePremium, setOpenRatePremium] = useState("");
-  const [gulfDiscFactor, setGulfDiscFactor] = useState("");
-  const [amexMapCode, setAmexMapCode] = useState("");
-  const [group, setGroup] = useState(null);
-
-  // --------------end create form states (values--------------
-
-  // --------------Edit form states--------------
-  const [editedSelectedId, setEditedSelectedId] = useState("");
-  const [editedcurrencyCode, setEditedCurrencyCode] = useState("");
-  const [editedcurrencyName, setEditedCurrencyName] = useState("");
-  const [editedcountry, setEditedCountry] = useState("");
-  const [editedpriority, setEditedPriority] = useState("");
-  const [editedratePer, setEditedRatePer] = useState("");
-  const [editeddefaultMinRate, setEditedDefaultMinRate] = useState("");
-  const [editeddefaultMaxRate, setEditedDefaultMaxRate] = useState("");
-  const [editedcalculationMethod, setEditedCalculationMethod] = useState(null);
-  const [editedopenRatePremium, setEditedOpenRatePremium] = useState("");
-  const [editedgulfDiscFactor, setEditedGulfDiscFactor] = useState("");
-  const [editedamexMapCode, setEditedAmexMapCode] = useState("");
-  const [editedActiveStatus, setEditedActiveStatus] = useState("");
-  const [editedgroup, setEditedGroup] = useState(null);
-
-  // --------------end Edit form states--------------
-
-  const [iscreateForm, setIsCreateForm] = useState(true);
-  const [isEdit, setIsEdit] = useState(false);
-  const [isDelete, setIsDelete] = useState(false);
-  const [isSearch, setIsSearch] = useState(false);
-  const [rowid, SetRowid] = useState(null);
-  const [dataForEdit, setDataForEdit] = useState(null);
-
-  const [selectionModel, setSelectionModel] = useState([]);
+  const [formData, setFormData] = useState({});
+  const [disabledFields, setDisabledFields] = useState({});
+  const [rows, setRows] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const columns = [
-    { field: "currencyid", headerName: "ID", width: 140 },
-    {
-      field: "currency_code",
-      headerName: "Currency Code",
-      width: isMobile ? 120 : 200,
-    },
-    { field: "currency_name", headerName: "Currency Name", width: 180 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      sortable: false,
-      width: 200,
-      headerAlign: "center",
-      renderCell: (params) => (
-        <Box display={"flex"} gap={2}>
-          <StyledButton
-            // className="ActionsButtonsEdit"
-            style={{ width: 80, height: 35 }}
-            onClick={() => handleEditClickOnRow(params.row)}
-          >
-            Edit
-          </StyledButton>
-          {isLoading ? (
-            <CircularProgress
-              size="25px"
-              style={{ color: COLORS.secondaryBG }}
-            />
-          ) : (
-            <StyledButton
-              // className="ActionsButtonsDelete"
-              bgColorHover={"red"}
-              textColOnHover={"white"}
-              style={{ width: 80, height: 35 }}
-              onClick={() => handleDeleteClick(params.row)}
-            >
-              Delete
-            </StyledButton>
-          )}
-        </Box>
-      ),
-    },
-    // {
-    //   field: "branchcode",
-    //   headerName: "Branch Code",
+  const [selectionModel, setSelectionModel] = useState([]);
+  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [countryOptions, setCountryOptions] = useState([]);
+  // const [groupOptions, setGroupOptions] = useState([]);
 
-    //   width: 130,
-    // },
-  ];
+  useEffect(() => {
+    const initialFormData = {};
+    const initialDisabledFields = {};
+    formConfig.fields.forEach((field) => {
+      initialFormData[field.name] = "";
+      if (field.disabled) initialDisabledFields[field.name] = true;
+    });
+    setFormData(initialFormData);
+    setDisabledFields(initialDisabledFields);
+  }, [formConfig]);
 
-  // -----------------STATES END---------------------
+  const handleChange = (field, value) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [field.name]: value,
+    }));
 
-  //  ---------------------FUNCTIONS START----------------------
+    // Handle dependencies
+    formConfig.fields.forEach((f) => {
+      if (f.dependencies && f.dependencies.includes(field.name)) {
+        setDisabledFields((prev) => ({
+          ...prev,
+          [f.name]: !value,
+        }));
+      }
+    });
+  };
 
-  const handleSubmitCreate = async (event) => {
-    setisLoading(true);
-    const token = localStorage.getItem("token");
-    event.preventDefault();
-    var data = new FormData(event.target);
-    let formObject = Object.fromEntries(data.entries());
-    console.log(formObject);
-    if (
-      currencyCode !== "" &&
-      currencyCode.length === 3 &&
-      currencyName !== "" &&
-      priority !== "" &&
-      ratePer !== ""
-    ) {
+  useEffect(() => {
+    const fetchAutocompleteOptions = async () => {
       try {
-        const response = await axios.post(
-          `${baseUrl}/api/master/CurrencyMasterCreate`,
-          {
-            currency_code: formObject.CurrencyCode.toUpperCase(),
-            currency_name: formObject.CurrencyName,
-            priority: formObject.Priority,
-            rateper: formObject.Rateper,
-            defaultminrate: formObject.DefaultMinRate,
-            defaultmaxrate: formObject.DefaultMaxRate,
-            calculationmethod:
-              formObject.CalculationMethod === "Multiplication" ? "M" : "D",
-            openratepremium: formObject.OpenRatePremium,
-            gulfdiscfactor: formObject.GulfDiscFactor,
-            isactive: formObject.Activate === "on" ? true : false,
-          },
+        const response = await fetch(
+          formConfig.fields.find((f) => f.name === "vCountryName").fetchOptions,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        console.log(
-          "Response Data for Creation of Currency Master:",
-          response.data
-        );
-
-        setisLoading(false);
-        setCurrencyCode("");
-        setCurrencyName("");
-        setPriority("");
-        setRatePer("");
-        setDefaultMinRate("");
-        setDefaultMaxRate("");
-        setCalculationMethod("");
-        setOpenRatePremium("");
-        setGulfDiscFactor("");
-
-        const updatedData = await CurrencyRefresh();
-        if (updatedData) {
-          setAllCurrencyData(updatedData);
-        }
-        showToast("Data Inserted Successfully!", "success");
+        const result = await response.json();
+        setCountryOptions(result); // Adjust this based on the structure of the response
+      } catch (error) {
+        console.error("Error fetching country options:", error);
+        showToast("Error Fetching Countries!", "fail");
         setTimeout(() => {
           hideToast();
-        }, 1500);
-      } catch (error) {
-        console.log(error);
-        setisLoading(false);
+        }, 2000);
       }
-    }
-    if (currencyName === "" && priority === "" && ratePer === "") {
-      setisLoading(false);
-      showToast("Please Enter All Fields", "Fail");
-      setTimeout(() => {
-        hideToast();
-      }, 1500);
-    } else if (currencyCode.length !== 3) {
-      setisLoading(false);
-      showToast("Currency Code Should be in 3 letters", "Fail");
-      setTimeout(() => {
-        hideToast();
-      }, 1500);
-    }
-  };
 
-  const handleSubmitEdit = async (event) => {
-    setisLoading(true);
-    const token = localStorage.getItem("token");
-    event.preventDefault();
-    var data = new FormData(event.target);
-    let formObject = Object.fromEntries(data.entries());
-    console.log(formObject);
-    if (
-      editedcurrencyCode !== "" &&
-      editedcurrencyName !== "" &&
-      editedpriority !== "" &&
-      editedratePer !== ""
-    ) {
-      try {
-        const response = await axios.post(
-          `${baseUrl}/api/master/CurrencyMasterEdit`,
-          {
-            currencyid: editedSelectedId,
-            currency_code: formObject.CurrencyCodeEdited,
-            currency_name: formObject.CurrencyNameEdited,
-            priority: formObject.PriorityEdited,
-            rateper: formObject.RateperEdited,
-            defaultminrate: formObject.DefaultMinRateEdited,
-            defaultmaxrate: formObject.DefaultMaxRateEdited,
-            calculationmethod:
-              formObject.CalculationMethodEdited === "Multiplication"
-                ? "M"
-                : "D",
-            openratepremium: formObject.OpenRatePremiumEdited,
-            gulfdiscfactor: formObject.GulfDiscFactorEdited,
-            isactive: formObject.ActivateEdited === "on" ? true : false,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      // try {
+      //   const response = await fetch(formConfig.fields.find(f => f.name === 'nCurrencyGroupID').fetchOptions, {
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //     },
+      //   });
+      //   const result = await response.json();
+      //   setGroupOptions(result); // Adjust this based on the structure of the response
+      // } catch (error) {
+      //   console.error('Error fetching group options:', error);
+      // }
+    };
 
-        console.log(response.data);
-        showToast("Data Edited Successfully!", "success");
-        setTimeout(() => {
-          hideToast();
-        }, 1500);
-        const updatedData = await CurrencyRefresh(); // Replace with your API call to fetch data
-        if (updatedData) {
-          setAllCurrencyData(updatedData);
-        }
-        setIsEdit(false);
-        setIsSearch(true);
-        setIsCreateForm(false);
-        setisLoading(false);
-      } catch (error) {
-        console.log(error);
-        setisLoading(false);
-      }
-    } else {
-      setisLoading(false);
-      showToast("Please Enter All Fields", "Fail");
-      setTimeout(() => {
-        hideToast();
-      }, 1500);
-    }
-  };
+    fetchAutocompleteOptions();
+  }, [token]);
 
-  const handleSearchClick = () => {
-    setIsSearch(true);
-    // setIsEdit(true);
-    setIsCreateForm(false);
-  };
-
-  const handlebackClickOnSearch = () => {
-    setIsSearch(false);
-    setIsCreateForm(true);
-  };
-
-  const handlebackClickOnCreate = () => {
-    navigate(-1);
-  };
-
-  const handleBackOnEdit = () => {
-    setIsSearch(true);
-    setIsEdit(false);
-    setIsCreateForm(false);
-  };
-
-  const CurrencyRefresh = async () => {
-    const token = localStorage.getItem("token");
+  const fetchData = async () => {
+    setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${baseUrl}/api/master/CurrencyMasterAll`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setAllCurrencyData(response.data);
-      console.log(response.data);
+      const response = await fetch(formConfig.endpoint, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      setRows(result.filter((row) => row.nCurrencyID));
+      setIsLoading(false);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching data:", error);
+      showToast("Error Occurred!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchCurrencyAll = async () => {
-      setLoading(true);
-      if (isSearch === true) {
-        const token = localStorage.getItem("token");
-        try {
-          const response = await axios.get(
-            `${baseUrl}/api/master/CurrencyMasterAll`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          setAllCurrencyData(response.data);
-          console.log(response.data);
-          setLoading(false);
-        } catch (error) {
-          console.log(error);
-          setLoading(false);
-        }
-      }
-    };
+    fetchData();
+  }, [token]);
 
-    fetchCurrencyAll();
-  }, [isSearch]);
+  const handleSubmit = async (e) => {
+    setIsLoading(true);
+    e.preventDefault();
+    const method = formData.nCurrencyID ? "PUT" : "POST";
+    const endpoint = formConfig.endpoint;
 
-  // useEffect(() => {
-  //   const fetchCurrencyOne = async () => {
-  //     const token = localStorage.getItem("token");
-  //     try {
-  //       const response = await axios.get(
-  //         `${baseUrl}/api/master/CurrencyMasterOne`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-  //       setCurrencyOneData(response.data);
-  //       console.log(response.data);
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   };
-
-  //   fetchCurrencyOne();
-  // }, []);
-
-  const CurrencyMasterDelete = async (currencyid) => {
-    setisLoading(true);
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `${baseUrl}/api/master/CurrencyMasterDelete`,
-        { currencyid: currencyid },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log(result.message);
+        // Refresh data grid or perform other actions
+        if (!formData.nCurrencyID) {
+          setRows((prevRows) => [...prevRows, result]);
+        } else {
+          setRows((prevRows) =>
+            prevRows.map((row) =>
+              row.nCurrencyID === result.nCurrencyID ? result : row
+            )
+          );
         }
-      );
-      console.log(response.data);
-      const updatedData = allCurrencyData.filter(
-        (item) => item.currencyid !== currencyid
-      );
-      setAllCurrencyData(updatedData);
-      setisLoading(false);
-      showToast("Successfully Deleted!", "success");
+
+        setIsFormVisible(false);
+        fetchData();
+        setFormData({});
+        setIsLoading(false);
+        method === "PUT"
+          ? showToast("Data Edited Successfully!", "success")
+          : showToast("Data Inserted Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+      } else {
+        console.error(result.error);
+        showToast("Error Occurred!", "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showToast("Error Occurred!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
-      hideAlertDialogCurrency();
-      setSearchKeyword("");
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(formConfig.endpoint, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+
+      // Filter out any invalid rows (rows that don't have a nCurrencyID)
+      const validRows = result.filter((row) => row.nCurrencyID);
+
+      setRows(validRows);
+      setIsFormVisible(false);
+      setIsLoading(false);
     } catch (error) {
-      console.log(error);
-      setisLoading(false);
-      hideAlertDialogCurrency();
+      console.error("Error:", error);
+      showToast("Error Occurred!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      setIsLoading(false);
+    }
+  };
+
+  const columns = [
+    { field: "vCncode", headerName: "Currency Code", width: 150 },
+    { field: "vCnName", headerName: "Currency Name", width: 150 },
+    // Add other columns as needed
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <Box display={"flex"} gap={2}>
+          <StyledButton
+            onClick={() => handleEdit(params.row)}
+            bgColor={Colortheme.buttonBg}
+            bgColorHover={Colortheme.buttonBgHover}
+            style={{ width: 80, height: 30 }}
+          >
+            Edit
+          </StyledButton>
+          <StyledButton
+            onClick={() => handleDelete(params.row.nCurrencyID)}
+            bgColor={Colortheme.buttonBg}
+            bgColorHover={"red"}
+            textColOnHover={"white"}
+            style={{ width: 80, height: 30 }}
+          >
+            Delete
+          </StyledButton>
+        </Box>
+      ),
+    },
+  ];
+
+  const handleEdit = (row) => {
+    setFormData(row);
+    setIsFormVisible(true);
+    setSearchKeyword("");
+  };
+
+  const handleDelete = async (nCurrencyID) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${formConfig.endpoint}/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nCurrencyID }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        console.log(result.message);
+        setRows((prevRows) =>
+          prevRows.filter((row) => row.nCurrencyID !== nCurrencyID)
+        );
+        setSearchKeyword("");
+        setIsLoading(false);
+        showToast("Data Deleted Successfully!", "success");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+      } else {
+        console.error(result.error);
+        setIsLoading(false);
+        showToast("Error Occurred!", "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setIsLoading(false);
+      showToast("Error Occurred!", "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
     }
   };
 
   const handleSelectionModelChange = (newSelection) => {
-    // Ensure that only one row is selected at a time
-    if (newSelection.length > 0) {
-      setSelectionModel([newSelection[newSelection.length - 1]]);
-    } else {
-      setSelectionModel(newSelection);
-    }
+    setSelectionModel(newSelection);
   };
 
-  const handleEditClickOnRow = (row) => {
-    // --------------setting all states-------------------------
-    setEditedSelectedId(row.currencyid);
-    setEditedCurrencyCode(row.currency_code);
-    setEditedCurrencyName(row.currency_name);
-    // setEditedCountry()
-    setEditedPriority(row.priority);
-    setEditedRatePer(row.rateper);
-    setEditedDefaultMinRate(row.defaultminrate);
-    setEditedDefaultMaxRate(row.defaultmaxrate);
-    setEditedCalculationMethod(
-      row.calculationmethod === "M" ? "Multiplication" : "Division"
-    );
-    setEditedOpenRatePremium(row.openratepremium);
-    setEditedGulfDiscFactor(row.gulfdiscfactor);
-    setEditedAmexMapCode(row.amexcode);
-    setEditedActiveStatus(row.isactive);
+  const handleSearchChange = (event) => {
+    setSearchKeyword(event.target.value);
+  };
 
-    // setEditedGroup()
+  const filteredRows = rows
+    .filter((row) => row.nCurrencyID) // Ensure each row has a nCurrencyID
+    .map((row) => {
+      // Add any additional transformations needed for your data
+      return row;
+    })
+    .filter((row) => {
+      if (searchKeyword === "") {
+        return true;
+      }
 
-    // --------------End of setting all data states-------------------------
+      const lowerSearchKeyword = searchKeyword.toLowerCase();
+      for (const column of columns) {
+        const cellValue = row[column.field]
+          ? row[column.field].toString().toLowerCase()
+          : "";
+        if (cellValue.includes(lowerSearchKeyword)) {
+          return true;
+        }
+      }
 
-    setDataForEdit(row);
-    setIsEdit(true);
-    setIsCreateForm(false);
-    setIsSearch(false);
+      return false;
+    });
+
+  const handleBack = () => {
+    setIsFormVisible(true);
     setSearchKeyword("");
-    // Switch the view and fetch the corresponding row's data for editing
-    // You can set the data in your component's state for editing
-    console.log("Edit button clicked for currency ID:", row.currencyid);
-
-    // Add your logic to switch views and show the data in inputs
   };
 
-  const handleDeleteClick = (row) => {
-    SetRowid(row.currencyid);
-    console.log("Delete button clicked for currency ID:", row.currencyid);
-    showAlertDialogCurrency(`Delete the record : ${row.currency_name} `);
+  const handleBackOnForm = () => {
+    setSearchKeyword("");
+    setFormData({});
+    setIsFormVisible(false);
+    // setTimeout(() => {
+    //   setIsFormVisible(true);
+    // }, 50);
   };
-
-  const handleCheckboxChange = (event) => {
-    setEditedActiveStatus(event.target.checked); // Update the state when the checkbox is toggled
-  };
-
-  //  ---------------------FUNCTIONS END----------------------
 
   return (
-    <MainContainerCompilation title={"Currency Profile"}>
-      {/* -------------------------CREATION START------------------------------- */}
-      {iscreateForm && (
-        <AnimatePresence>
-          <Box
-            display={"flex"}
-            component={motion.div}
-            initial={{ x: -50 }}
-            animate={{ x: 0 }}
-            exit={{ x: 100 }}
-            width={"100%"}
-            justifyContent={"center"}
-          >
-            <Box
-              display={"flex"}
-              flexDirection={"column"}
-              alignItems={"center"}
-              name="ContainerBox"
-              component={"form"}
-              onSubmit={handleSubmitCreate}
-              sx={{
-                backgroundColor: Colortheme.background,
-                overflow: isMobile ? "auto" : "visible",
-                maxHeight: isMobile ? "70vh" : "auto",
-              }}
-              height={"auto"}
-              p={3}
-              width={isMobile ? "70vw" : "90%"}
-              borderRadius={"40px"}
-              boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
-            >
-              <KeyboardBackspaceIcon
-                onClick={handlebackClickOnCreate}
-                fontSize="large"
-                sx={{
-                  alignSelf: "flex-start",
-                  color: Colortheme.text,
-                  position: "absolute",
-                  cursor: "pointer",
-                }}
-              />
-              <Box
-                name="HeaderSection"
-                textAlign={"center"}
-                fontSize={"20px"}
-                mt={0}
-                color={Colortheme.text}
-              >
-                Currency Master
-              </Box>
-              <Box
-                name="HeaderSection"
-                fontSize={"14px"}
-                mt={2}
-                color={Colortheme.text}
-              >
-                (Create New)
-              </Box>
-              {isLoading ? (
-                <CircularProgress sx={{ marginTop: 5 }} />
-              ) : (
-                <Box
-                  name="InputsContainer"
-                  mt={4}
-                  display={"grid"}
-                  gridTemplateColumns={
-                    isMobile ? "repeat(1, 1fr)" : "repeat(5, 1fr)"
-                  }
-                  // gridTemplateColumns={"repeat(3, 1fr)"}
-                  gridTemplateRows={"repeat(3, 1fr)"}
-                  columnGap={"40px"}
-                  rowGap={"40px"}
-                >
-                  <CustomTextField
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    name="CurrencyCode"
-                    value={currencyCode}
-                    onChange={(e) => setCurrencyCode(e.target.value)}
-                    label="Currency Code"
-                  />
-
-                  <CustomTextField
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    name="CurrencyName"
-                    label="Currency Name"
-                    value={currencyName}
-                    onChange={(e) => setCurrencyName(e.target.value)}
-                  />
-                  <Autocomplete
-                    disabled
-                    disablePortal
-                    id="Countries"
-                    name="Countries"
-                    onChange={(event, newValue) => setCountry(newValue)}
-                    options={options}
-                    sx={{ width: isMobile ? "auto" : "12vw" }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Countries"
-                        value={country}
-                        name="country"
-                      />
-                    )}
-                  />
-                  <CustomTextField
-                    id="Priority"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    label="Priority"
-                    name="Priority"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                  />
-                  <CustomTextField
-                    id="Rateper"
-                    name="Rateper"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    label="Rate / per"
-                    value={ratePer}
-                    onChange={(e) => setRatePer(e.target.value)}
-                  />
-                  <CustomTextField
-                    id="DefaultMinRate"
-                    name="DefaultMinRate"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    label="Default Min Rate"
-                    value={defaultMinRate}
-                    onChange={(e) => setDefaultMinRate(e.target.value)}
-                  />
-                  <CustomTextField
-                    id="DefaultMaxRate"
-                    name="DefaultMaxRate"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    label="Default Max Rate"
-                    value={defaultMaxRate}
-                    onChange={(e) => setDefaultMaxRate(e.target.value)}
-                  />
-                  <CustomAutocomplete
-                    disablePortal
-                    id="CalculationMethod"
-                    options={CalculationMethodOptions}
-                    label="Calculation Method"
-                    name="CalculationMethod"
-                    // onChange={(e, newValue) => setCalculationMethod(newValue)}
-                  />
-                  <CustomTextField
-                    id="OpenRatePremium"
-                    name="OpenRatePremium"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    label="Open Rate Premium"
-                    value={openRatePremium}
-                    onChange={(e) => setOpenRatePremium(e.target.value)}
-                  />
-                  <CustomTextField
-                    id="GulfDiscFactor"
-                    name="GulfDiscFactor"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    label="Gulf Disc Factor"
-                    value={gulfDiscFactor}
-                    onChange={(e) => setGulfDiscFactor(e.target.value)}
-                  />
-                  <CustomTextField
-                    label="Amex Map Code"
-                    name="AmexMapCode"
-                    id="AmexMapCode"
-                    // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    value={amexMapCode}
-                    onChange={(e) => setAmexMapCode(e.target.value)}
-                  />
-                  <CustomAutocomplete
-                    disabled
-                    disablePortal
-                    id="Group"
-                    options={options}
-                    label="Group"
-                    name="Group"
-                  />
-                  <CustomCheckbox name="Activate" label="Activate" />
-                  <CustomCheckbox name="OnlyStocking" label="Only Stocking" />
-                </Box>
-              )}
-
-              <Box display="flex" name="FooterSection" mt={4} gap={5}>
+    <MainContainerCompilation title="Currency Profile">
+      <Box>
+        {isLoading ? (
+          <MutatingDots
+            visible={true}
+            height="100"
+            width="100"
+            color={Colortheme.text}
+            secondaryColor={Colortheme.text}
+            radius="12.5"
+            ariaLabel="mutating-dots-loading"
+          />
+        ) : (
+          <>
+            <Box display={"flex"} alignItems={"center"}>
+              {formData.nCurrencyID && isFormVisible && (
                 <StyledButton
-                  onClick={handleSearchClick}
-                  // className="FormFooterButton"
+                  onClick={handleBackOnForm}
                   style={{
+                    width: 100,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: 5,
-                    width: isMobile ? 120 : 200,
                   }}
                 >
-                  <SearchIcon />
-                  Search
+                  <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
                 </StyledButton>
-
-                {/* <button className="FormFooterButton" type="reset">
-                  Cancel
-                </button> */}
-                <StyledButton
-                  className="FormFooterButton"
-                  type="submit"
-                  style={{
-                    width: isMobile ? 120 : 200,
-                  }}
-                >
-                  Add
-                </StyledButton>
-              </Box>
-            </Box>
-          </Box>
-        </AnimatePresence>
-      )}
-
-      {/* -------------------------CREATION END------------------------------- */}
-
-      {/* -------------------------SEARCH & DELETE) START------------------------------- */}
-      {loading && isSearch ? (
-        <CircularProgress style={{ color: Colortheme.text }} />
-      ) : (
-        <>
-          {isSearch && (
-            <Box
-              component={motion.div}
-              initial={{ x: 50 }}
-              animate={{ x: 0 }}
-              height={"auto"}
-              minHeight={"40vh"}
-              width={isMobile ? "65vw" : "80%"}
-              display={"flex"}
-              flexDirection={"column"}
-              alignItems={"center"}
-              gap={4}
-              p={5}
-              borderRadius={"20px"}
-              sx={{ backgroundColor: Colortheme.background }}
-              boxShadow={5}
-            >
-              <KeyboardBackspaceIcon
-                onClick={handlebackClickOnSearch}
-                fontSize="large"
-                sx={{
-                  alignSelf: "flex-start",
-                  color: Colortheme.text,
-                  position: "absolute",
-                  cursor: "pointer",
-                }}
-              />
-              <CustomTextField
-                placeholder="Search.."
-                placeholderTextColor="white"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                sx={{
-                  "& fieldset": { border: "none" },
-                }}
-                style={{
-                  display: "flex",
-                  width: isMobile ? "40vw" : "16vw",
-                  backgroundColor: "white",
-                  borderRadius: "20px",
-                  border: `2px solid ${Colortheme.secondaryBG}`,
-                  height: 50,
-                  justifyContent: "center",
-                  boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
-                }}
-                InputProps={
-                  searchKeyword.length > 0
-                    ? {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <ClearIcon
-                              onClick={() => setSearchKeyword("")}
-                              style={{ cursor: "pointer" }}
-                            />
-                          </InputAdornment>
-                        ),
-                      }
-                    : {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                      }
-                }
-              />
-              <DataGrid
-                disableRowSelectionOnClick
-                disableColumnFilter
-                rows={allCurrencyData.filter((row) => {
-                  if (searchKeyword === "") {
-                    return true; // No search keyword, so show all rows
-                  }
-
-                  const lowerSearchKeyword = searchKeyword.toLowerCase();
-
-                  // Check if any column value includes the search keyword (case-insensitive)
-                  for (const column of columns) {
-                    const cellValue = row[column.field]
-                      ? row[column.field].toString().toLowerCase()
-                      : "";
-                    if (cellValue.includes(lowerSearchKeyword)) {
-                      return true;
-                    }
-                  }
-
-                  return false;
-                })}
-                columnVisibilityModel={
-                  isMobile
-                    ? {
-                        // Hide columns status and traderName, the other columns will remain visible
-                        currencyid: false,
-                        currency_name: false,
-                      }
-                    : { currencyid: false }
-                }
-                getRowId={(row) => row.currencyid}
-                rowSelectionModel={selectionModel}
-                onRowSelectionModelChange={handleSelectionModelChange}
-                sortModel={[
-                  {
-                    field: "currencyid",
-                    sort: "asc",
-                  },
-                ]}
-                columns={columns}
-                onModelChange={(model) => {
-                  // Update the search keyword when filtering is applied
-                  if (model.filterModel && model.filterModel.items.length > 0) {
-                    setSearchKeyword(model.filterModel.items[0].value);
-                  } else {
-                    setSearchKeyword("");
-                  }
-                }}
-                sx={{
-                  backgroundColor: Colortheme.background,
-                  p: isMobile ? "10px" : "20px",
-                  maxHeight: "60vh",
-                  width: isMobile ? "70vw" : "100%",
-                  border: "none",
-                  // boxShadow: 3,
-
-                  "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                    {
-                      display: "none",
-                    },
-                  "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                    backgroundColor: Colortheme.background,
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiTablePagination-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-toolbarContainer": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-footerContainer": {
-                    backgroundColor: Colortheme.background,
-                  },
-                  "& .MuiButtonBase-root": {
-                    color: Colortheme.text,
-                  },
-                }}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 5 },
-                  },
-                }}
-                pageSizeOptions={[5, 10]}
-                // checkboxSelection
-              />
-            </Box>
-          )}{" "}
-        </>
-      )}
-
-      {/* -------------------------SEARCH END------------------------------- */}
-
-      {/* -------------------------EDIT START------------------------------- */}
-
-      {isEdit && dataForEdit && (
-        <AnimatePresence>
-          <Box
-            component={motion.div}
-            initial={{ y: -50 }}
-            animate={{ y: 0 }}
-            exit={{ y: -50 }}
-          >
-            <Box
-              display={"flex"}
-              flexDirection={"column"}
-              alignItems={"center"}
-              name="ContainerBox"
-              component={"form"}
-              onSubmit={handleSubmitEdit}
-              sx={{
-                backgroundColor: Colortheme.background,
-                overflow: isMobile ? "auto" : "visible",
-                maxHeight: isMobile ? "70vh" : "auto",
-              }}
-              height={"auto"}
-              p={3}
-              width={isLoading ? "10vw" : "70vw"}
-              borderRadius={"40px"}
-              boxShadow={"box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.6)"}
-            >
-              {isLoading ? (
-                <CircularProgress
-                  size={"30px"}
-                  style={{ color: Colortheme.text }}
-                />
-              ) : (
-                <>
-                  <Box
-                    name="HeaderSection"
-                    textAlign={"center"}
-                    fontSize={"20px"}
-                    mt={0}
-                    color={Colortheme.text}
-                  >
-                    Edit Data
-                  </Box>
-                  <Box
-                    name="HeaderSection"
-                    fontSize={"14px"}
-                    mt={2}
-                    color={Colortheme.text}
-                  >
-                    (Currency : {dataForEdit.currency_name})
-                  </Box>
-                  <Box
-                    name="InputsContainer"
-                    mt={4}
-                    display={"grid"}
-                    gridTemplateColumns={
-                      isMobile ? "repeat(1, 1fr)" : "repeat(5, 1fr)"
-                    }
-                    gridTemplateRows={"repeat(3, 1fr)"}
-                    columnGap={"40px"}
-                    rowGap={"40px"}
-                  >
-                    <CustomTextField
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      name="CurrencyCodeEdited"
-                      value={editedcurrencyCode}
-                      onChange={(e) => setEditedCurrencyCode(e.target.value)}
-                      label="Currency Code"
-                    />
-
-                    <CustomTextField
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      name="CurrencyNameEdited"
-                      label="Currency Name"
-                      value={editedcurrencyName}
-                      onChange={(e) => setEditedCurrencyName(e.target.value)}
-                    />
-                    <CustomAutocomplete
-                      disabled
-                      disablePortal
-                      id="Countries"
-                      // name="CountriesEdited"
-                      onChange={(event, newValue) => setCountry(newValue)}
-                      options={options}
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Countries"
-                      value={country}
-                      name="country"
-                    />
-                    <CustomTextField
-                      id="Priority"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label={"Priority"}
-                      name="PriorityEdited"
-                      value={editedpriority}
-                      onChange={(e) => setEditedPriority(e.target.value)}
-                    />
-                    <CustomTextField
-                      id="Rate/per"
-                      name="RateperEdited"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Rate / per"
-                      value={editedratePer}
-                      onChange={(e) => setEditedRatePer(e.target.value)}
-                    />
-                    <CustomTextField
-                      id="DefaultMinRate"
-                      name="DefaultMinRateEdited"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Default Min Rate"
-                      value={editeddefaultMinRate}
-                      onChange={(e) => setEditedDefaultMinRate(e.target.value)}
-                    />
-                    <CustomTextField
-                      id="DefaultMaxRate"
-                      name="DefaultMaxRateEdited"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Default Max Rate"
-                      value={editeddefaultMaxRate}
-                      onChange={(e) => setEditedDefaultMaxRate(e.target.value)}
-                    />
-                    <CustomAutocomplete
-                      disablePortal
-                      id="CalculationMethod"
-                      options={CalculationMethodOptions}
-                      value={editedcalculationMethod}
-                      onChange={(e, newValue) =>
-                        setEditedCalculationMethod(newValue)
-                      }
-                      label="Calculation Method"
-                      name="CalculationMethodEdited"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                    />
-                    <CustomTextField
-                      id="OpenRatePremium"
-                      name="OpenRatePremiumEdited"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Open Rate Premium"
-                      value={editedopenRatePremium}
-                      onChange={(e) => setEditedOpenRatePremium(e.target.value)}
-                    />
-                    <CustomTextField
-                      id="GulfDiscFactor"
-                      name="GulfDiscFactorEdited"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Gulf Disc Factor"
-                      value={editedgulfDiscFactor}
-                      onChange={(e) => setEditedGulfDiscFactor(e.target.value)}
-                    />
-                    <CustomTextField
-                      label="Amex Map Code"
-                      name="AmexMapCodeEdited"
-                      id="AmexMapCode"
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      value={editedamexMapCode}
-                      onChange={(e) => setEditedAmexMapCode(e.target.value)}
-                    />
-                    <CustomAutocomplete
-                      disabled
-                      disablePortal
-                      id="Group"
-                      options={options}
-                      // sx={{ width: isMobile ? "auto" : "12vw" }}
-                      label="Group"
-                      name="Group"
-                      // renderInput={(params) => (
-                      //   <TextField {...params} />
-                      // )}
-                      // value={group}
-                      // onChange={(_, newValue) => setGroup(newValue)}
-                    />
-                    <CustomCheckbox
-                      label="Active"
-                      name="ActivateEdited"
-                      checked={editedActiveStatus}
-                      onChange={handleCheckboxChange}
-                    />
-
-                    <CustomCheckbox
-                      label="Only Stocking"
-                      name="OnlyStockingEdited"
-                    />
-                  </Box>
-                  <Box display="flex" name="FooterSection" mt={4} gap={5}>
-                    <StyledButton
-                      bgColorHover={"darkred"}
-                      textColOnHover={"white"}
-                      onClick={handleBackOnEdit}
-                      style={{
-                        width: isMobile ? 120 : 200,
-                      }}
-                    >
-                      Cancel
-                    </StyledButton>
-
-                    {/* <button className="FormFooterButton" type="reset">
-                    Cancel
-                  </button> */}
-                    <StyledButton
-                      className="FormFooterButton"
-                      type="submit"
-                      style={{ width: isMobile ? 120 : 200 }}
-                    >
-                      Edit & Save
-                    </StyledButton>
-                  </Box>
-                </>
+              )}
+              {formData.nCurrencyID && isFormVisible && (
+                <h1 style={{ color: Colortheme.text, marginLeft: "35%" }}>
+                  Edit : {formData.vCncode}
+                </h1>
+              )}
+              {!formData.nCurrencyID && isFormVisible && (
+                <h1 style={{ color: Colortheme.text, marginLeft: "45%" }}>
+                  Create
+                </h1>
               )}
             </Box>
-          </Box>
-        </AnimatePresence>
-      )}
 
-      {/* -------------------------EDIT END------------------------------- */}
-
-      <CustomAlertModalCurrency
-        handleAction={() => CurrencyMasterDelete(rowid)}
-      />
+            {isFormVisible ? (
+              <AnimatePresence>
+                <Box
+                  component={motion.div}
+                  initial={{ x: 50 }}
+                  animate={{ x: 0 }}
+                >
+                  <Box
+                    component="form"
+                    onSubmit={handleSubmit}
+                    display={"grid"}
+                    overflow={isMobile ? "scroll" : "none"}
+                    sx={{
+                      overflowX: "hidden",
+                      backgroundColor: Colortheme.background,
+                    }}
+                    gridTemplateColumns={
+                      isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"
+                    }
+                    gridTemplateRows={"repeat(3, 1fr)"}
+                    columnGap={"60px"}
+                    rowGap={"40px"}
+                    p={10}
+                    borderRadius={5}
+                  >
+                    {formConfig.fields.map((field) => (
+                      <div key={field.name}>
+                        {field.type === "text" ? (
+                          <CustomTextField
+                            label={field.label}
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.value)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                          />
+                        ) : field.type === "autocomplete" ? (
+                          <CustomAutocomplete
+                            label={field.label}
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e, newValue) =>
+                              handleChange(field, newValue)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                            options={countryOptions.map((item) => item.vCode)}
+                          />
+                        ) : field.type === "checkbox" ? (
+                          <CustomCheckbox
+                            name={field.name}
+                            label={field.label}
+                            checked={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.checked)
+                            }
+                            disabled={disabledFields[field.name]}
+                          />
+                        ) : field.type === "button" ? (
+                          <StyledButton
+                            onClick={field.onClick}
+                            bgColor={Colortheme.buttonBg}
+                            bgColorHover={Colortheme.buttonBgHover}
+                          >
+                            {field.label}
+                          </StyledButton>
+                        ) : field.type === "select" ? (
+                          <CustomTextField
+                            label={field.label}
+                            select
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.value)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                          >
+                            {field.options &&
+                              field.options.map((option) => (
+                                <MenuItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </MenuItem>
+                              ))}
+                          </CustomTextField>
+                        ) : null}
+                      </div>
+                    ))}
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <StyledButton
+                        type="submit"
+                        bgColor={Colortheme.buttonBg}
+                        bgColorHover={Colortheme.buttonBgHover}
+                      >
+                        {formData.nCurrencyID ? "Save" : "Create"}
+                      </StyledButton>
+                      <StyledButton
+                        type="button"
+                        onClick={handleSearch}
+                        bgColor={Colortheme.buttonBg}
+                        bgColorHover={Colortheme.buttonBgHover}
+                      >
+                        Search
+                      </StyledButton>
+                    </Box>
+                  </Box>
+                </Box>
+              </AnimatePresence>
+            ) : (
+              <Box
+                component={motion.div}
+                initial={{ x: -50 }}
+                animate={{ x: 0 }}
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  backgroundColor: Colortheme.background,
+                  p: 5,
+                  borderRadius: 10,
+                }}
+              >
+                <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
+                  <StyledButton
+                    onClick={handleBack}
+                    style={{
+                      width: 100,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+                  </StyledButton>
+                </Box>
+                <CustomTextField
+                  variant="outlined"
+                  placeholder="Search..."
+                  value={searchKeyword}
+                  onChange={handleSearchChange}
+                  style={{ marginBottom: "20px", width: "50%" }}
+                />
+                <DataGrid
+                  rows={filteredRows}
+                  columns={columns}
+                  pageSize={5}
+                  disableRowSelectionOnClick
+                  disableColumnFilter
+                  getRowId={(row) => row.nCurrencyID}
+                  rowSelectionModel={selectionModel}
+                  onRowSelectionModelChange={handleSelectionModelChange}
+                  sortModel={[
+                    {
+                      field: "nCurrencyID",
+                      sort: "asc",
+                    },
+                  ]}
+                  columnVisibilityModel={
+                    isMobile ? { id: false } : { id: false }
+                  }
+                  onModelChange={(model) => {
+                    if (
+                      model.filterModel &&
+                      model.filterModel.items.length > 0
+                    ) {
+                      setSearchKeyword(model.filterModel.items[0].value);
+                    } else {
+                      setSearchKeyword("");
+                    }
+                  }}
+                  sx={{
+                    backgroundColor: Colortheme.background,
+                    p: isMobile ? "10px" : "20px",
+                    maxHeight: "60vh",
+                    width: isMobile ? "70vw" : "50vw",
+                    border: "2px solid",
+                    borderColor: Colortheme.background,
+                    "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
+                      {
+                        display: "none",
+                      },
+                    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+                      backgroundColor: Colortheme.background,
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiTablePagination-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiSvgIcon-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-toolbarContainer": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                      backgroundColor: Colortheme.background,
+                    },
+                    "& .MuiButtonBase-root": {
+                      color: Colortheme.text,
+                    },
+                  }}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { page: 0, pageSize: 5 },
+                    },
+                  }}
+                  pageSizeOptions={[5, 10]}
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
     </MainContainerCompilation>
   );
 };

@@ -8,9 +8,13 @@ const CustomAutocomplete = (props) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  // Ensure options is an array
+  const options = Array.isArray(props.options) ? props.options : [];
+
   return (
     <Autocomplete
       {...props}
+      options={options}
       sx={{
         "& .MuiAutocomplete-clearIndicator": {
           color: Colortheme.text,
@@ -23,7 +27,6 @@ const CustomAutocomplete = (props) => {
             borderColor: "gray", // Custom outline color when disabled
           },
         },
-        width: isMobile ? "auto" : "12vw",
       }}
       renderInput={(params) => (
         <CustomTextField

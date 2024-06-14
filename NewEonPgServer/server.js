@@ -186,6 +186,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const navRoutes = require("./routes/navRoutes");
+const MasterProfileRoutes = require("./routes/pages/Master/MasterProfiles/indexRoutesMP");
 
 const app = express();
 const port = 5002;
@@ -196,6 +197,7 @@ app.use(cors());
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/nav", navRoutes);
+app.use("/pages/Master/MasterProfiles", MasterProfileRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

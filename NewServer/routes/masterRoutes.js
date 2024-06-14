@@ -884,4 +884,152 @@ router.post("/CurrencyMasterEdit", authenticate, async (req, res) => {
 
 // ---------------------EDIT END------------------------------
 
+// CURRENCY MASTER TESTT---------------------
+
+// router.get('/api/countries', async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT id, name FROM countries');
+//     res.json(result.rows);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// });
+
+router.get("/api/currencies", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM currencymaster WHERE isdeleted=false order by currencyid"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// CRUD operations for currencies
+router.post("/api/currencies", authenticate, async (req, res) => {
+  const {
+    currency_code,
+    currency_name,
+    priority,
+    rateper,
+    defaultminrate,
+    defaultmaxrate,
+    calculationmethod,
+    openratepremium,
+    gulfdiscfactor,
+    isactive,
+  } = req.body;
+
+  const query = `
+    INSERT INTO currencymaster (
+      currency_code, currency_name,priority, rateper, defaultminrate, defaultmaxrate, calculationmethod ,
+      openratepremium, gulfdiscfactor, isactive
+    )
+    VALUES (
+      $1, $2, $3, $4 , $5, $6, $7, $8, $9, $10
+    )
+  `;
+
+  try {
+    await pool.query(query, [
+      currency_code,
+      currency_name,
+      priority,
+      rateper,
+      defaultminrate,
+      defaultmaxrate,
+      calculationmethod,
+      openratepremium,
+      gulfdiscfactor,
+      isactive,
+    ]);
+
+    console.log("Data inserted successfully");
+    res.status(201).json({ message: "Data inserted successfully" });
+  } catch (error) {
+    console.error("Error inserting data:", error);
+    res.status(500).json({ error: "Error inserting data" });
+  }
+});
+
+router.put("/api/currencies", authenticate, async (req, res) => {
+  const {
+    currencyid,
+    currency_code,
+    currency_name,
+    priority,
+    rateper,
+    defaultminrate,
+    defaultmaxrate,
+    calculationmethod,
+    openratepremium,
+    gulfdiscfactor,
+    isactive,
+  } = req.body;
+
+  const query = `
+  UPDATE currencymaster
+  SET currency_code = $2, currency_name = $3, priority = $4, rateper = $5, defaultminrate = $6, defaultmaxrate = $7, calculationmethod = $8, openratepremium =$9, gulfdiscfactor = $10, isactive = $11
+  WHERE currencyid = $1
+  `;
+
+  try {
+    pool.query(
+      query,
+      [
+        currencyid,
+        currency_code,
+        currency_name,
+        priority,
+        rateper,
+        defaultminrate,
+        defaultmaxrate,
+        calculationmethod,
+        openratepremium,
+        gulfdiscfactor,
+        isactive,
+      ],
+      (error, results) => {
+        if (error) {
+          console.error("Error Editing:", error);
+          res.status(500).json({ error: "Error Editing data" });
+        }
+        console.log("Data Edited successfully");
+        res.status(201).json({ message: "Data Edited successfully" });
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+router.post("/api/currencies/delete", authenticate, async (req, res) => {
+  const { currencyid } = req.body;
+
+  const query = `
+  UPDATE currencymaster
+  SET isdeleted = true
+  WHERE currencyid = $1
+  `;
+
+  try {
+    pool.query(query, [currencyid], (error, results) => {
+      if (error) {
+        console.error("Error deleting row:", error);
+        res.status(500).json({ error: "Error deleting data" });
+      }
+      console.log("Data deleted successfully");
+      res.status(201).json({ message: "Data deleted successfully" });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+
+// CURRENCY MASTER TESTT---------------------
 module.exports = router;
