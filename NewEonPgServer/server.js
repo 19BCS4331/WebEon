@@ -9,7 +9,7 @@ const PartyProfileRoutes = require("./routes/pages/Master/PartyProfiles/indexRou
 const SystemSetupRoutes = require("./routes/pages/Master/SystemSetup/indexRoutesSystemSetup");
 
 const app = express();
-const port = 5002;
+const port = process.env.PORT || 5002;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
