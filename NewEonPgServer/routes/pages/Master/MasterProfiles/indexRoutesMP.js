@@ -3,6 +3,18 @@ const router = express.Router();
 const pool = require("../../../../config/db");
 const authMiddleware = require("../../../../middleware/authMiddleware");
 
+const transformEmptyToNull = (data) => {
+  const transformedData = {};
+  for (const key in data) {
+    if (data[key] === "") {
+      transformedData[key] = null;
+    } else {
+      transformedData[key] = data[key];
+    }
+  }
+  return transformedData;
+};
+
 //   ------------------------------------------------CURRENCY PROFILE-------------------------------------------------------------------
 
 router.get("/currencyProfile", authMiddleware, async (req, res) => {
@@ -562,7 +574,7 @@ router.post("/divisionProfile/delete", authMiddleware, async (req, res) => {
 
 //   ------------------------------------------------DIVISION PROFILE END-------------------------------------------------------------------
 
-//   ------------------------------------------------DIVISION PROFILE-------------------------------------------------------------------
+//   ------------------------------------------------DIVISION Details-------------------------------------------------------------------
 
 router.get("/divisionDetails", authMiddleware, async (req, res) => {
   try {
@@ -754,9 +766,9 @@ router.post("/divisionDetails/delete", authMiddleware, async (req, res) => {
 });
 // CRUD
 
-//   ------------------------------------------------DIVISION PROFILE END-------------------------------------------------------------------
+//   ------------------------------------------------DIVISION Details END-------------------------------------------------------------------
 
-//   ------------------------------------------------DIVISION PROFILE-------------------------------------------------------------------
+//   ------------------------------------------------ACCOUNTS PROFILE-------------------------------------------------------------------
 
 router.get("/accountsProfile", authMiddleware, async (req, res) => {
   try {
@@ -835,113 +847,429 @@ router.get(
   }
 );
 
+router.get("/accountsProfile/currency", authMiddleware, async (req, res) => {
+  const query = `select "nCurrencyID","vCncode","vCnName" from "mCurrency" WHERE "bIsDeleted" = false ORDER BY "nCurrencyID" `;
+
+  try {
+    const { rows } = await pool.query(query);
+
+    // Map the rows to extract just the values of "vFinCode"
+    const currency = rows.map((row) => ({
+      value: row.nCurrencyID,
+      label: `${row.vCncode} - ${row.vCnName}`,
+    }));
+
+    console.log("Data Fetched successfully");
+    res.json(currency);
+  } catch (err) {
+    console.error("Error Fetching:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/accountsProfile/finCode", authMiddleware, async (req, res) => {
+  const { vFinType } = req.body;
+
+  const query = `
+      SELECT DISTINCT "vFinCode","vFinName"
+      FROM "FinancialProfile" WHERE "vFinType" = $1;
+    `;
+
+  try {
+    const { rows } = await pool.query(query, [vFinType]);
+
+    const finCodes = rows.map((row) => ({
+      value: row.vFinCode,
+      label: `${row.vFinCode} - ${row.vFinName}`,
+    }));
+    // Map the rows to extract just the values of "vFinCode"
+    // const finCodes = rows.map((row) => row.vFinCode);
+
+    console.log("Data Fetched successfully");
+    res.json(finCodes);
+  } catch (err) {
+    console.error("Error Fetching:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/accountsProfile/subfinCode", authMiddleware, async (req, res) => {
+  const { vFinCode } = req.body;
+
+  const query = `
+      SELECT DISTINCT "vSubFinCode","vSubFinName"
+      FROM "FinancialSubProfile" WHERE "vFinCode" = $1;
+    `;
+
+  try {
+    const { rows } = await pool.query(query, [vFinCode]);
+
+    const subfinCodes = rows.map((row) => ({
+      value: row.vSubFinCode,
+      label: row.vSubFinCode,
+    }));
+    // Map the rows to extract just the values of "vFinCode"
+    // const finCodes = rows.map((row) => row.vFinCode);
+
+    console.log("Data Fetched successfully");
+    res.json(subfinCodes);
+  } catch (err) {
+    console.error("Error Fetching:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // --------options-------------------
 
-router.put("/accountsProfile/", authMiddleware, async (req, res) => {
+router.post("/accountsProfile", authMiddleware, async (req, res) => {
   const {
-    vDivCode,
-    nNo_of_Emp,
-    vHeadDept,
-    vContactH,
-    nAreaManagerID,
-    vContactAM,
-    nDivProDtlID,
-  } = req.body;
+    nDivisionID,
+    vCode,
+    vName,
+    vNature,
+    vSblnat,
+    vBankType,
+    nCurrencyID,
+    vFinType,
+    vFinCode,
+    vSubFinCode,
+    nPCColID,
+    bZeroBalatEOD,
+    nBranchIDtoTransfer,
+    bDoPurchase,
+    bDoSales,
+    bDoReceipts,
+    bDoPayments,
+    bActive,
+    bCMSBank,
+    bDirectRemit,
+  } = transformEmptyToNull(req.body);
 
   const parseInput = (input) => (input === "" ? null : input);
 
-  // Query to retrieve nDivisionID based on vDivCode
-  const findnDivisionIDQuery = `
-    SELECT "nDivisionID" FROM "DivisionProfile" WHERE "vDivCode" = $1;
-  `;
-
-  const updateQuery = `
-    UPDATE "DivisionProfileDetails"
-    SET
-      "nDivisionID" = $1,
-      "nNo_of_Emp" = $2,
-      "vHeadDept" = $3,
-      "vContactH" = $4,
-      "nAreaManagerID" = $5,
-      "vContactAM" = $6
-    WHERE
-      "nDivProDtlID" = $7;
+  const insertQuery = `
+    INSERT INTO "AccountsProfile" (
+      "nDivisionID",
+"vCode",
+"vName",
+"vNature",
+"vSblnat",
+"vBankType",
+"nCurrencyID",
+"vFinType",
+"vFinCode",
+"vSubFinCode",
+"nPCColID",
+"bZeroBalatEOD",
+"nBranchIDtoTransfer",
+"bDoPurchase",
+"bDoSales",
+"bDoReceipts",
+"bDoPayments",
+"bActive",
+"bCMSBank",
+"bDirectRemit"
+    )
+    VALUES (
+      $1,
+$2,
+$3,
+$4,
+$5,
+$6,
+$7,
+$8,
+$9,
+$10,
+$11,
+$12,
+$13,
+$14,
+$15,
+$16,
+$17,
+$18,
+$19,
+$20
+    ) RETURNING *
   `;
 
   try {
-    // Fetch nDivisionID based on vDivCode
-    const { rows } = await pool.query(findnDivisionIDQuery, [vDivCode]);
-
-    // If no rows are returned or if nDivisionID is not found, handle the error
-    if (rows.length === 0) {
-      throw new Error(`nDivisionID not found for vDivCode: ${vDivCode}`);
-    }
-
-    // Extract nDivisionID from the result
-    const nDivisionID = rows[0].nDivisionID;
-
-    // Execute the update query
-    await pool.query(updateQuery, [
-      nDivisionID,
-      parseInput(nNo_of_Emp),
-      parseInput(vHeadDept),
-      parseInput(vContactH),
-      parseInput(nAreaManagerID),
-      parseInput(vContactAM),
-      parseInput(nDivProDtlID),
-      // Assuming id is passed as a route parameter
+    await pool.query(insertQuery, [
+      parseInput(nDivisionID),
+      parseInput(vCode),
+      parseInput(vName),
+      parseInput(vNature),
+      parseInput(vSblnat),
+      parseInput(vBankType),
+      parseInput(nCurrencyID),
+      parseInput(vFinType),
+      parseInput(vFinCode),
+      parseInput(vSubFinCode),
+      parseInput(nPCColID),
+      parseInput(bZeroBalatEOD),
+      parseInput(nBranchIDtoTransfer),
+      parseInput(bDoPurchase),
+      parseInput(bDoSales),
+      parseInput(bDoReceipts),
+      parseInput(bDoPayments),
+      parseInput(bActive),
+      parseInput(bCMSBank),
+      parseInput(bDirectRemit),
     ]);
 
-    console.log("Data updated successfully");
-    res.status(200).json({ message: "Data updated successfully" });
+    console.log("Data inserted successfully");
+    res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error("Error updating data:", error);
-    res.status(500).json({ error: "Error updating data" });
+    console.error("Error inserting data:", error);
+    res.status(500).json({ error: "Error inserting data" });
   }
 });
 
 router.put("/accountsProfile", authMiddleware, async (req, res) => {
   const {
-    nDivProDtlID,
-    vDivCode,
-    nNo_of_Emp,
-    vHeadDept,
-    vContactH,
-    nAreaManagerID,
-    vContactAM,
-  } = req.body;
+    nDivisionID,
+    vCode,
+    vName,
+    vNature,
+    vSblnat,
+    vBankType,
+    nCurrencyID,
+    vFinType,
+    vFinCode,
+    vSubFinCode,
+    nPCColID,
+    bZeroBalatEOD,
+    nBranchIDtoTransfer,
+    bDoPurchase,
+    bDoSales,
+    bDoReceipts,
+    bDoPayments,
+    bActive,
+    bCMSBank,
+    bDirectRemit,
+    nAccID,
+  } = transformEmptyToNull(req.body);
 
-  const findnDivisionIDQuery = `
-    SELECT "nDivisionID" FROM "DivisionProfile" WHERE "vDivCode" = $2;
-  `;
+  const query = `UPDATE "AccountsProfile" SET "nDivisionID"=$1,
+"vCode"=$2,
+"vName"=$3,
+"vNature"=$4,
+"vSblnat"=$5,
+"vBankType"=$6,
+"nCurrencyID"=$7,
+"vFinType"=$8,
+"vFinCode"=$9,
+"vSubFinCode"=$10,
+"nPCColID"=$11,
+"bZeroBalatEOD"=$12,
+"nBranchIDtoTransfer"=$13,
+"bDoPurchase"=$14,
+"bDoSales"=$15,
+"bDoReceipts"=$16,
+"bDoPayments"=$17,
+"bActive"=$18,
+"bCMSBank"=$19,
+"bDirectRemit"=$20 WHERE "nAccID" = $21 RETURNING *`;
+
+  try {
+    const result = await pool.query(query, [
+      nDivisionID,
+      vCode,
+      vName,
+      vNature,
+      vSblnat,
+      vBankType,
+      nCurrencyID,
+      vFinType,
+      vFinCode,
+      vSubFinCode,
+      nPCColID,
+      bZeroBalatEOD,
+      nBranchIDtoTransfer,
+      bDoPurchase,
+      bDoSales,
+      bDoReceipts,
+      bDoPayments,
+      bActive,
+      bCMSBank,
+      bDirectRemit,
+      nAccID,
+    ]);
+    if (result.rows.length === 0) {
+      return res.status(404).send("Profile not found");
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating data:", error);
+    res.status(500).send("Error updating data");
+  }
+});
+
+router.post("/accountsProfile/delete", authMiddleware, async (req, res) => {
+  const { nAccID } = req.body;
 
   const query = `
-    UPDATE "DivisionProfileDetails"
-    SET "nDivisionID" = $2, "nNo_of_Emp" = $3, "vHeadDept" = $4, "vContactH"=$5,"nAreaManagerID"=$6,"vContactAM"=$7
-    WHERE "nDivProDtlID" = $1
+    UPDATE "AccountsProfile"
+    SET "bIsDeleted" = true
+    WHERE "nAccID" = $1
     `;
 
   try {
-    const { rows } = await pool.query(findnDivisionIDQuery, [vDivCode]);
+    pool.query(query, [nAccID], (error, results) => {
+      if (error) {
+        console.error("Error deleting row:", error);
+        res.status(500).json({ error: "Error deleting data" });
+      }
+      console.log("Data deleted successfully");
+      res.status(201).json({ message: "Data deleted successfully" });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+});
+// CRUD
 
-    // If no rows are returned or if nDivisionID is not found, handle the error
-    if (rows.length === 0) {
-      throw new Error(`nDivisionID not found for vDivCode: ${vDivCode}`);
-    }
+//   ------------------------------------------------ACCOUNTS PROFILE END-------------------------------------------------------------------
 
-    // Extract nDivisionID from the result
-    const nDivisionID = rows[0].nDivisionID;
+//   ------------------------------------------------AD1 Master-------------------------------------------------------------------
 
+router.get("/ad1Master", authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM "ADIProviderMast" WHERE "bIsDeleted" = false ORDER BY "id"`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/ad1Master", authMiddleware, async (req, res) => {
+  const {
+    vCode,
+    dIntdate,
+    vName,
+    vAddress1,
+    vLocation,
+    vPhone,
+    vFax,
+    vEmail,
+    vWebsite,
+    vCommRcvbl,
+    vCommAccount,
+    vStaxAccount,
+    divfactor,
+    ADType,
+    vServiceChargeAcc,
+    bLvalue,
+  } = req.body;
+
+  const parseInput = (input) => (input === "" ? null : input);
+
+  const insertQuery = `
+    INSERT INTO "ADIProviderMast" (
+      "vCode",
+    "dIntdate",
+    "vName",
+    "vAddress1",
+    "vLocation",
+    "vPhone",
+    "vFax",
+    "vEmail",
+    "vWebsite",
+    "vCommRcvbl",
+    "vCommAccount",
+    "vStaxAccount",
+    "divfactor",
+    "ADType",
+    "vServiceChargeAcc",
+    "bLvalue"
+    )
+    VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+    );
+  `;
+
+  try {
+    await pool.query(insertQuery, [
+      parseInput(vCode),
+      parseInput(dIntdate),
+      parseInput(vName),
+      parseInput(vAddress1),
+      parseInput(vLocation),
+      parseInput(vPhone),
+      parseInput(vFax),
+      parseInput(vEmail),
+      parseInput(vWebsite),
+      parseInput(vCommRcvbl),
+      parseInput(vCommAccount),
+      parseInput(vStaxAccount),
+      parseInput(divfactor),
+      parseInput(ADType),
+      parseInput(vServiceChargeAcc),
+      parseInput(bLvalue),
+    ]);
+
+    console.log("Data inserted successfully");
+    res.status(201).json({ message: "Data inserted successfully" });
+  } catch (error) {
+    console.error("Error inserting data:", error);
+    res.status(500).json({ error: "Error inserting data" });
+  }
+});
+
+router.put("/ad1Master", authMiddleware, async (req, res) => {
+  const {
+    id,
+    vCode,
+    dIntdate,
+    vName,
+    vAddress1,
+    vLocation,
+    vPhone,
+    vFax,
+    vEmail,
+    vWebsite,
+    vCommRcvbl,
+    vCommAccount,
+    vStaxAccount,
+    divfactor,
+    ADType,
+    vServiceChargeAcc,
+    bLvalue,
+  } = req.body;
+
+  const query = `
+    UPDATE "ADIProviderMast"
+    SET "vCode" = $2, "dIntdate" = $3, "vName" = $4, "vAddress1"=$5,"vLocation"=$6,"vPhone"=$7,"vFax"=$8,"vEmail"=$9,"vWebsite"=$10,"vCommRcvbl"=$11,"vCommAccount"=$12,"vStaxAccount"=$13,"divfactor"=$14,"ADType"=$15,"vServiceChargeAcc"=$16,"bLvalue"=$17
+    WHERE "id" = $1
+    `;
+
+  try {
     pool.query(
       query,
       [
-        nDivProDtlID,
-        nDivisionID,
-        nNo_of_Emp,
-        vHeadDept,
-        vContactH,
-        nAreaManagerID,
-        vContactAM,
+        id,
+        vCode,
+        dIntdate,
+        vName,
+        vAddress1,
+        vLocation,
+        vPhone,
+        vFax,
+        vEmail,
+        vWebsite,
+        vCommRcvbl,
+        vCommAccount,
+        vStaxAccount,
+        divfactor,
+        ADType,
+        vServiceChargeAcc,
+        bLvalue,
       ],
       (error, results) => {
         if (error) {
@@ -958,17 +1286,17 @@ router.put("/accountsProfile", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/accountsProfile/delete", authMiddleware, async (req, res) => {
-  const { nDivProDtlID } = req.body;
+router.post("/ad1Master/delete", authMiddleware, async (req, res) => {
+  const { id } = req.body;
 
   const query = `
-    UPDATE "DivisionProfileDetails"
+    UPDATE "ADIProviderMast"
     SET "bIsDeleted" = true
-    WHERE "nDivProDtlID" = $1
+    WHERE "id" = $1
     `;
 
   try {
-    pool.query(query, [nDivProDtlID], (error, results) => {
+    pool.query(query, [id], (error, results) => {
       if (error) {
         console.error("Error deleting row:", error);
         res.status(500).json({ error: "Error deleting data" });
@@ -983,6 +1311,6 @@ router.post("/accountsProfile/delete", authMiddleware, async (req, res) => {
 });
 // CRUD
 
-//   ------------------------------------------------DIVISION PROFILE END-------------------------------------------------------------------
+//   ------------------------------------------------AD1 Master END-------------------------------------------------------------------
 
 module.exports = router;

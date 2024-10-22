@@ -8,7 +8,7 @@ const finYearModel = require("../models/finYearModel");
 const secretKey = process.env.SECRET_KEY;
 
 const register = async (req, res) => {
-  const { username, password, IsAdmin } = req.body;
+  const { username, password, IsAdmin, bIsGroup, bActive, name } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
   const upperCaseUsername = username.toUpperCase();
 
@@ -16,7 +16,10 @@ const register = async (req, res) => {
     const user = await userModel.createUser(
       upperCaseUsername,
       hashedPassword,
-      IsAdmin
+      IsAdmin,
+      bIsGroup,
+      bActive,
+      name
     );
     res.status(201).json(user);
   } catch (err) {
@@ -40,13 +43,17 @@ const login = async (req, res) => {
       return res.status(400).json({ error: "Incorrect Passsword" });
     }
 
+    if (user.bActive === false) {
+      return res.status(400).json({ error: "User is disabled" });
+    }
+
     const newToken = jwt.sign({ userId: user.nUserID }, secretKey, {
       expiresIn: "1h",
     });
 
     await userModel.updateUserToken(user.nUserID, newToken);
 
-    res.json({ userID: user.nUserID, username: user.vUID, token: newToken });
+    res.json({ user: user, token: newToken });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -63,11 +70,13 @@ const getBranches = async (req, res) => {
   }
 };
 const getCounters = async (req, res) => {
-  const { vBranchCode, vUID } = req.body;
+  const { vBranchCode, vUID, nBranchID, nUserID } = req.body;
   try {
     const Counters = await counterModel.findCounterByBranchAndUser(
       vBranchCode,
-      vUID
+      vUID,
+      nBranchID,
+      nUserID
     );
     res.status(201).json(Counters);
   } catch (error) {

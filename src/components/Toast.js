@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Box } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import DoneIcon from "@mui/icons-material/Done";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToast } from "../contexts/ToastContext";
+import ThemeContext from "../contexts/ThemeContext";
 
 const Toast = () => {
   const { toast } = useToast();
-
+  const { Colortheme } = useContext(ThemeContext);
   const { show, message, type } = toast;
 
   return (
@@ -27,7 +28,11 @@ const Toast = () => {
           height={40}
           width={"auto"}
           borderRadius={20}
-          sx={{ backgroundColor: "white", userSelect: "none" }}
+          sx={{
+            backgroundColor: Colortheme.text,
+            userSelect: "none",
+            color: Colortheme.background,
+          }}
           p={2}
           gap={2}
           zIndex={999999}

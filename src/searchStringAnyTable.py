@@ -2,10 +2,11 @@ import pyodbc
 
 # Replace these with your actual database connection details
 server = '101.53.148.243,9137'
-database = 'WAPR24AHMDUAT'
+# database = 'WAPR24AHMDUAT'
+database = 'wsgfmastUAT'
 username = 'mil'
 password = 'mil@1234#'
-search_string = 'Balance Sheet'
+search_string = 'TRADING ACCOUNT'
 
 # Establish connection
 conn = pyodbc.connect(
@@ -16,7 +17,6 @@ cursor = conn.cursor()
 # Get the list of tables
 cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema = 'dbo'")
 tables = cursor.fetchall()
-
 # Loop through each table
 for table in tables:
     table_name = table[0]

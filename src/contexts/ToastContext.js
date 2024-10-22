@@ -9,6 +9,7 @@ export const ToastProvider = ({ children }) => {
     open: false,
     title: "",
     dialogMsg: "",
+    handleAction: null,
   });
 
   const [alertModalCurrency, setAlertModalCurrency] = useState({
@@ -25,12 +26,17 @@ export const ToastProvider = ({ children }) => {
     setToast({ show: false, message: "", type: "" });
   };
 
-  const showAlertDialog = (title, dialogMsg) => {
-    setAlertModal({ open: true, title, dialogMsg });
+  const showAlertDialog = (title, dialogMsg, handleAction) => {
+    setAlertModal({ open: true, title, dialogMsg, handleAction });
   };
 
   const hideAlertDialog = () => {
-    setAlertModal({ open: false, title: "", dialogMsg: "" });
+    setAlertModal({
+      open: false,
+      title: "",
+      dialogMsg: "",
+      handleAction: null,
+    });
   };
 
   const showAlertDialogCurrency = (title, dialogMsg) => {

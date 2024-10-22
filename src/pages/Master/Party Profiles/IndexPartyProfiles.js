@@ -15,9 +15,9 @@ import PartyProfileForm from "../../../components/global/FormConfig/Master/Party
 import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModal from "../../../components/CustomAlertModal";
 import { useBaseUrl } from "../../../contexts/BaseUrl";
-import AccountsProfileForm from "../../../components/global/FormConfig/Master/Master Profiles/AccountsProfileForm";
 
-const AccountsProfile = () => {
+const IndexPartyProfiles = () => {
+  const { vType } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { Colortheme } = useContext(ThemeContext);
@@ -33,31 +33,52 @@ const AccountsProfile = () => {
   const navigate = useNavigate();
   const { baseUrl } = useBaseUrl();
 
+  const titleMapping = {
+    CC: "Corporate Client Profile",
+    AD: "Banks Profile (A.D)",
+    FF: "FFMC Profile",
+    RM: "RMC Profile",
+    FR: "Franchisee Profile",
+    EX: "Foreign Correspondants Profile",
+    TA: "Agents Profile",
+    MS: "Miscellaneous Supplier Profile",
+    TC: "TC Issuer Profile",
+    IN: "Insurance Profile",
+    ME: "Marketing Executive Profile",
+    BR: "Branch Profile",
+    // Add other mappings as needed
+  };
+
   // Get the title based on the vType parameter
-  const title = "Accounts Profile";
+  const title = titleMapping[vType] || "Default Profile Title";
 
   useEffect(() => {
     setLoading(true);
     const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/MasterProfiles/accountsProfile`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
-      .then((response) => {
-        setRows(response.data.filter((row) => row.nAccID));
-        setLoading(false);
-      })
-      .catch((error) => {
-        setError(error);
-        setLoading(false);
-        showToast("Error fetching data", "error");
-        setTimeout(() => {
-          hideToast();
-        }, 2000);
-      });
-  }, []);
+    if (vType) {
+      axios
+        .get(
+          `${baseUrl}/pages/Master/PartyProfiles/PartyProfilesIndex?vType=${vType}`,
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          }
+        )
+        .then((response) => {
+          setRows(response.data.filter((row) => row.nCodesID));
+          setLoading(false);
+        })
+        .catch((error) => {
+          setError(error);
+          setLoading(false);
+          showToast("Error fetching data", "error");
+          setTimeout(() => {
+            hideToast();
+          }, 2000);
+        });
+    }
+  }, [vType]);
 
   const handleSelectionModelChange = (newSelection) => {
     setSelectionModel(newSelection);
@@ -78,20 +99,20 @@ const AccountsProfile = () => {
   };
 
   const handleDeleteClick = (row) => {
-    const rowid = row.nAccID;
-    console.log("Delete button clicked for ID:", row.nAccID);
+    const rowid = row.nCodesID;
+    console.log("Delete button clicked for ID:", row.nCodesID);
     showAlertDialog(`Delete the record : ${row.vCode} `, "", () =>
       DeleteFunc(rowid)
     );
   };
 
-  const DeleteFunc = async (nAccID) => {
+  const DeleteFunc = async (nCodesID) => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/delete`,
-        { nAccID: nAccID },
+        `${baseUrl}/pages/Master/PartyProfiles/PartyProfileDelete`,
+        { nCodesID: nCodesID },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -99,7 +120,7 @@ const AccountsProfile = () => {
         }
       );
       console.log(response.data);
-      setRows((prev) => prev.filter((row) => row.nAccID !== nAccID));
+      setRows((prev) => prev.filter((row) => row.nCodesID !== nCodesID));
       setLoading(false);
       showToast("Successfully Deleted!", "success");
       setTimeout(() => {
@@ -123,19 +144,15 @@ const AccountsProfile = () => {
     setLoading(true);
     if (editData) {
       axios
-        .put(
-          `${baseUrl}/pages/Master/MasterProfiles/accountsProfile`,
-          formData,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
-        )
+        .put(`${baseUrl}/pages/Master/PartyProfiles/PartyProfiles`, formData, {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        })
         .then((response) => {
           setRows((prev) =>
             prev.map((row) =>
-              row.nAccID === editData.nAccID ? response.data : row
+              row.nCodesID === editData.nCodesID ? response.data : row
             )
           );
           setShowForm(false);
@@ -156,15 +173,11 @@ const AccountsProfile = () => {
         });
     } else {
       axios
-        .post(
-          `${baseUrl}/pages/Master/MasterProfiles/accountsProfile`,
-          formData,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
-        )
+        .post(`${baseUrl}/pages/Master/PartyProfiles/PartyProfiles`, formData, {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        })
         .then((response) => {
           setRows((prev) => [...prev, response.data]);
           setShowForm(false);
@@ -190,15 +203,33 @@ const AccountsProfile = () => {
     return <LazyFallBack />;
   }
 
+  // if (error) {
+  //   return <div>Error fetching data: {error.message}</div>;
+  // }
+
   const columns = [
+    {
+      field: "dIntdate",
+      headerName: "Intro Date",
+      width: 110,
+      valueFormatter: (params) => {
+        if (!params.value) {
+          return "";
+        }
+        return dayjs(params.value).format("DD/MM/YYYY");
+      },
+    },
     { field: "vCode", headerName: "Code", width: 120 },
     { field: "vName", headerName: "Name", width: 400 },
+    { field: "vBranchCode", headerName: "Branch", width: 120 },
     {
       field: "bActive",
       headerName: "Status",
       width: 120,
       valueGetter: (params) => (params.row.bActive ? "Active" : "Inactive"),
     },
+    { field: "nCREDITLIM", headerName: "Credit Limit", width: 120 },
+    { field: "nCREDITDAYS", headerName: "Credit Days", width: 120 },
     {
       field: "actions",
       headerName: "Actions",
@@ -228,7 +259,7 @@ const AccountsProfile = () => {
   ];
 
   const filteredRows = rows
-    .filter((row) => row.nAccID) // Ensure each row has a nAccID
+    .filter((row) => row.nCodesID) // Ensure each row has a nCodesID
     .map((row) => {
       // Add any additional transformations needed for your data
       return row;
@@ -261,7 +292,7 @@ const AccountsProfile = () => {
             animate={{ x: 0 }}
             exit={{ x: -50 }}
             sx={{
-              width: "60%",
+              width: "95%",
               height: "80%",
               display: "flex",
               flexDirection: "column",
@@ -318,12 +349,12 @@ const AccountsProfile = () => {
               pageSize={5}
               disableRowSelectionOnClick
               disableColumnFilter
-              getRowId={(row) => row.nAccID}
+              getRowId={(row) => row.nCodesID}
               rowSelectionModel={selectionModel}
               onRowSelectionModelChange={handleSelectionModelChange}
               sortModel={[
                 {
-                  field: "nAccID",
+                  field: "nCodesID",
                   sort: "asc",
                 },
               ]}
@@ -430,7 +461,7 @@ const AccountsProfile = () => {
               <h2 style={{ color: Colortheme.text }}>CREATE</h2>
             )}
           </Box>
-          <AccountsProfileForm
+          <PartyProfileForm
             initialData={editData}
             onSubmit={handleFormSubmit}
             onCancel={() => setShowForm(false)}
@@ -442,4 +473,4 @@ const AccountsProfile = () => {
   );
 };
 
-export default AccountsProfile;
+export default IndexPartyProfiles;

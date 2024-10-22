@@ -19,4 +19,5 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
+export { ThemeContext }; // Ensure ThemeContext is exported
 export default ThemeContext;

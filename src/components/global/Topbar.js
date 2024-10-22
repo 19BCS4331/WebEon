@@ -5,31 +5,18 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
 import HomeIcon from "@mui/icons-material/Home";
-// import { COLORS } from "../../assets/colors/COLORS";
 import { useToast } from "../../contexts/ToastContext";
 import { AuthContext } from "../../contexts/AuthContext";
-import axios from "axios";
 import CustomAlertModal from "../CustomAlertModal";
 import ThemeContext from "../../contexts/ThemeContext";
-import { useBaseUrl } from "../../contexts/BaseUrl";
 import ThemeToggleButton from "./ThemeToggleButton";
 
 const Topbar = ({ title }) => {
-  const { baseUrl } = useBaseUrl();
   const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const {
-    logout,
-    username,
-    counter,
-    finyear,
-    branch,
-    setBranch,
-    setCounter,
-    setFinyear,
-    setToken,
-  } = useContext(AuthContext);
+  const { logout, username, counter, finyear, branch } =
+    useContext(AuthContext);
   const [isProfileVis, setIsProfileVis] = useState(false);
 
   const { showAlertDialog, hideAlertDialog, showToast, hideToast } = useToast();
@@ -55,10 +42,7 @@ const Topbar = ({ title }) => {
   }, [isProfileVis]);
 
   const handleNavtoDash = () => {
-    showAlertDialog(
-      "Navigate to Dashboard",
-      "Are you sure you want to back to the dashboard ?"
-    );
+    showAlertDialog("Navigate to Dashboard", "", () => handleNavtoDashAction());
   };
 
   const handleNavtoDashAction = () => {
@@ -67,29 +51,11 @@ const Topbar = ({ title }) => {
   };
 
   const handleLogoutAuth = async () => {
-    const userid = localStorage.getItem("userid");
-    try {
-      const response = axios.post(`${baseUrl}/api/auth/logout`, {
-        userid: userid,
-      });
-      console.log(response);
-      // navigate("/");
-      showToast("Successfully Logged Out!", "success");
-      setTimeout(() => {
-        hideToast();
-      }, 1000);
-      logout();
-      localStorage.removeItem("branch");
-      setBranch("");
-      setCounter("");
-      setFinyear(null);
-      localStorage.removeItem("finyear");
-    } catch (error) {
-      console.log("error occured", error);
-    }
-    localStorage.removeItem("token");
-    setToken(null);
-    localStorage.removeItem("userid");
+    logout();
+    showToast("Successfully Logged Out!", "success");
+    setTimeout(() => {
+      hideToast();
+    }, 1000);
   };
 
   return (
@@ -197,11 +163,11 @@ const Topbar = ({ title }) => {
               </p>
               <hr style={{ width: 100 }} />
               <p className="ProfileInfo">
-                {branch ? branch + " Branch" : "No Branch"}
+                {branch ? branch.vBranchCode + " Branch" : "No Branch"}
               </p>
               <hr style={{ width: 100 }} />
               <p className="ProfileInfo">
-                {counter ? "Counter " + counter : "No Counter"}
+                {counter ? "Counter " + counter.nCounterID : "No Counter"}
               </p>
               <hr style={{ width: 100 }} />
               <p className="ProfileInfo">{finyear ? finyear : "No FinYear"}</p>
@@ -225,9 +191,7 @@ const Topbar = ({ title }) => {
           )}
         </AnimatePresence>
       </Box>
-      {title !== "Dashboard" && (
-        <CustomAlertModal handleAction={handleNavtoDashAction} />
-      )}
+      {title !== "Dashboard" && <CustomAlertModal />}
     </Box>
   );
 };

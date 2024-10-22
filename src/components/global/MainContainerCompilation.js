@@ -4,15 +4,22 @@ import Topbar from "./Topbar";
 import MainContentLayout from "./MainContentLayout";
 import SideNavbar from "./SideNavbar";
 import MainContentBox from "./MainContentBox";
+import LazyFallBack from "../../pages/LazyFallBack";
 
-const MainContainerCompilation = ({ children, title }) => {
+const MainContainerCompilation = ({ children, title, loading }) => {
   return (
     <MainBackBox>
-      <Topbar title={title} />
-      <MainContentLayout>
-        {/* <SideNavbar /> */}
-        <MainContentBox>{children}</MainContentBox>
-      </MainContentLayout>
+      {loading ? (
+        <LazyFallBack />
+      ) : (
+        <>
+          <Topbar title={title} />
+          <MainContentLayout>
+            {/* <SideNavbar /> */}
+            <MainContentBox>{children}</MainContentBox>
+          </MainContentLayout>
+        </>
+      )}
     </MainBackBox>
   );
 };

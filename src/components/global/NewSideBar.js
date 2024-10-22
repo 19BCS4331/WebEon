@@ -309,6 +309,7 @@ const SubItem = ({
   };
 
   const handleLinkClick = () => {
+    console.log("subItem", subItem);
     if (subItem.subItems.length > 0) {
       toggleSubItems();
     } else {

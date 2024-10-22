@@ -1,4 +1,10 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Box,
+  MenuItem,
+  TextField,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import React, { useEffect, useState, useContext } from "react";
 import "../css/pages/Login.css";
 // import CustomTextField from "@mui/material/CustomTextField";
@@ -59,10 +65,9 @@ const LoginNew = () => {
 
   const fetchBranches = async (username) => {
     try {
-      const response = await axios.post(
-        `http://localhost:5002/auth/login/branchOnUser`,
-        { username: username }
-      );
+      const response = await axios.post(`${baseUrl}/auth/login/branchOnUser`, {
+        username: username,
+      });
       setBranches(response.data);
     } catch (err) {
       console.log("error", err);
@@ -74,8 +79,13 @@ const LoginNew = () => {
       const fetchCounters = async () => {
         try {
           const response = await axios.post(
-            `http://localhost:5002/auth/login/CounterOnBranchAndUser`,
-            { vBranchCode: branch, vUID: successRes.username }
+            `${baseUrl}/auth/login/CounterOnBranchAndUser`,
+            {
+              vBranchCode: branch.vBranchCode,
+              vUID: successRes.vUID,
+              nBranchID: branch.nBranchID,
+              nUserID: successRes.nUserID,
+            }
           );
           setCounters(response.data);
         } catch (err) {
@@ -85,15 +95,13 @@ const LoginNew = () => {
       fetchCounters();
     } else {
       setCounters([]);
-      setCounter("");
+      setCounter(null);
     }
   }, [branch]);
 
   const fetchFinYearData = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5002/auth/login/finYear"
-      ); // Replace with your API endpoint
+      const response = await axios.get(`${baseUrl}/auth/login/finYear`); // Replace with your API endpoint
       const data = await response.data;
 
       const currentDate = new Date();
@@ -124,147 +132,209 @@ const LoginNew = () => {
     return new Date(dateString).toLocaleDateString("en-GB", options);
   };
 
+  // const ProceedClick = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await axios.post(`${baseUrl}/auth/login`, {
+  //       username: username.toUpperCase(),
+  //       password: password,
+  //     });
+  //     if (response.data.token) {
+  //       // Store the token in localStorage
+  //       setToken(response.data.token);
+  //       setUserId(response.data.user.nUserID);
+  //       setUsername(response.data.user.vUID);
+
+  //       localStorage.setItem("token", response.data.token);
+  //       localStorage.setItem("userid", response.data.user.nUserID);
+  //       localStorage.setItem("username", response.data.user.vUID);
+  //     }
+  //     const successRes = response.data.user;
+
+  //     setSuccessRes(successRes);
+
+  //     fetchFinYearData();
+  //     if (successRes) {
+  //       await fetchBranches(successRes.vUID);
+  //     }
+  //     setIsLowerInputsVis(true);
+  //     setIsLoading(false);
+  //     setErrorMsg("");
+  //     setPassword("");
+  //   } catch (error) {
+  //     // Handle login failure here
+  //     console.error(error);
+  //     setIsLoading(false);
+
+  //     if (error.response) {
+  //       // The request was made and the server responded with a status code
+  //       console.log(error.response.data.error);
+
+  //       setErrorMsg(error.response.data.error);
+
+  //       showToast(error.response.data.error || "An error occurred", "error");
+  //       setIsLoading(false);
+  //       setIsLowerInputsVis(false);
+  //     } else if (error.request) {
+  //       // The request was made but no response was received
+  //       showToast("No response from server", "error");
+  //       setIsLoading(false);
+  //       setIsLowerInputsVis(false);
+  //     } else {
+  //       // Something else happened while setting up the request
+  //       showToast("An error occurred", "error");
+  //       setIsLoading(false);
+  //       setIsLowerInputsVis(false);
+  //     }
+  //   } finally {
+  //     setIsLoading(false);
+  //     // Hide the toast after a certain time (e.g., 2 seconds)
+  //     setTimeout(() => {
+  //       hideToast();
+  //     }, 800);
+  //   }
+  // };
+
   const ProceedClick = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(`http://localhost:5002/auth/login`, {
+      const response = await axios.post(`${baseUrl}/auth/login`, {
         username: username.toUpperCase(),
         password: password,
       });
-      if (response.data.token) {
-        // Store the token in localStorage
-        setToken(response.data.token);
-        setUserId(response.data.userID);
-        setUsername(response.data.username);
 
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("userid", response.data.userID);
-        localStorage.setItem("username", response.data.username);
+      const { token, user } = response.data;
+
+      if (token) {
+        setToken(token);
+        setUserId(user.nUserID);
+        setUsername(user.vUID);
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("userid", user.nUserID);
+        localStorage.setItem("username", user.vUID);
       }
-      const successRes = response.data;
-      setSuccessRes(successRes);
 
+      setSuccessRes(user);
       fetchFinYearData();
-      if (successRes) {
-        await fetchBranches(successRes.username);
+
+      if (user) {
+        await fetchBranches(user.vUID);
       }
+
       setIsLowerInputsVis(true);
-      setIsLoading(false);
       setErrorMsg("");
       setPassword("");
     } catch (error) {
-      // Handle login failure here
-      console.error(error);
-      setIsLoading(false);
-
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        console.log(error.response.data.error);
-
-        setErrorMsg(error.response.data.error);
-
-        showToast(error.response.data.error || "An error occurred", "error");
-        setIsLoading(false);
-        setIsLowerInputsVis(false);
-      } else if (error.request) {
-        // The request was made but no response was received
-        showToast("No response from server", "error");
-        setIsLoading(false);
-        setIsLowerInputsVis(false);
-      } else {
-        // Something else happened while setting up the request
-        showToast("An error occurred", "error");
-        setIsLoading(false);
-        setIsLowerInputsVis(false);
-      }
+      const errorMessage = error.response?.data?.error || "An error occurred";
+      console.error(errorMessage);
+      setErrorMsg(errorMessage);
+      showToast(errorMessage, "error");
+      setIsLowerInputsVis(false);
     } finally {
       setIsLoading(false);
-      // Hide the toast after a certain time (e.g., 2 seconds)
-      setTimeout(() => {
-        hideToast();
-      }, 800);
+      setTimeout(hideToast, 800);
     }
   };
 
+  // const loginUser = async () => {
+  //   setIsLoading(true);
+  //   if (
+  //     branch !== null &&
+  //     branch !== "" &&
+  //     finyear !== null &&
+  //     finyear !== "" &&
+  //     counter !== null &&
+  //     counter !== ""
+  //   ) {
+
+  //     try {
+  //       login();
+  //       setIsLoading(false);
+  //       localStorage.setItem("branch", JSON.stringify(branch));
+  //       localStorage.setItem("finyear", JSON.stringify(finyear));
+  //       localStorage.setItem("counter", JSON.stringify(counter));
+  //       setFinyear(finyear.value);
+
+  //       // Handle login success here
+  //       showToast("Successfully Logged In !", "success");
+  //       navigate("/Dashboard");
+
+  //       // Schedule logout after 1 hour
+  //     } catch (error) {
+  //       // Handle login failure here
+  //       console.error(error);
+  //       setIsLoading(false);
+
+  //       if (error.response) {
+  //         // The request was made and the server responded with a status code
+  //         const { data } = error.response;
+
+  //         setErrorMsg(data.msg);
+
+  //         showToast(data.msg || "An error occurred", "error");
+  //         setIsLoading(false);
+  //       } else if (error.request) {
+  //         // The request was made but no response was received
+  //         showToast("No response from server", "error");
+  //         setIsLoading(false);
+  //       } else {
+  //         // Something else happened while setting up the request
+  //         showToast("An error occurred", "error");
+  //         setIsLoading(false);
+  //       }
+  //     } finally {
+  //       // Hide the toast after a certain time (e.g., 2 seconds)
+  //       setTimeout(() => {
+  //         hideToast();
+  //       }, 800);
+  //     }
+  //   } else {
+  //     showToast("Please Enter All Details!", "error");
+  //     setIsLoading(false);
+  //     setTimeout(() => {
+  //       hideToast();
+  //     }, 1000);
+  //   }
+  // };
+
   const loginUser = async () => {
     setIsLoading(true);
-    if (
-      branch !== null &&
-      branch !== "" &&
-      finyear !== null &&
-      finyear !== "" &&
-      counter !== null &&
-      counter !== ""
-    ) {
-      // try {
-      //   const response = await axios.post(`http://localhost:5002/auth/login`, {
-      //     username: username.toUpperCase(),
-      //     password: password,
-      //   });
-      //   console.log("login response", response.data);
 
-      //   if (response.data.token) {
-      //     // Store the token in localStorage
-      //     setToken(response.data.token);
-      //     localStorage.setItem("token", response.data.token);
-      //     localStorage.setItem("userid", response.data.userID);
-      //     localStorage.setItem("username", response.data.username);
-      //   }
-
-      try {
-        login();
-        setIsLoading(false);
-        localStorage.setItem("branch", branch);
-        localStorage.setItem("finyear", JSON.stringify(finyear));
-        localStorage.setItem("counter", counter);
-        setFinyear(finyear.value);
-
-        // Handle login success here
-        showToast("Successfully Logged In !", "success");
-        navigate("/Dashboard");
-
-        // Schedule logout after 1 hour
-      } catch (error) {
-        // Handle login failure here
-        console.error(error);
-        setIsLoading(false);
-
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          const { data } = error.response;
-
-          setErrorMsg(data.msg);
-
-          showToast(data.msg || "An error occurred", "error");
-          setIsLoading(false);
-        } else if (error.request) {
-          // The request was made but no response was received
-          showToast("No response from server", "error");
-          setIsLoading(false);
-        } else {
-          // Something else happened while setting up the request
-          showToast("An error occurred", "error");
-          setIsLoading(false);
-        }
-      } finally {
-        // Hide the toast after a certain time (e.g., 2 seconds)
-        setTimeout(() => {
-          hideToast();
-        }, 800);
-      }
-    } else {
+    if (!branch || !finyear || !counter) {
       showToast("Please Enter All Details!", "error");
       setIsLoading(false);
-      setTimeout(() => {
-        hideToast();
-      }, 1000);
+      setTimeout(hideToast, 1000);
+      return;
+    }
+
+    try {
+      await login();
+
+      localStorage.setItem("branch", JSON.stringify(branch));
+      localStorage.setItem("finyear", JSON.stringify(finyear));
+      localStorage.setItem("counter", JSON.stringify(counter));
+      setFinyear(finyear.value);
+
+      showToast("Successfully Logged In!", "success");
+      navigate("/Dashboard");
+
+      // Optionally schedule logout after 1 hour
+    } catch (error) {
+      const errorMessage = error.response?.data?.msg || "An error occurred";
+      console.error(errorMessage);
+      setErrorMsg(errorMessage);
+      showToast(errorMessage, "error");
+    } finally {
+      setIsLoading(false);
+      setTimeout(hideToast, 800);
     }
   };
 
   const handleBackClick = () => {
     setIsLowerInputsVis(false);
-    setBranch("");
-    setCounter("");
+    setBranch(null);
+    setCounter(null);
     setFinyear(null);
     setCounters([]);
   };
@@ -289,23 +359,23 @@ const LoginNew = () => {
       </Box>
       <Box
         sx={{ backgroundColor: Colortheme.text, opacity: 0.6 }}
-        height={"400px"}
-        width={"400px"}
+        height={isMobile ? "200px" : "400px"}
+        width={isMobile ? "200px" : "400px"}
         position={"absolute"}
         zIndex={1}
-        top={-100}
-        left={-150}
+        top={isMobile ? 10 : -100}
+        left={isMobile ? -100 : -150}
         borderRadius={100}
       />
 
       <Box
         sx={{ backgroundColor: Colortheme.text, opacity: 0.6 }}
-        height={"400px"}
-        width={"400px"}
+        height={isMobile ? "200px" : "400px"}
+        width={isMobile ? "200px" : "400px"}
         position={"absolute"}
         zIndex={1}
-        bottom={20}
-        right={50}
+        bottom={isMobile ? 10 : 20}
+        right={isMobile ? 10 : 50}
         borderRadius={100}
       />
       <Box
@@ -322,7 +392,15 @@ const LoginNew = () => {
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <h1 style={{ color: Colortheme.text, textAlign: "center" }}>
+          <h1
+            style={{
+              color: Colortheme.text,
+              textAlign: "center",
+              fontSize: isMobile ? "24px" : "auto",
+              width: isMobile ? "50vw" : "auto",
+              marginTop: isMobile ? "-80px" : "0px",
+            }}
+          >
             Maraekat's Advanced EON
           </h1>
         </Box>
@@ -385,32 +463,68 @@ const LoginNew = () => {
                     className="LowerInputs"
                     disablePortal
                     id="BranchSelect"
-                    options={branches.map((branch) => branch.vBranchCode)}
+                    // options={branches.map((branch) => branch.vBranchCode)}
+                    // isOptionEqualToValue={(option, value) =>
+                    //   option.nBranchID === value.nBranchID
+                    // }
+
+                    options={branches}
+                    getOptionLabel={(option) => option.vBranchCode}
                     isOptionEqualToValue={(option, value) =>
                       option.nBranchID === value.nBranchID
                     }
-                    value={branch || ""} // Set the value to the selectedBranch state
+                    value={branch || null} // Set the value to the selectedBranch state
                     onChange={(event, newValue) => {
                       setBranch(newValue); // Update the selectedBranch state
                     }}
-                    sx={{ width: isMobile ? "35vw" : "16vw" }}
+                    styleTF={{ width: isMobile ? "30vw" : "12vw" }}
                     label="Branch"
                   />
+                  {/* <CustomTextField
+                    disablePortal
+                    select={true}
+                    name="nBranchID"
+                    label="Branch"
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    style={{
+                      width: isMobile ? "35vw" : "40vw",
+                      zIndex: 9999999999,
+                    }}
+                    fullWidth
+                  >
+                    <MenuItem value="" key="select">
+                      Select
+                    </MenuItem>
+                    {branches &&
+                      branches.map((item) => (
+                        <MenuItem value={item.value} key={item.nBranchID}>
+                          {item.label}
+                        </MenuItem>
+                      ))}
+                  </CustomTextField> */}
 
                   <CustomAutocomplete
                     className="LowerInputs"
                     disablePortal
                     id="CounterSelect"
                     noOptionsText={"Select A Branch"}
-                    options={counters.map((counter) => counter.nCounterID)}
+                    // options={counters.map((counter) =>
+                    //   counter.nCounterID.toString()
+                    // )}
+                    // isOptionEqualToValue={(option, value) =>
+                    //   option.nCounterID === value.nCounterID
+                    // }
+                    options={counters}
+                    getOptionLabel={(option) => option.nCounterID.toString()}
                     isOptionEqualToValue={(option, value) =>
                       option.nCounterID === value.nCounterID
                     }
-                    value={counter || ""} // Set the value to the selectedBranch state
+                    value={counter || null} // Set the value to the selectedBranch state
                     onChange={(event, newValue) => {
                       setCounter(newValue); // Update the selectedBranch state
                     }}
-                    sx={{ width: isMobile ? "25vw" : "16vw" }}
+                    styleTF={{ width: isMobile ? "30vw" : "12vw" }}
                     label="Counter"
                   />
                 </Box>
@@ -449,7 +563,7 @@ const LoginNew = () => {
                     }
                     value={finyear}
                     onChange={handleFinYearChange}
-                    // sx={{ width: isMobile ? "40vw" : "16vw" }}
+                    styleTF={{ width: isMobile ? "69vw" : "26.5vw" }}
                     label="Financial Year"
                   />
                 </Box>
@@ -490,6 +604,7 @@ const LoginNew = () => {
                 width={"25vw"}
                 mt={2}
                 className="Inputs"
+                flexDirection={isMobile ? "column" : "row"}
               >
                 <CustomTextField
                   autoComplete="off"

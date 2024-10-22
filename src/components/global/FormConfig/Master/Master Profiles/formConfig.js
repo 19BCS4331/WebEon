@@ -1,4 +1,4 @@
-const baseUrl = "http://localhost:5002";
+const baseUrl = process.env.REACT_APP_BASE_URL;
 export const formConfigs = {
   currencyForm: {
     endpoint: `${baseUrl}/pages/Master/MasterProfiles/currencyProfile`,
@@ -341,7 +341,10 @@ export const formConfigs = {
         name: "vBankType",
         label: "Bank Nature",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/bankNature`,
+        options: [
+          { value: 0, label: "Local" },
+          { value: 1, label: "Nostro" },
+        ],
         required: false,
       },
 
@@ -357,16 +360,23 @@ export const formConfigs = {
         name: "vFinType",
         label: "Financial Type",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/finType`,
-        required: false,
+        options: [
+          { value: "B", label: "Balance Sheet" },
+          { value: "P", label: "Profit & Loss" },
+          { value: "T", label: "Trading" },
+        ],
+        required: true,
+        // dependencies: ["vFinCode"],
       },
 
       {
         name: "vFinCode",
         label: "Financial Code",
-        type: "select",
+        type: "autocomplete",
         fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/finCode`,
-        required: false,
+        required: true,
+        dependent: true,
+        dependsOn: "vFinType",
       },
       {
         name: "vSubFinCode",
@@ -437,6 +447,113 @@ export const formConfigs = {
       {
         name: "bDirectRemit",
         label: "Direct Remittance",
+        type: "checkbox",
+        required: false,
+      },
+    ],
+  },
+
+  ad1MasterForm: {
+    endpoint: `${baseUrl}/pages/Master/MasterProfiles/ad1Master`,
+
+    fields: [
+      {
+        name: "vCode",
+        label: "Code",
+        type: "text",
+        required: true,
+      },
+      {
+        name: "dIntdate",
+        label: "Date Of Intro",
+        type: "date",
+        required: false,
+      },
+
+      {
+        name: "vName",
+        label: "Name",
+        type: "text",
+        required: false,
+      },
+
+      {
+        name: "vAddress1",
+        label: "Address",
+        type: "text",
+        required: false,
+      },
+      {
+        name: "vLocation",
+        label: "Location",
+        type: "text",
+        required: false,
+      },
+      {
+        name: "vPhone",
+        label: "Phone No.",
+        type: "text",
+        required: false,
+      },
+      {
+        name: "vFax",
+        label: "Fax No.",
+        type: "text",
+        required: false,
+      },
+
+      {
+        name: "vEmail",
+        label: "Email",
+        type: "text",
+        required: false,
+      },
+
+      {
+        name: "vWebsite",
+        label: "Website",
+        type: "text",
+        required: false,
+      },
+
+      {
+        name: "vCommRcvbl",
+        label: "Commission Receivable",
+        type: "text",
+        required: false,
+      },
+
+      {
+        name: "vCommAccount",
+        label: "Commission Account",
+        type: "text",
+        required: false,
+      },
+      {
+        name: "divfactor",
+        label: "Div Factor",
+        type: "text",
+        required: false,
+      },
+      {
+        name: "ADType",
+        label: "Type",
+        type: "select",
+        options: [
+          { value: "BN", label: "Bank" },
+          { value: "AD", label: "AD II" },
+        ],
+        required: false,
+      },
+      {
+        name: "vServiceChargeAcc",
+        label: "Service Charge",
+        type: "text",
+        required: false,
+      },
+      {
+        name: "bLvalue",
+        label: "Active",
         type: "checkbox",
         required: false,
       },

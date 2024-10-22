@@ -16,10 +16,17 @@ const findUserById = async (userId) => {
   return result.rows[0];
 };
 
-const createUser = async (username, hashedPassword, isAdmin) => {
+const createUser = async (
+  username,
+  hashedPassword,
+  isAdmin,
+  bIsGroup,
+  bActive,
+  name
+) => {
   const result = await pool.query(
-    'INSERT INTO "mstUser" ("vUID", "vPassword", "bIsAdministrator") VALUES ($1, $2, $3) RETURNING *',
-    [username, hashedPassword, isAdmin]
+    'INSERT INTO "mstUser" ("vUID", "vPassword", "bIsAdministrator","bIsGroup","bActive","vName") VALUES ($1, $2, $3, $4,$5,$6) RETURNING *',
+    [username, hashedPassword, isAdmin, bIsGroup, bActive, name]
   );
   return result.rows[0];
 };

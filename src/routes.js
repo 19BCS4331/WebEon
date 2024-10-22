@@ -78,6 +78,10 @@ const BranchProfile = lazy(() =>
   import("./pages/Master/Party Profiles/BranchProfile")
 );
 
+const MainIndexComp = lazy(() =>
+  import("./pages/Master/Party Profiles/IndexPartyProfiles")
+);
+
 //   Party Profiles End------------------------------------------------------------------
 
 // System Setup ---------------------------------------------------------------------
@@ -648,86 +652,96 @@ const routes = [
   // Master Profiles END-------------------------------------------------------------------------------------------
 
   //   Party Profiles ------------------------------------------------------------------
+  // {
+  //   path: "/party-profiles/category-master",
+  //   element: <CategoryMaster />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/corporate-client-profile",
+  //   element: <CorporateClientProfile />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/ffmc-profile",
+  //   element: <FFMCProfile />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/banks-profile",
+  //   element: <BanksProfile />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/rmc-profile",
+  //   element: <RMCProfile />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/franchisee-profile",
+  //   element: <FranchiseeMaster />,
+  //   protected: true,
+  // },
+  // {
+  //   path: "/party-profiles/foreign-correspondents-profile",
+  //   element: <ForeignCorrespondents />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/agents-profile",
+  //   element: <AgentProfile />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/misc-supplier-profile",
+  //   element: <MiscSuppliers />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/tc-issuer-profile",
+  //   element: <TCIssuerProfile />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/insurance-profile",
+  //   element: <InsuranceMaster />,
+  //   protected: true,
+  // },
+  // {
+  //   path: "/party-profiles/employee-profile",
+  //   element: <EmployeeProfile />,
+  //   protected: true,
+  // },
+  // {
+  //   path: "/party-profiles/marketing-exec-profile",
+  //   element: <MrktExecutive />,
+  //   protected: true,
+  // },
+
+  // {
+  //   path: "/party-profiles/branch-profile",
+  //   element: <BranchProfile />,
+  //   protected: true,
+  // },
+
+  // --------------------------------------SINGLE PARAM URL FOR PARTY PROFILES------------------------------------------------
+
   {
-    path: "/party-profiles/category-master",
-    element: <CategoryMaster />,
+    path: "/party-profiles/:vType",
+    element: <MainIndexComp />,
     protected: true,
   },
 
-  {
-    path: "/party-profiles/corporate-client-profile",
-    element: <CorporateClientProfile />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/ffmc-profile",
-    element: <FFMCProfile />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/banks-profile",
-    element: <BanksProfile />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/rmc-profile",
-    element: <RMCProfile />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/franchisee-profile",
-    element: <FranchiseeMaster />,
-    protected: true,
-  },
-  {
-    path: "/party-profiles/foreign-correspondents-profile",
-    element: <ForeignCorrespondents />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/agents-profile",
-    element: <AgentProfile />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/misc-supplier-profile",
-    element: <MiscSuppliers />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/tc-issuer-profile",
-    element: <TCIssuerProfile />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/insurance-profile",
-    element: <InsuranceMaster />,
-    protected: true,
-  },
-  {
-    path: "/party-profiles/employee-profile",
-    element: <EmployeeProfile />,
-    protected: true,
-  },
-  {
-    path: "/party-profiles/marketing-exec-profile",
-    element: <MrktExecutive />,
-    protected: true,
-  },
-
-  {
-    path: "/party-profiles/branch-profile",
-    element: <BranchProfile />,
-    protected: true,
-  },
+  // --------------------------------------SINGLE PARAM URL FOR PARTY PROFILES END------------------------------------------------
 
   //    Party Profiles End -------------------------------------------------------------------------
 

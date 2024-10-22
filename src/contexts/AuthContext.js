@@ -68,8 +68,8 @@ const AuthProvider = ({ children }) => {
       const userid = localStorage.getItem("userid");
       const username = localStorage.getItem("username");
       const isAuth = localStorage.getItem("isAuth");
-      const branch = localStorage.getItem("branch");
-      const counter = localStorage.getItem("counter");
+      const branch = JSON.parse(localStorage.getItem("branch"));
+      const counter = JSON.parse(localStorage.getItem("counter"));
       const finyear = JSON.parse(localStorage.getItem("finyear"));
 
       if (token && userid && isAuth && finyear) {
@@ -86,7 +86,7 @@ const AuthProvider = ({ children }) => {
         setToken(null);
         setUserId(null);
         setUsername("");
-        setBranch("");
+        setBranch(null);
         setCounter("");
         setFinyear(null);
         localStorage.removeItem("isAuth");
@@ -113,6 +113,8 @@ const AuthProvider = ({ children }) => {
     localStorage.removeItem("username");
     localStorage.removeItem("branch");
     localStorage.removeItem("counter");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userid");
 
     setUserId(null);
     setToken(null);

@@ -35,6 +35,7 @@ const CustomAutocomplete = (props) => {
           name={props.name}
           value={props.value}
           required={props.required}
+          style={props.styleTF}
         />
       )}
     />

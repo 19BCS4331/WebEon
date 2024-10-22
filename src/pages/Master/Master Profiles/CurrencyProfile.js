@@ -32,24 +32,31 @@ const CurrencyProfile = () => {
   const [countryOptions, setCountryOptions] = useState([]);
   // const [groupOptions, setGroupOptions] = useState([]);
 
+  // This function sets the initial values of the form data and disabled fields when the form config changes
   useEffect(() => {
+    // Initialize the form data and disabled fields
     const initialFormData = {};
     const initialDisabledFields = {};
+    // Loop through each field in the form config
     formConfig.fields.forEach((field) => {
+      // Set the initial value of the field to an empty string
       initialFormData[field.name] = "";
+      // If the field is disabled, add it to the disabled fields object
       if (field.disabled) initialDisabledFields[field.name] = true;
     });
+    // Set the initial form data and disabled fields
     setFormData(initialFormData);
     setDisabledFields(initialDisabledFields);
   }, [formConfig]);
 
   const handleChange = (field, value) => {
+    // Set the value of the field in the form data
     setFormData((prevData) => ({
       ...prevData,
       [field.name]: value,
     }));
 
-    // Handle dependencies
+    // Enable or disable the dependent fields
     formConfig.fields.forEach((f) => {
       if (f.dependencies && f.dependencies.includes(field.name)) {
         setDisabledFields((prev) => ({
@@ -60,9 +67,12 @@ const CurrencyProfile = () => {
     });
   };
 
+  // This function is used to fetch autocomplete options when the component mounts
   useEffect(() => {
+    // This function is used to fetch autocomplete options
     const fetchAutocompleteOptions = async () => {
       try {
+        // Fetch the autocomplete options
         const response = await fetch(
           formConfig.fields.find((f) => f.name === "vCountryName").fetchOptions,
           {
@@ -71,50 +81,54 @@ const CurrencyProfile = () => {
             },
           }
         );
+        // Parse the response as JSON
         const result = await response.json();
+        // Set the country options based on the response
         setCountryOptions(result); // Adjust this based on the structure of the response
       } catch (error) {
+        // Log any errors that occur
         console.error("Error fetching country options:", error);
+        // Show an error toast
         showToast("Error Fetching Countries!", "fail");
+        // Hide the toast after a certain amount of time
         setTimeout(() => {
           hideToast();
         }, 2000);
       }
-
-      // try {
-      //   const response = await fetch(formConfig.fields.find(f => f.name === 'nCurrencyGroupID').fetchOptions, {
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //     },
-      //   });
-      //   const result = await response.json();
-      //   setGroupOptions(result); // Adjust this based on the structure of the response
-      // } catch (error) {
-      //   console.error('Error fetching group options:', error);
-      // }
     };
 
+    // Call the fetchAutocompleteOptions function when the component mounts
     fetchAutocompleteOptions();
   }, [token]);
 
   const fetchData = async () => {
+    // Set loading to true
     setIsLoading(true);
     try {
+      // Fetch data from the endpoint
       const response = await fetch(formConfig.endpoint, {
+        // Set headers
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
+      // Parse the response as JSON
       const result = await response.json();
+      // Filter the rows and set the result
       setRows(result.filter((row) => row.nCurrencyID));
+      // Set loading to false
       setIsLoading(false);
     } catch (error) {
+      // Log the error
       console.error("Error fetching data:", error);
+      // Show a toast with the error message
       showToast("Error Occurred!", "fail");
+      // Hide the toast after 2 seconds
       setTimeout(() => {
         hideToast();
       }, 2000);
+      // Set loading to false
       setIsLoading(false);
     }
   };
@@ -348,28 +362,50 @@ const CurrencyProfile = () => {
             ariaLabel="mutating-dots-loading"
           />
         ) : (
-          <>
+          <Box display={"flex"} flexDirection={"column"} alignItems={"center"}>
             <Box display={"flex"} alignItems={"center"}>
               {formData.nCurrencyID && isFormVisible && (
                 <StyledButton
                   onClick={handleBackOnForm}
-                  style={{
-                    width: 100,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+                  style={
+                    isMobile
+                      ? {
+                          width: 100,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }
+                      : {
+                          position: "absolute",
+                          top: 200,
+                          left: 300,
+                          width: 100,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }
+                  }
                 >
                   <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
                 </StyledButton>
               )}
               {formData.nCurrencyID && isFormVisible && (
-                <h1 style={{ color: Colortheme.text, marginLeft: "35%" }}>
+                <h1
+                  style={{
+                    color: Colortheme.text,
+                    // marginLeft: isMobile ? "5%" : "35%",
+                  }}
+                >
                   Edit : {formData.vCncode}
                 </h1>
               )}
               {!formData.nCurrencyID && isFormVisible && (
-                <h1 style={{ color: Colortheme.text, marginLeft: "45%" }}>
+                <h1
+                  style={{
+                    color: Colortheme.text,
+                    // marginLeft: "45%"
+                  }}
+                >
                   Create
                 </h1>
               )}
@@ -399,6 +435,8 @@ const CurrencyProfile = () => {
                     rowGap={"40px"}
                     p={10}
                     borderRadius={5}
+                    maxHeight={"50vh"}
+                    maxWidth={isMobile ? "40vw" : "auto"}
                   >
                     {formConfig.fields.map((field) => (
                       <div key={field.name}>
@@ -504,6 +542,7 @@ const CurrencyProfile = () => {
                   p: 5,
                   borderRadius: 10,
                 }}
+                maxWidth={isMobile ? "60vw" : "auto"}
               >
                 <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
                   <StyledButton
@@ -596,7 +635,7 @@ const CurrencyProfile = () => {
                 />
               </Box>
             )}
-          </>
+          </Box>
         )}
       </Box>
     </MainContainerCompilation>

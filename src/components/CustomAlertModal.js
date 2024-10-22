@@ -1,38 +1,21 @@
+// CustomAlertModal.js
 import * as React from "react";
 import { Box } from "@mui/material";
 import { useToast } from "../contexts/ToastContext";
-import { COLORS } from "../assets/colors/COLORS";
 import { AnimatePresence, motion } from "framer-motion";
 import CancelIcon from "@mui/icons-material/Cancel";
 import Backdrop from "@mui/material/Backdrop";
 import ThemeContext from "../contexts/ThemeContext";
 import { useContext } from "react";
 
-export default function CustomAlertModal({ handleAction }) {
+export default function CustomAlertModal() {
   const { Colortheme } = useContext(ThemeContext);
   const { alertModal, hideAlertDialog } = useToast();
 
-  const { open, title, DialogMsg } = alertModal;
-  //   const [open, setOpen] = React.useState(false);
+  const { open, title, dialogMsg, handleAction } = alertModal;
 
   return (
     <AnimatePresence>
-      {/* {open && (
-        <Box
-          component={motion.div}
-          display={"flex"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          sx={{ backgroundColor: "black" }}
-          height={"100vh"}
-          width={"100%"}
-          position={"absolute"}
-          top={0}
-          zIndex={999}
-          alignItems={"center"}
-          justifyContent={"center"}
-        > */}
       <Backdrop open={open} style={{ zIndex: 99999 }}>
         {open && (
           <Box
@@ -56,7 +39,6 @@ export default function CustomAlertModal({ handleAction }) {
               style={{
                 alignSelf: "flex-end",
                 marginRight: 20,
-
                 cursor: "pointer",
               }}
             />
@@ -69,8 +51,7 @@ export default function CustomAlertModal({ handleAction }) {
             >
               {title} ?
             </p>
-            <Box>{DialogMsg}</Box>
-
+            <Box>{dialogMsg}</Box>
             <Box display={"flex"} flexDirection={"row"} gap={3}>
               <Box>
                 <button
@@ -89,7 +70,10 @@ export default function CustomAlertModal({ handleAction }) {
               </Box>
               <button
                 className="AlertDialogButtons"
-                onClick={handleAction}
+                onClick={() => {
+                  handleAction();
+                  hideAlertDialog();
+                }}
                 style={{
                   border: "none",
                   width: 120,
@@ -103,7 +87,6 @@ export default function CustomAlertModal({ handleAction }) {
             </Box>
           </Box>
         )}
-        {/* </Box> */}
       </Backdrop>
     </AnimatePresence>
   );

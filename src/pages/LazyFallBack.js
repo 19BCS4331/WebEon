@@ -18,6 +18,7 @@ const LazyFallBack = () => {
         radius="12.5"
         ariaLabel="mutating-dots-loading"
       />
+      <h2 style={{ color: Colortheme.text }}>Loading...</h2>
     </MainContainerCompilation>
   );
 };
