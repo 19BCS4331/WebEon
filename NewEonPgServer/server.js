@@ -22,6 +22,10 @@ app.use("/pages/Master/MasterProfiles", MasterProfileRoutes);
 app.use("/pages/Master/PartyProfiles", PartyProfileRoutes);
 app.use("/pages/Master/SystemSetup", SystemSetupRoutes);
 
+app.get("/ping", (req, res) => {
+  res.send("pong");
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
