@@ -283,6 +283,8 @@ import { AuthContext } from "../../contexts/AuthContext";
 import ThemeContext from "../../contexts/ThemeContext";
 import useAxiosInterceptor from "./AxiosIntercept";
 
+const baseUrl = process.env.REACT_APP_BASE_URL;
+
 const SubItem = ({
   subItem,
   openItems,
@@ -394,14 +396,11 @@ const NewSidebar = () => {
     if (!isLoginPage) {
       const fetchItems = async () => {
         try {
-          const response = await axios.get(
-            "http://localhost:5002/nav/navigation",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const response = await axios.get(`${baseUrl}/nav/navigation`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
           const fetchedItems = response.data.map((item) => ({
             ...item,
             open: false,
