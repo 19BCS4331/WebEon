@@ -523,7 +523,7 @@ const NewSidebar = () => {
         <h1
           style={{ fontSize: 22, alignSelf: "center", color: Colortheme.text }}
         >
-          Navigation
+          Advanced EON
         </h1>
         <TextField
           placeholder="Search..."
