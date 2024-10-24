@@ -9,10 +9,28 @@ const useAxiosInterceptor = () => {
   axios.interceptors.response.use(
     (response) => response,
     (error) => {
-      const { status } = error.response;
+      const { status, data } = error.response;
+      // if (status === 401) {
+      //   logout();
+      //   showToast("Token Expired, Please Login Again", "Fail");
+      //   setTimeout(() => {
+      //     hideToast();
+      //   }, 5000);
+      // }
       if (status === 401) {
+        switch (data?.error) {
+          case "Token expired":
+            showToast("Your session has expired. Please login again.", "Fail");
+            break;
+          case "Invalid token":
+            showToast("You have been logged in from another location.", "Fail");
+            break;
+          default:
+            showToast("Authentication error. Please login again.", "Fail");
+        }
+
         logout();
-        showToast("Token Expired, Please Login Again", "Fail");
+
         setTimeout(() => {
           hideToast();
         }, 5000);

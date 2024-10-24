@@ -174,12 +174,13 @@ export const formConfigs = {
         label: "Financial Type",
         type: "select",
         options: [
+          { value: "", label: "Select Financial Type" },
           { value: "B", label: "Balance Sheet" },
           { value: "P", label: "Profit & Loss" },
           { value: "T", label: "Trading" },
         ],
         required: true,
-        // dependencies: ["vFinCode"],
+        dependencies: ["vFinCode"],
       },
 
       {
@@ -210,6 +211,13 @@ export const formConfigs = {
         type: "text",
         required: false,
       },
+    ],
+
+    columns: [
+      { field: "vSubFinCode", headerName: "Sub Fin Code", width: 150 },
+      { field: "vSubFinName", headerName: "Sub Fin Name", width: 150 },
+      { field: "vFinCode", headerName: "Fin Code", width: 150 },
+      // Add more column configurations if needed
     ],
   },
 
