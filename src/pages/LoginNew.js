@@ -576,11 +576,13 @@ const LoginNew = () => {
                   <StyledButton
                     onClick={loginUser}
                     style={{ marginTop: "40px" }}
+                    bgColor={Colortheme.text}
+                    textColor={Colortheme.background}
                   >
                     {isLoading ? (
                       <CircularProgress
-                        size="25px"
-                        style={{ color: Colortheme.text }}
+                        size="20px"
+                        style={{ color: Colortheme.background }}
                       />
                     ) : (
                       "Login"
@@ -634,9 +636,14 @@ const LoginNew = () => {
               <StyledButton
                 onClick={ProceedClick}
                 style={{ marginTop: "40px" }}
+                bgColor={Colortheme.text}
+                textColor={Colortheme.background}
               >
                 {isLoading ? (
-                  <CircularProgress style={{ color: "white" }} size={"25px"} />
+                  <CircularProgress
+                    style={{ color: Colortheme.background }}
+                    size={"20px"}
+                  />
                 ) : (
                   "Proceed"
                 )}

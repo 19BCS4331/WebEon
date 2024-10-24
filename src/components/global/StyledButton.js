@@ -5,16 +5,19 @@ import ThemeContext from "../../contexts/ThemeContext";
 
 const Button = styled.button`
   border: none;
-  color: ${(props) => props.theme.text};
+  color: ${(props) => props.textColor || props.theme.text};
   background-color: ${(props) => props.bgColor || props.theme.secondaryBG};
   border-radius: 15px;
   width: 40%;
   height: 5vh;
   cursor: pointer;
   transition: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
-    opacity: 0.7;
+    // opacity: 0.7;
     color: ${(props) => props.textColOnHover || props.theme.background};
     font-size: 15px;
     background-color: ${(props) => props.bgColorHover || props.theme.text};
@@ -31,6 +34,7 @@ const Button = styled.button`
 const StyledButton = ({
   children,
   bgColor,
+  textColor,
   bgColorHover,
   textColOnHover,
   ...props
@@ -40,6 +44,7 @@ const StyledButton = ({
   return (
     <Button
       theme={Colortheme}
+      textColor={textColor}
       textColOnHover={textColOnHover}
       bgColor={bgColor}
       bgColorHover={bgColorHover}

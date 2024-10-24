@@ -269,19 +269,23 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  IconButton,
   Collapse,
   useMediaQuery,
   useTheme,
   TextField,
+  IconButton,
+  Box,
+  ListItemIcon,
+  InputAdornment,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
+
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { AuthContext } from "../../contexts/AuthContext";
 import ThemeContext from "../../contexts/ThemeContext";
 import useAxiosInterceptor from "./AxiosIntercept";
+import CloseIcon from "@mui/icons-material/Close";
+import * as MaterialIcons from "@mui/icons-material";
 
 const baseUrl = process.env.REACT_APP_BASE_URL;
 
@@ -382,13 +386,20 @@ const NewSidebar = () => {
   const isLoginPage = location.pathname === "/";
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { Colortheme, isDarkMode } = useContext(ThemeContext);
+  const {
+    Colortheme,
+    isDarkMode,
+    open,
+    openItems,
+    setOpenItems,
+    toggleDrawer,
+  } = useContext(ThemeContext);
   useAxiosInterceptor();
 
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const [openItems, setOpenItems] = useState([]);
+  // const [openItems, setOpenItems] = useState([]);
   const { token } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -414,13 +425,6 @@ const NewSidebar = () => {
       fetchItems();
     }
   }, [isLoginPage, token]);
-
-  const toggleDrawer = () => {
-    setOpen(!open);
-    if (open) {
-      setOpenItems([]);
-    }
-  };
 
   const toggleSubItems = (itemId) => {
     setOpenItems((prevOpenItems) => {
@@ -487,24 +491,21 @@ const NewSidebar = () => {
     return null;
   }
 
+  // Dynamic Icon Component
+  const DynamicIcon = ({ iconName }) => {
+    const IconComponent = MaterialIcons[iconName];
+
+    if (!IconComponent) {
+      return null;
+    }
+
+    return (
+      <IconComponent sx={{ width: 25, height: 25, color: Colortheme.text }} />
+    );
+  };
+
   return (
     <>
-      <IconButton
-        onClick={toggleDrawer}
-        style={{
-          position: "absolute",
-          top: "35px",
-          left: "20px",
-          zIndex: 1000,
-          color: Colortheme.secondaryBG,
-          backgroundColor: Colortheme.text,
-          padding: "10px",
-          borderRadius: "50%",
-          boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
-        }}
-      >
-        {open ? <CloseIcon /> : <MenuIcon />}
-      </IconButton>
       <Drawer
         anchor="left"
         open={open}
@@ -520,42 +521,80 @@ const NewSidebar = () => {
           },
         }}
       >
-        <h1
-          style={{ fontSize: 22, alignSelf: "center", color: Colortheme.text }}
+        <Box
+          display={"flex"}
+          alignItems={"center"}
+          justifyContent={"space-around"}
         >
-          Advanced EON
-        </h1>
-        <TextField
-          placeholder="Search..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          sx={{
-            marginTop: 4,
-            width: "80%",
-            marginLeft: 4,
-            backgroundColor: "white",
-            borderRadius: 5,
-            "& .MuiInputBase-input": {
-              color: "black", // Text color when typing
-            },
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": {
-                borderWidth: 1.5,
-                borderRadius: 5,
-                borderColor: isDarkMode ? "transparent" : "black", // Border color
+          <h1 style={{ fontSize: 22, color: Colortheme.text }}>Advanced EON</h1>
+          {open && (
+            <IconButton
+              onClick={toggleDrawer}
+              style={{
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+                color: Colortheme.secondaryBG,
+                backgroundColor: Colortheme.text,
+                padding: "5px",
+                borderRadius: "50%",
+                boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
+              }}
+            >
+              <CloseIcon
+                sx={{ width: 25, height: 25, color: Colortheme.background }}
+              />
+            </IconButton>
+          )}
+        </Box>
+
+        {/* ## Search Input For Filtering Sidebar Items */}
+
+        <Box width={"100%"} display={"flex"} justifyContent={"center"}>
+          <TextField
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <MaterialIcons.Search
+                    sx={{ width: 25, height: 25, color: Colortheme.background }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              marginTop: 4,
+              width: "80%",
+              // marginLeft: 4,
+              backgroundColor: "white",
+              borderRadius: 20,
+              "& .MuiInputBase-input": {
+                color: "black", // Text color when typing
+                pl: 1,
               },
-              "&:hover fieldset": {
-                borderColor: isDarkMode ? "transparent" : "black", // Border color on hover
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderWidth: 1.5,
+                  borderRadius: 5,
+                  borderColor: isDarkMode ? "transparent" : "black", // Border color
+                },
+                "&:hover fieldset": {
+                  borderColor: isDarkMode ? "transparent" : "black", // Border color on hover
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: isDarkMode ? "transparent" : "gray", // Border color when focused
+                },
               },
-              "&.Mui-focused fieldset": {
-                borderColor: isDarkMode ? "transparent" : "gray", // Border color when focused
+              "& .MuiInputLabel-root": {
+                color: Colortheme.background, // Placeholder color
               },
-            },
-            "& .MuiInputLabel-root": {
-              color: Colortheme.background, // Placeholder color
-            },
-          }}
-        />
+            }}
+          />
+        </Box>
+
         <List>
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
@@ -579,6 +618,12 @@ const NewSidebar = () => {
                     setFilteredItems(items); // Reset filtered items to original items
                   }}
                 >
+                  {/* Add Icon here */}
+                  {item.icon_name && (
+                    <ListItemIcon>
+                      <DynamicIcon iconName={item.icon_name} size={20} />
+                    </ListItemIcon>
+                  )}
                   <ListItemText
                     primary={item.name}
                     sx={{ color: Colortheme.text }}

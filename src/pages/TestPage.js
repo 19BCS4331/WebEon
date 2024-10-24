@@ -5,6 +5,7 @@ import MainBackBox from "../components/global/MainBackBox";
 import MainContentBox from "../components/global/MainContentBox";
 import MainContentLayout from "../components/global/MainContentLayout";
 import InnerUrlGrid from "../components/global/InnerUrlGrid";
+import MainContainerCompilation from "../components/global/MainContainerCompilation";
 
 const TestPage = () => {
   const InnerUrlGridData = [
@@ -32,18 +33,12 @@ const TestPage = () => {
   ];
 
   return (
-    <MainBackBox>
-      <Topbar title={"Master Profiles"} />
-      <MainContentLayout>
-        <SideNavbar />
-        <MainContentBox>
-          <InnerUrlGrid
-            InnerUrlGridData={InnerUrlGridData}
-            title={"master-profiles"}
-          />
-        </MainContentBox>
-      </MainContentLayout>
-    </MainBackBox>
+    <MainContainerCompilation title={"Master Profiles"}>
+      <InnerUrlGrid
+        InnerUrlGridData={InnerUrlGridData}
+        title={"master-profiles"}
+      />
+    </MainContainerCompilation>
   );
 };
 

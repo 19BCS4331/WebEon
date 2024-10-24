@@ -2,7 +2,7 @@ import React from "react";
 import MainBackBox from "./MainBackBox";
 import Topbar from "./Topbar";
 import MainContentLayout from "./MainContentLayout";
-import SideNavbar from "./SideNavbar";
+// import SideNavbar from "./SideNavbar";
 import MainContentBox from "./MainContentBox";
 import LazyFallBack from "../../pages/LazyFallBack";
 

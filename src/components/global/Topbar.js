@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -10,9 +10,12 @@ import { AuthContext } from "../../contexts/AuthContext";
 import CustomAlertModal from "../CustomAlertModal";
 import ThemeContext from "../../contexts/ThemeContext";
 import ThemeToggleButton from "./ThemeToggleButton";
+import ProfileDropdown from "./ProfileDropdown";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 
 const Topbar = ({ title }) => {
-  const { Colortheme } = useContext(ThemeContext);
+  const { Colortheme, toggleDrawer, open } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { logout, username, counter, finyear, branch } =
@@ -59,49 +62,61 @@ const Topbar = ({ title }) => {
   };
 
   return (
-    <Box>
+    <Box width={"100%"} display={"flex"} justifyContent={"center"}>
       <Box
         component={motion.div}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         display={"flex"}
         height={"10vh"}
-        width={isMobile ? "70vw" : "99vw"}
+        width={isMobile ? "85%" : "98%"}
         borderRadius={"20px"}
         sx={{ backgroundColor: Colortheme.secondaryBG }}
         mt={2}
-        ml={1}
+        // ml={isMobile ? 1 : 1}
         alignItems={"center"}
-        justifyContent={
-          isMobile
-            ? title !== "Dashboard"
-              ? "space-between"
-              : "space-around"
-            : "space-between"
-        }
+        justifyContent={"space-between"}
+        pl={isMobile ? 2 : "auto"}
+        pr={isMobile ? 2 : "auto"}
       >
-        {title !== "Dashboard" && (
-          <HomeIcon
-            sx={{
-              marginLeft: isMobile ? "40px" : "80px",
-              fontSize: isMobile ? 30 : 40,
-              color: Colortheme.text, // Use the text color from the ThemeContext
-              transition: "0.3s", // Add transition for smoother styles
-              "&:hover": {
-                opacity: 0.6, // Change color on hover
-                cursor: "pointer",
-              },
+        <Box display={"flex"} alignItems={"center"} gap={isMobile ? 2 : 5}>
+          <IconButton
+            onClick={toggleDrawer}
+            style={{
+              marginLeft: isMobile ? "0px" : "40px",
+              color: Colortheme.secondaryBG,
+              backgroundColor: Colortheme.text,
+              padding: "10px",
+              borderRadius: "50%",
+              boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
+              width: 40,
+              height: 40,
             }}
-            onClick={handleNavtoDash}
-          />
-        )}
+          >
+            {open ? <CloseIcon /> : <MenuIcon />}
+          </IconButton>
+          {title !== "Dashboard" && (
+            <HomeIcon
+              sx={{
+                // marginLeft: isMobile ? "0px" : "-350px",
+                fontSize: isMobile ? 30 : 40,
+                color: Colortheme.text, // Use the text color from the ThemeContext
+                transition: "0.3s", // Add transition for smoother styles
+                "&:hover": {
+                  opacity: 0.6, // Change color on hover
+                  cursor: "pointer",
+                },
+              }}
+              onClick={handleNavtoDash}
+            />
+          )}
+        </Box>
         <h1
           style={
             title === "Dashboard"
               ? {
                   color: Colortheme.text,
                   userSelect: "none",
-                  marginLeft: isMobile ? "0%" : "45%",
                   fontSize: isMobile ? 25 : 35,
                 }
               : {
@@ -119,7 +134,7 @@ const Topbar = ({ title }) => {
           // className="ProfileIcon"
           onClick={handleProfileToggle}
           sx={{
-            marginRight: "40px",
+            marginRight: isMobile ? "0px" : "40px",
             fontSize: isMobile ? 30 : 40,
             color: Colortheme.text, // Use the text color from the ThemeContext
             transition: "0.3s", // Add transition for smoother styles
@@ -130,68 +145,20 @@ const Topbar = ({ title }) => {
           }}
         />
 
-        <AnimatePresence>
-          {isProfileVis && (
-            <Box
-              className="ProfileBox"
-              display={"flex"}
-              component={motion.div}
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 100 }}
-              exit={{ y: -20, opacity: 0 }}
-              flexDirection={"column"}
-              alignItems={"center"}
-              height={"50%"}
-              sx={{
-                border: "solid",
-                borderWidth: "2px",
-                borderColor: Colortheme.text,
-                backgroundColor: Colortheme.secondaryBG,
-                width: "auto",
-                position: "absolute",
-                top: 80,
-                right: 10,
-                bottom: 0,
-                zIndex: 99999,
-                borderRadius: "20px",
-                p: 4,
-                color: Colortheme.text,
-              }}
-            >
-              <p className="ProfileInfo" style={{ fontWeight: "bold" }}>
-                {username ? username : "User"}
-              </p>
-              <hr style={{ width: 100 }} />
-              <p className="ProfileInfo">
-                {branch ? branch.vBranchCode + " Branch" : "No Branch"}
-              </p>
-              <hr style={{ width: 100 }} />
-              <p className="ProfileInfo">
-                {counter ? "Counter " + counter.nCounterID : "No Counter"}
-              </p>
-              <hr style={{ width: 100 }} />
-              <p className="ProfileInfo">{finyear ? finyear : "No FinYear"}</p>
-              <hr style={{ width: 100 }} />
-              <Box mt={2}>
-                <ThemeToggleButton />
-              </Box>
-              <hr style={{ width: 100, marginTop: 20 }} />
-              <Box
-                display={"flex"}
-                alignItems={"center"}
-                mt={2}
-                gap={2}
-                onClick={handleLogoutAuth}
-                sx={{ cursor: "pointer" }}
-              >
-                Logout
-                <LogoutIcon />
-              </Box>
-            </Box>
-          )}
-        </AnimatePresence>
+        <ProfileDropdown
+          isProfileVis={isProfileVis}
+          username={username}
+          branch={branch}
+          counter={counter}
+          finyear={finyear}
+          handleLogoutAuth={() =>
+            showAlertDialog("Log Out", "", () => handleLogoutAuth())
+          }
+          Colortheme={Colortheme}
+          ThemeToggleButton={ThemeToggleButton}
+        />
       </Box>
-      {title !== "Dashboard" && <CustomAlertModal />}
+      <CustomAlertModal />
     </Box>
   );
 };

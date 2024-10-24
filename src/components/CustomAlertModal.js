@@ -27,21 +27,11 @@ export default function CustomAlertModal() {
             flexDirection={"column"}
             sx={{ backgroundColor: Colortheme.secondaryBG }}
             width={"auto"}
-            p={2}
-            height={"20vh"}
+            p={5}
             alignItems={"center"}
-            justifyContent={"center"}
+            // justifyContent={"center"}
             borderRadius={"30px"}
           >
-            <CancelIcon
-              onClick={hideAlertDialog}
-              className="CancelIcon"
-              style={{
-                alignSelf: "flex-end",
-                marginRight: 20,
-                cursor: "pointer",
-              }}
-            />
             <p
               style={{
                 color: Colortheme.text,
@@ -52,7 +42,7 @@ export default function CustomAlertModal() {
               {title} ?
             </p>
             <Box>{dialogMsg}</Box>
-            <Box display={"flex"} flexDirection={"row"} gap={3}>
+            <Box display={"flex"} flexDirection={"row"} gap={3} marginTop={2}>
               <Box>
                 <button
                   className="AlertDialogButtons"

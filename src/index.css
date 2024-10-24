@@ -3,6 +3,23 @@
   
 }
   
+/* Target Webkit browsers (Chrome, Safari, etc.) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    /* Change 'white' to match your desired background color */
+    
+    /* Optional: If you want to change the text color when autofilled */
+    -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
+}
+
+/* For Firefox */
+input:autofill {
+    background-color: white !important;
+    /* Change 'white' to match your desired background color */
+}
   
   body {
   margin: 0;

@@ -11,6 +11,8 @@ const MainBackBox = ({ children }) => {
     <Box
       display={"flex"}
       height={"100vh"}
+      width={"100vw"}
+      // p={2}
       flexDirection={"column"}
       sx={{ backgroundColor: Colortheme.background }}
       alignItems={isMobile ? "center" : "flex-start"}

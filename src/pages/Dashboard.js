@@ -28,7 +28,7 @@ const Dashboard = () => {
       <Box
         display={"flex"}
         height={"80%"}
-        width={"95%"}
+        width={isMobile ? "90%" : "95%"}
         justifyContent={"center"}
         alignItems={"center"}
         sx={{ backgroundColor: Colortheme.background }}
@@ -40,6 +40,8 @@ const Dashboard = () => {
             fontSize: isMobile ? 20 : 40,
             color: Colortheme.text,
             userSelect: "none",
+            width: isMobile ? "60%" : "100%",
+            textAlign: "center",
           }}
         >
           Basic Dashboard Information
