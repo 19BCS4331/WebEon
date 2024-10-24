@@ -30,4 +30,17 @@ Before setting up the project, ensure you have the following installed:
 - [Git](https://git-scm.com/)
 
 
+# Deployed in Testing Mode.
+
+## Websites used for hosting
+
+- Vercel - Hosting the Reactjs Frontend.
+- Render - Hosting the Nodejs (Express) Backend Server.
+- Supabase - Hosting the Postgres DB
+
+## Link for hosted WebApp (In Testing) : 
+
+https://web-eon.vercel.app/
+
+
 
