@@ -1,7 +1,19 @@
 const baseUrl = process.env.REACT_APP_BASE_URL;
+const FinalBaseURL = `${baseUrl}/pages/Master/MasterProfiles`;
+
+const financialTypeLabels = {
+  B: "Balance Sheet",
+  P: "Profit & Loss",
+  T: "Trading",
+};
 export const formConfigs = {
   currencyForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/currencyProfile`,
+    endpoint: `${FinalBaseURL}/currencyProfile`,
+    tableNameEndpoint: `${FinalBaseURL}/mCurrency`,
+    columns: [
+      { field: "vCncode", headerName: "Currency Code", width: 150 },
+      { field: "vCnName", headerName: "Currency Name", width: 200 },
+    ],
 
     fields: [
       {
@@ -22,7 +34,7 @@ export const formConfigs = {
         label: "Country",
         type: "autocomplete",
         required: false,
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/currencyProfile/countries`,
+        fetchOptions: `${FinalBaseURL}/currencyProfile/countries`,
         // disabled: true,
       },
 
@@ -91,6 +103,7 @@ export const formConfigs = {
         type: "autocomplete",
         required: false,
         fetchOptions: "/api/groups",
+        fetchNotNeeded: true,
         disabled: true,
       },
       {
@@ -118,7 +131,7 @@ export const formConfigs = {
   },
 
   financialCodesForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/financialProfile`,
+    endpoint: `${FinalBaseURL}/financialProfile`,
 
     fields: [
       {
@@ -126,6 +139,7 @@ export const formConfigs = {
         label: "Financial Type",
         type: "select",
         options: [
+          { value: "", label: "Select Financial Type" },
           { value: "B", label: "Balance Sheet" },
           { value: "P", label: "Profit & Loss" },
           { value: "T", label: "Trading" },
@@ -150,6 +164,7 @@ export const formConfigs = {
         label: "Default Sign",
         type: "select",
         options: [
+          { value: "", label: "Select Default Sign" },
           { value: "C", label: "Credit" },
           { value: "D", label: "Debit" },
         ],
@@ -163,11 +178,22 @@ export const formConfigs = {
         required: false,
       },
     ],
+    columns: [
+      {
+        field: "vFinType",
+        headerName: "Fin Type",
+        width: 150,
+        renderCell: (params) =>
+          financialTypeLabels[params.value] || params.value,
+      },
+      { field: "vFinCode", headerName: "Fin Code", width: 150 },
+      { field: "vFinName", headerName: "Fin Name", width: 150 },
+    ],
   },
 
   financialSubCodesForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/financialSubProfile`,
-
+    endpoint: `${FinalBaseURL}/financialSubProfile`,
+    tableNameEndpoint: `${FinalBaseURL}/FinancialSubProfile`,
     fields: [
       {
         name: "vFinType",
@@ -187,7 +213,7 @@ export const formConfigs = {
         name: "vFinCode",
         label: "Financial Code",
         type: "autocomplete",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/financialSubProfile/finCode`,
+        fetchOptions: `${FinalBaseURL}/financialSubProfile/finCode`,
         required: true,
         dependent: true,
         dependsOn: "vFinType",
@@ -219,10 +245,12 @@ export const formConfigs = {
       { field: "vFinCode", headerName: "Fin Code", width: 150 },
       // Add more column configurations if needed
     ],
+
+    hiddenColumns: {},
   },
 
   divisionProfileForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/divisionProfile`,
+    endpoint: `${FinalBaseURL}/divisionProfile`,
 
     fields: [
       {
@@ -242,21 +270,28 @@ export const formConfigs = {
         name: "vBranchCode",
         label: "Controlling Branch",
         type: "autocomplete",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/divisionProfile/branch`,
+        fetchOptions: `${FinalBaseURL}/divisionProfile/branch`,
         required: false,
       },
+    ],
+
+    columns: [
+      { field: "vDivCode", headerName: "Division Code", width: 150 },
+      { field: "vDivName", headerName: "Division Name", width: 200 },
+      { field: "vBranchCode", headerName: "Controlling Branch", width: 150 },
+      // Add more column configurations if needed
     ],
   },
 
   divisionDetailsForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/divisionDetails`,
+    endpoint: `${FinalBaseURL}/divisionDetails`,
 
     fields: [
       {
         name: "vDivCode",
         label: "Division Code",
         type: "autocomplete",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/divisionDetails/divCode`,
+        fetchOptions: `${FinalBaseURL}/divisionDetails/divCode`,
         required: true,
       },
       {
@@ -301,17 +336,35 @@ export const formConfigs = {
         required: false,
       },
     ],
+
+    columns: [
+      { field: "vDivCode", headerName: "Division Code", width: 150 },
+      { field: "vHeadDept", headerName: "HOD", width: 200 },
+      { field: "vContactH", headerName: "HOD Contact", width: 150 },
+      // Add more column configurations if needed
+    ],
   },
 
   accountsProfileForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile`,
+    endpoint: `${FinalBaseURL}/accountsProfile`,
+
+    columns: [
+      { field: "vCode", headerName: "Code", width: 120 },
+      { field: "vName", headerName: "Name", width: 200 },
+      {
+        field: "bActive",
+        headerName: "Status",
+        width: 120,
+        valueGetter: (params) => (params.row.bActive ? "Active" : "Inactive"),
+      },
+    ],
 
     fields: [
       {
         name: "nDivisionID",
         label: "Division / Dept",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/division`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/division`,
         required: true,
       },
       {
@@ -332,7 +385,7 @@ export const formConfigs = {
         name: "vNature",
         label: "Account Type",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/accType`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/accType`,
 
         required: false,
       },
@@ -341,7 +394,7 @@ export const formConfigs = {
         name: "vSblnat",
         label: "Sub Ledger Type",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/subLedgerType`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/subLedgerType`,
         required: false,
       },
 
@@ -360,7 +413,7 @@ export const formConfigs = {
         name: "nCurrencyID",
         label: "Currency",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/currency`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/currency`,
         required: false,
       },
 
@@ -381,7 +434,7 @@ export const formConfigs = {
         name: "vFinCode",
         label: "Financial Code",
         type: "autocomplete",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/finCode`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/finCode`,
         required: true,
         dependent: true,
         dependsOn: "vFinType",
@@ -390,7 +443,7 @@ export const formConfigs = {
         name: "vSubFinCode",
         label: "Financial Sub Code",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/finSubCode`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/finSubCode`,
         required: false,
       },
 
@@ -412,7 +465,7 @@ export const formConfigs = {
         name: "nBranchIDtoTransfer",
         label: "Branch To Transfer",
         type: "select",
-        fetchOptions: `${baseUrl}/pages/Master/MasterProfiles/accountsProfile/branchTransfer`,
+        fetchOptions: `${FinalBaseURL}/accountsProfile/branchTransfer`,
         required: false,
       },
 
@@ -462,7 +515,7 @@ export const formConfigs = {
   },
 
   ad1MasterForm: {
-    endpoint: `${baseUrl}/pages/Master/MasterProfiles/ad1Master`,
+    endpoint: `${FinalBaseURL}/ad1Master`,
 
     fields: [
       {

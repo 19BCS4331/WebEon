@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { Box, MenuItem, useMediaQuery, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import CustomAutocomplete from "../CustomAutocomplete";
@@ -31,23 +31,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const [options, setOptions] = useState({});
 
   const navigation = useNavigate();
-
-  // useEffect(() => {
-  //   const initialFormData = {};
-  //   const initialDisabledFields = {};
-  //   formConfig.fields.forEach((field) => {
-  //     initialFormData[field.name] = "";
-  //     if (field.disabled) initialDisabledFields[field.name] = true;
-  //   });
-  //   setFormData(initialFormData);
-  //   setDisabledFields(initialDisabledFields);
-
-  //   formConfig.fields.forEach((field) => {
-  //     if (!field.dependent && field.type === "autocomplete") {
-  //       fetchOptions(field);
-  //     }
-  //   });
-  // }, [formConfig]);
 
   useEffect(() => {
     const initialFormData = {};
@@ -82,11 +65,52 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
     // Fetch initial options for non-dependent autocomplete fields
     formConfig.fields.forEach((field) => {
-      if (!field.dependsOn && field.type === "autocomplete") {
-        fetchOptions(field);
+      if (
+        !field.dependsOn &&
+        !field.fetchNotNeeded &&
+        field.type === ("autocomplete" && "select")
+      ) {
+        fetchIndependantOptions(field);
       }
     });
   }, [formConfig]);
+
+  const fetchIndependantOptions = async (field) => {
+    try {
+      // const url = field.dependent && value && field.fetchOptions;
+
+      const response = await fetch(field.fetchOptions, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorMessage = `Error ${response.status}: ${response.statusText}`;
+        console.error(errorMessage);
+        showToast(errorMessage, "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        return;
+      }
+
+      const result = await response.json();
+      setOptions((prevOptions) => ({
+        ...prevOptions,
+        [field.name]: result,
+      }));
+    } catch (error) {
+      console.error("Error fetching options:", error);
+      const errorMessage = error.response?.status
+        ? `Error ${error.response.status}: ${error.response.statusText}`
+        : "Network error or server unreachable";
+      showToast(errorMessage, "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+    }
+  };
 
   const fetchOptions = async (field, value) => {
     try {
@@ -297,6 +321,102 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     }
   };
 
+  // const handleSubmit = async (e) => {
+  //   setIsLoading(true);
+  //   e.preventDefault();
+  //   const endpoint = formConfig.endpoint;
+  //   const updateEndPoint = formConfig.tableNameEndpoint;
+  //   // const method = formData[formDataID] ? "PUT" : "POST";
+
+  //   if (!formData[formDataID]) {
+  //     try {
+  //       const response = await fetch(endpoint, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify(formData),
+  //       });
+
+  //       const result = await response.json();
+
+  //       if (response.ok) {
+  //         console.log(result.message);
+  //         // Refresh data grid or perform other actions
+  //         setRows((prevRows) => [...prevRows, result]);
+  //         setIsFormVisible(false);
+  //         fetchData();
+  //         setFormData({});
+  //         setIsLoading(false);
+  //         showToast("Data Inserted Successfully!", "success");
+  //         setTimeout(() => {
+  //           hideToast();
+  //         }, 2000);
+  //       } else {
+  //         console.error(result.error);
+  //         showToast("Error Occurred!", "fail");
+  //         setTimeout(() => {
+  //           hideToast();
+  //         }, 2000);
+  //         setIsLoading(false);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error:", error);
+  //       showToast("Error Occurred!", "fail");
+  //       setTimeout(() => {
+  //         hideToast();
+  //       }, 2000);
+  //       setIsLoading(false);
+  //     }
+  //   } else {
+  //     try {
+  //       const response = await fetch(updateEndPoint, {
+  //         method: "PUT",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify(formData),
+  //       });
+
+  //       const result = await response.json();
+
+  //       if (response.ok) {
+  //         console.log(result.message);
+  //         // Refresh data grid or perform other actions
+  //         setRows((prevRows) =>
+  //           prevRows.map((row) =>
+  //             row[formDataID] === result[formDataID] ? result : row
+  //           )
+  //         );
+  //         setIsFormVisible(false);
+  //         fetchData();
+  //         setFormData({});
+  //         setIsLoading(false);
+  //         showToast("Data Edited Successfully!", "success");
+  //         setTimeout(() => {
+  //           hideToast();
+  //         }, 2000);
+  //       } else {
+  //         console.error(result.error);
+  //         showToast("Error Occurred!", "fail");
+  //         setTimeout(() => {
+  //           hideToast();
+  //         }, 2000);
+  //         setIsLoading(false);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error:", error);
+  //       showToast("Error Occurred!", "fail");
+  //       setTimeout(() => {
+  //         hideToast();
+  //       }, 2000);
+  //       setIsLoading(false);
+  //     }
+  //   }
+  // };
+
   const handleSearch = async () => {
     setIsLoading(true);
     try {
@@ -324,12 +444,55 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     }
   };
 
-  const generateColumns = (dynamicFields) => {
-    // Map the dynamic fields to the column structure
-    const dynamicColumns = dynamicFields.map((field) => ({
+  // const generateColumns = (dynamicFields) => {
+  //   // Map the dynamic fields to the column structure
+  //   const dynamicColumns = dynamicFields.map((field) => ({
+  //     field: field.field,
+  //     headerName: field.headerName,
+  //     width: field.width || 150, // Default width if not specified
+  //   }));
+
+  //   return [
+  //     ...dynamicColumns,
+  //     {
+  //       field: "actions",
+  //       headerName: "Actions",
+  //       width: 200,
+  //       renderCell: (params) => (
+  //         <Box display={"flex"} gap={2}>
+  //           <StyledButton
+  //             onClick={() => handleEdit(params.row)}
+  //             bgColor={Colortheme.buttonBg}
+  //             bgColorHover={Colortheme.buttonBgHover}
+  //             style={{ width: 80, height: 30 }}
+  //           >
+  //             Edit
+  //           </StyledButton>
+  //           <StyledButton
+  //             onClick={() => handleDelete(params.row[formDataID])}
+  //             bgColor={Colortheme.buttonBg}
+  //             bgColorHover={"red"}
+  //             textColOnHover={"white"}
+  //             style={{ width: 80, height: 30 }}
+  //           >
+  //             Delete
+  //           </StyledButton>
+  //         </Box>
+  //       ),
+  //     },
+  //   ];
+  // };
+
+  // const columns = generateColumns(formConfig.columns);
+
+  // Memoized Columns
+  const columns = useMemo(() => {
+    const dynamicColumns = formConfig.columns.map((field) => ({
       field: field.field,
       headerName: field.headerName,
-      width: field.width || 150, // Default width if not specified
+      width: field.width || 150,
+      renderCell: field.renderCell,
+      valueGetter: field.valueGetter,
     }));
 
     return [
@@ -339,7 +502,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
         headerName: "Actions",
         width: 200,
         renderCell: (params) => (
-          <Box display={"flex"} gap={2}>
+          <Box display="flex" gap={2}>
             <StyledButton
               onClick={() => handleEdit(params.row)}
               bgColor={Colortheme.buttonBg}
@@ -351,8 +514,8 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
             <StyledButton
               onClick={() => handleDelete(params.row[formDataID])}
               bgColor={Colortheme.buttonBg}
-              bgColorHover={"red"}
-              textColOnHover={"white"}
+              bgColorHover="red"
+              textColOnHover="white"
               style={{ width: 80, height: 30 }}
             >
               Delete
@@ -361,9 +524,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
         ),
       },
     ];
-  };
-
-  const columns = generateColumns(formConfig.columns);
+  }, [formConfig.columns, Colortheme, formDataID]);
 
   //   const columns = [
   //     { field: "vSubFinCode", headerName: "Sub Fin Code", width: 150 },
@@ -405,7 +566,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     setSearchKeyword("");
   };
 
-  const handleDelete = async (formDataID) => {
+  const handleDelete = async (idToDelete) => {
     setIsLoading(true);
     try {
       const response = await fetch(`${formConfig.endpoint}/delete`, {
@@ -414,16 +575,17 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ formDataID }),
+        body: JSON.stringify({ idToDelete }),
       });
       const result = await response.json();
       if (response.ok) {
         console.log(result.message);
         setRows((prevRows) =>
-          prevRows.filter((row) => row[formDataID] !== formDataID)
+          prevRows.filter((row) => row[formDataID] !== idToDelete)
         );
         setSearchKeyword("");
         setIsLoading(false);
+
         showToast("Data Deleted Successfully!", "success");
         setTimeout(() => {
           hideToast();
@@ -524,16 +686,19 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                   sx={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "40px",
+                    gap: "25px",
                     backgroundColor: Colortheme.background,
-                    pl: 10,
-                    pr: 10,
-                    pb: 10,
+                    pl: isMobile ? 5 : 10,
+                    pr: isMobile ? 5 : 10,
+                    pb: 5,
                     borderRadius: 5,
+                    maxHeight: isMobile
+                      ? "calc(100vh - 200px)"
+                      : "calc(100vh - 100px)",
                   }}
                 >
                   <Box display={"flex"} alignItems={"center"}>
-                    {!formData[formDataID] && isFormVisible && (
+                    {!formData[formDataID] && isFormVisible && !isMobile && (
                       <StyledButton
                         onClick={navHome}
                         style={{
@@ -550,22 +715,36 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                       <StyledButton
                         onClick={handleBackOnForm}
                         style={{
-                          width: 100,
+                          width: isMobile ? 80 : 100,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                         }}
                       >
-                        <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+                        <KeyboardBackspaceIcon
+                          style={{ fontSize: isMobile ? "20px" : "30px" }}
+                        />
                       </StyledButton>
                     )}
                     {formData[formDataID] && isFormVisible && (
-                      <h1 style={{ color: Colortheme.text, marginLeft: "35%" }}>
-                        Edit : {formData[editFieldTitle]}
+                      <h1
+                        style={{
+                          color: Colortheme.text,
+                          marginLeft: isMobile ? "10%" : "35%",
+                        }}
+                      >
+                        {isMobile
+                          ? "Edit"
+                          : `Edit : ${formData[editFieldTitle]}`}
                       </h1>
                     )}
                     {!formData[formDataID] && isFormVisible && (
-                      <h1 style={{ color: Colortheme.text, marginLeft: "35%" }}>
+                      <h1
+                        style={{
+                          color: Colortheme.text,
+                          marginLeft: isMobile ? "25%" : "35%",
+                        }}
+                      >
                         Create
                       </h1>
                     )}
@@ -573,6 +752,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
                   {/* Grid container for form fields */}
                   <Box
+                    mt={isMobile ? -4 : 0}
                     display={"grid"}
                     overflow={isMobile ? "scroll" : "none"}
                     sx={{
@@ -585,6 +765,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                     columnGap={"60px"}
                     rowGap={"40px"}
                     pt={1}
+                    pr={2}
                   >
                     {formConfig.fields.map((field) => (
                       <div key={field.name}>
@@ -610,6 +791,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                             }
                             required={field.required}
                             disabled={disabledFields[field.name]}
+                            styleTF={isMobile ? { width: "100%" } : {}}
                           />
                         ) : field.type === "checkbox" ? (
                           <CustomCheckbox
@@ -640,6 +822,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                             }
                             required={field.required}
                             disabled={disabledFields[field.name]}
+                            style={isMobile ? { width: "100%" } : {}}
                           >
                             {field.options &&
                               field.options.map((option) => (
@@ -658,6 +841,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
                   {/* Buttons container outside the grid */}
                   <Box
+                    mt={2}
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -688,7 +872,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
               initial={{ x: -50 }}
               animate={{ x: 0 }}
               sx={{
-                width: "100%",
+                width: isMobile ? "auto" : "100%",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -701,13 +885,15 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                 <StyledButton
                   onClick={handleBack}
                   style={{
-                    width: 100,
+                    width: isMobile ? 80 : 100,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+                  <KeyboardBackspaceIcon
+                    style={{ fontSize: isMobile ? "20px" : "30px" }}
+                  />
                 </StyledButton>
               </Box>
               <CustomTextField
@@ -715,7 +901,10 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                 placeholder="Search..."
                 value={searchKeyword}
                 onChange={handleSearchChange}
-                style={{ marginBottom: "20px", width: "50%" }}
+                style={{
+                  marginBottom: "20px",
+                  width: isMobile ? "80%" : "50%",
+                }}
               />
               <DataGrid
                 rows={filteredRows}
@@ -728,7 +917,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                 onRowSelectionModelChange={handleSelectionModelChange}
                 sortModel={[
                   {
-                    field: "formDataID",
+                    field: formDataID,
                     sort: "asc",
                   },
                 ]}

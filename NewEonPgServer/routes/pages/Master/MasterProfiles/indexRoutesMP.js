@@ -22,6 +22,7 @@ router.get("/currencyProfile", authMiddleware, async (req, res) => {
     const result = await pool.query(
       'SELECT * FROM "mCurrency" WHERE "bIsDeleted"=false order by "nCurrencyID"'
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -30,11 +31,20 @@ router.get("/currencyProfile", authMiddleware, async (req, res) => {
 });
 
 router.get("/currencyProfile/countries", authMiddleware, async (req, res) => {
+  const query = `select "vCode" from "MMASTERS" WHERE "vType" = 'CTRY' ORDER BY "vCode" ASC`;
   try {
-    const result = await pool.query(
-      `select "vCode" from "MMASTERS" WHERE "vType" = 'CTRY' ORDER BY "vCode" ASC`
-    );
-    res.json(result.rows);
+    const { rows } = await pool.query(query);
+
+    // Map the rows to extract just the values of "vFinCode"
+    const Countries = rows.map((row) => row.vCode);
+
+    console.log("Data Fetched successfully");
+    res.json(Countries);
+    // const result = await pool.query(
+    //   `select "vCode" from "MMASTERS" WHERE "vType" = 'CTRY' ORDER BY "vCode" ASC`
+    // );
+
+    // res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -161,7 +171,7 @@ router.put("/currencyProfile", authMiddleware, async (req, res) => {
 });
 
 router.post("/currencyProfile/delete", authMiddleware, async (req, res) => {
-  const { nCurrencyID } = req.body;
+  const { idToDelete } = req.body;
 
   const query = `
     UPDATE "mCurrency"
@@ -170,7 +180,7 @@ router.post("/currencyProfile/delete", authMiddleware, async (req, res) => {
     `;
 
   try {
-    pool.query(query, [nCurrencyID], (error, results) => {
+    pool.query(query, [idToDelete], (error, results) => {
       if (error) {
         console.error("Error deleting row:", error);
         res.status(500).json({ error: "Error deleting data" });
@@ -267,7 +277,7 @@ router.put("/financialProfile", authMiddleware, async (req, res) => {
 });
 
 router.post("/financialProfile/delete", authMiddleware, async (req, res) => {
-  const { nFID } = req.body;
+  const { idToDelete } = req.body;
 
   const query = `
     UPDATE "FinancialProfile"
@@ -276,7 +286,7 @@ router.post("/financialProfile/delete", authMiddleware, async (req, res) => {
     `;
 
   try {
-    pool.query(query, [nFID], (error, results) => {
+    pool.query(query, [idToDelete], (error, results) => {
       if (error) {
         console.error("Error deleting row:", error);
         res.status(500).json({ error: "Error deleting data" });
@@ -298,20 +308,21 @@ router.post("/financialProfile/delete", authMiddleware, async (req, res) => {
 router.get("/financialSubProfile", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT 
-	fsp."nSFID",
-    fp."nFID",
-    fp."vFinType",
-    fp."vFinCode",
-    fsp."vSubFinCode",
-    fsp."vSubFinName",
-	fsp."nPriority"
-FROM 
-    public."FinancialProfile" fp
-JOIN 
-    public."FinancialSubProfile" fsp ON fp."nFID" = fsp."nFID" WHERE fsp."bIsDeleted" = false
+      //       `SELECT
+      // 	fsp."nSFID",
+      //     fp."nFID",
+      //     fp."vFinType",
+      //     fp."vFinCode",
+      //     fsp."vSubFinCode",
+      //     fsp."vSubFinName",
+      // 	fsp."nPriority"
+      // FROM
+      //     public."FinancialProfile" fp
+      // JOIN
+      //     public."FinancialSubProfile" fsp ON fp."nFID" = fsp."nFID" WHERE fsp."bIsDeleted" = false
 
-`
+      // `
+      `SELECT * FROM public."FinancialSubProfile" WHERE "bIsDeleted" = false`
     );
     res.json(result.rows);
   } catch (err) {
@@ -353,7 +364,7 @@ router.post(
 
 // CRUD
 router.post("/financialSubProfile", authMiddleware, async (req, res) => {
-  const { vFinCode, vSubFinCode, vSubFinName, nPriority } = req.body;
+  const { vFinCode, vSubFinCode, vSubFinName, nPriority, vFinType } = req.body;
 
   const parseInput = (input) => (input === "" ? null : input);
 
@@ -364,10 +375,10 @@ router.post("/financialSubProfile", authMiddleware, async (req, res) => {
 
   const insertQuery = `
     INSERT INTO "FinancialSubProfile" (
-      "vFinCode", "nFID", "vSubFinCode", "vSubFinName", "nPriority"
+      "vFinCode", "nFID", "vSubFinCode", "vSubFinName", "nPriority","vFinType"
     )
     VALUES (
-      $1, $2, $3, $4, $5
+      $1, $2, $3, $4, $5, $6
     );
   `;
 
@@ -390,6 +401,7 @@ router.post("/financialSubProfile", authMiddleware, async (req, res) => {
       parseInput(vSubFinCode),
       parseInput(vSubFinName),
       parseInput(nPriority),
+      parseInput(vFinType),
     ]);
 
     console.log("Data inserted successfully");
@@ -400,36 +412,80 @@ router.post("/financialSubProfile", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/financialSubProfile", authMiddleware, async (req, res) => {
-  const { nSFID, vFinCode, vSubFinCode, vSubFinName, nPriority } = req.body;
+// router.put("/financialSubProfile", authMiddleware, async (req, res) => {
+//   const { nSFID, vFinCode, vSubFinCode, vSubFinName, nPriority, vFinType } =
+//     req.body;
 
-  const query = `
+//   const query = `
+//     UPDATE "FinancialSubProfile"
+//     SET "vFinCode" = $2, "vSubFinCode" = $3, "vSubFinName" = $4, "nPriority" = $5, "vFinType" = $6
+//     WHERE "nSFID" = $1
+//     `;
+
+//   try {
+//     pool.query(
+//       query,
+//       [nSFID, vFinCode, vSubFinCode, vSubFinName, nPriority, vFinType],
+//       (error, results) => {
+//         if (error) {
+//           console.error("Error Editing:", error);
+//           res.status(500).json({ error: "Error Editing data" });
+//         }
+//         console.log("Data Edited successfully");
+//         res.status(201).json({ message: "Data Edited successfully" });
+//       }
+//     );
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Server error");
+//   }
+// });
+
+router.put("/financialSubProfile", authMiddleware, async (req, res) => {
+  const { nSFID, vFinCode, vSubFinCode, vSubFinName, nPriority, vFinType } =
+    req.body;
+
+  const getNFIDQuery = `
+    SELECT "nFID" FROM "FinancialProfile" WHERE "vFinType" = $1
+  `;
+
+  const updateQuery = `
     UPDATE "FinancialSubProfile"
-    SET "vFinCode" = $2, "vSubFinCode" = $3, "vSubFinName" = $4, "nPriority" = $5
+    SET "vFinCode" = $2, "vSubFinCode" = $3, "vSubFinName" = $4, "nPriority" = $5, "vFinType" = $6, "nFID" = $7
     WHERE "nSFID" = $1
-    `;
+  `;
 
   try {
-    pool.query(
-      query,
-      [nSFID, vFinCode, vSubFinCode, vSubFinName, nPriority],
-      (error, results) => {
-        if (error) {
-          console.error("Error Editing:", error);
-          res.status(500).json({ error: "Error Editing data" });
-        }
-        console.log("Data Edited successfully");
-        res.status(201).json({ message: "Data Edited successfully" });
-      }
-    );
+    // Get nFID from FinancialProfile based on vFinType
+    const nFIDResult = await pool.query(getNFIDQuery, [vFinType]);
+    if (nFIDResult.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "vFinType not found in FinancialProfile" });
+    }
+    const nFID = nFIDResult.rows[0].nFID;
+
+    // Update FinancialSubProfile with the retrieved nFID and other fields
+    await pool.query(updateQuery, [
+      nSFID,
+      vFinCode,
+      vSubFinCode,
+      vSubFinName,
+      nPriority,
+      vFinType,
+      nFID,
+    ]);
+
+    console.log("Data Edited successfully");
+    res.status(201).json({ message: "Data Edited successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    console.error("Error Editing:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 router.post("/financialSubProfile/delete", authMiddleware, async (req, res) => {
-  const { nSFID } = req.body;
+  const { idToDelete } = req.body;
 
   const query = `
     UPDATE "FinancialSubProfile"
@@ -438,7 +494,7 @@ router.post("/financialSubProfile/delete", authMiddleware, async (req, res) => {
     `;
 
   try {
-    pool.query(query, [nSFID], (error, results) => {
+    pool.query(query, [idToDelete], (error, results) => {
       if (error) {
         console.error("Error deleting row:", error);
         res.status(500).json({ error: "Error deleting data" });
@@ -548,7 +604,7 @@ router.put("/divisionProfile", authMiddleware, async (req, res) => {
 });
 
 router.post("/divisionProfile/delete", authMiddleware, async (req, res) => {
-  const { nDivisionID } = req.body;
+  const { idToDelete } = req.body;
 
   const query = `
     UPDATE "DivisionProfile"
@@ -557,7 +613,7 @@ router.post("/divisionProfile/delete", authMiddleware, async (req, res) => {
     `;
 
   try {
-    pool.query(query, [nDivisionID], (error, results) => {
+    pool.query(query, [idToDelete], (error, results) => {
       if (error) {
         console.error("Error deleting row:", error);
         res.status(500).json({ error: "Error deleting data" });
@@ -579,21 +635,22 @@ router.post("/divisionProfile/delete", authMiddleware, async (req, res) => {
 router.get("/divisionDetails", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT 
-	dpd."nDivProDtlID",
-    dpd."nDivisionID",
-	dp."vDivCode",
-    dpd."nNo_of_Emp",
-    dpd."vHeadDept",
-	dpd."vContactH",
-	dpd."vContactAM",
-	dpd."nAreaManagerID"
-FROM 
-    public."DivisionProfile" dp
-JOIN 
-    public."DivisionProfileDetails" dpd ON dp."nDivisionID" = dpd."nDivisionID" WHERE dpd."bIsDeleted" = false
+      //       `SELECT
+      // 	dpd."nDivProDtlID",
+      //     dpd."nDivisionID",
+      // 	dp."vDivCode",
+      //     dpd."nNo_of_Emp",
+      //     dpd."vHeadDept",
+      // 	dpd."vContactH",
+      // 	dpd."vContactAM",
+      // 	dpd."nAreaManagerID"
+      // FROM
+      //     public."DivisionProfile" dp
+      // JOIN
+      //     public."DivisionProfileDetails" dpd ON dp."nDivisionID" = dpd."nDivisionID" WHERE dpd."bIsDeleted" = false
 
-`
+      // `
+      `SELECT * FROM "DivisionProfileDetails" WHERE "bIsDeleted" = false`
     );
     res.json(result.rows);
   } catch (err) {
@@ -617,6 +674,47 @@ router.get("/divisionDetails/divCode", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("Error Fetching:", err);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// INSERT
+
+router.post("/divisionDetails", authMiddleware, async (req, res) => {
+  const {
+    vDivCode,
+    nNo_of_Emp,
+    vHeadDept,
+    vContactH,
+    nAreaManagerID,
+    vContactAM,
+  } = req.body;
+
+  const parseInput = (input) => (input === "" ? null : input);
+
+  const insertQuery = `
+    INSERT INTO "DivisionProfileDetails" (
+      "vDivCode", "nNo_of_Emp","vHeadDept","vContactH","nAreaManagerID","vContactAM"
+    )
+    VALUES (
+      $1, $2, $3, $4, $5, $6
+    );
+  `;
+
+  try {
+    await pool.query(insertQuery, [
+      parseInput(vDivCode),
+      parseInput(nNo_of_Emp),
+      parseInput(vHeadDept),
+      parseInput(vContactH),
+      parseInput(nAreaManagerID),
+      parseInput(vContactAM),
+    ]);
+
+    console.log("Data inserted successfully");
+    res.status(201).json({ message: "Data inserted successfully" });
+  } catch (error) {
+    console.error("Error inserting data:", error);
+    res.status(500).json({ error: "Error inserting data" });
   }
 });
 
@@ -646,7 +744,8 @@ router.put("/divisionDetails/", authMiddleware, async (req, res) => {
       "vHeadDept" = $3,
       "vContactH" = $4,
       "nAreaManagerID" = $5,
-      "vContactAM" = $6
+      "vContactAM" = $6,
+      "vDivCode" = $8
     WHERE
       "nDivProDtlID" = $7;
   `;
@@ -672,6 +771,7 @@ router.put("/divisionDetails/", authMiddleware, async (req, res) => {
       parseInput(nAreaManagerID),
       parseInput(vContactAM),
       parseInput(nDivProDtlID),
+      parseInput(vDivCode),
       // Assuming id is passed as a route parameter
     ]);
 
@@ -683,66 +783,66 @@ router.put("/divisionDetails/", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/divisionDetails", authMiddleware, async (req, res) => {
-  const {
-    nDivProDtlID,
-    vDivCode,
-    nNo_of_Emp,
-    vHeadDept,
-    vContactH,
-    nAreaManagerID,
-    vContactAM,
-  } = req.body;
+// router.put("/divisionDetails", authMiddleware, async (req, res) => {
+//   const {
+//     nDivProDtlID,
+//     vDivCode,
+//     nNo_of_Emp,
+//     vHeadDept,
+//     vContactH,
+//     nAreaManagerID,
+//     vContactAM,
+//   } = req.body;
 
-  const findnDivisionIDQuery = `
-    SELECT "nDivisionID" FROM "DivisionProfile" WHERE "vDivCode" = $2;
-  `;
+//   const findnDivisionIDQuery = `
+//     SELECT "nDivisionID" FROM "DivisionProfile" WHERE "vDivCode" = $2;
+//   `;
 
-  const query = `
-    UPDATE "DivisionProfileDetails"
-    SET "nDivisionID" = $2, "nNo_of_Emp" = $3, "vHeadDept" = $4, "vContactH"=$5,"nAreaManagerID"=$6,"vContactAM"=$7
-    WHERE "nDivProDtlID" = $1
-    `;
+//   const query = `
+//     UPDATE "DivisionProfileDetails"
+//     SET "nDivisionID" = $2, "nNo_of_Emp" = $3, "vHeadDept" = $4, "vContactH"=$5,"nAreaManagerID"=$6,"vContactAM"=$7
+//     WHERE "nDivProDtlID" = $1
+//     `;
 
-  try {
-    const { rows } = await pool.query(findnDivisionIDQuery, [vDivCode]);
+//   try {
+//     const { rows } = await pool.query(findnDivisionIDQuery, [vDivCode]);
 
-    // If no rows are returned or if nDivisionID is not found, handle the error
-    if (rows.length === 0) {
-      throw new Error(`nDivisionID not found for vDivCode: ${vDivCode}`);
-    }
+//     // If no rows are returned or if nDivisionID is not found, handle the error
+//     if (rows.length === 0) {
+//       throw new Error(`nDivisionID not found for vDivCode: ${vDivCode}`);
+//     }
 
-    // Extract nDivisionID from the result
-    const nDivisionID = rows[0].nDivisionID;
+//     // Extract nDivisionID from the result
+//     const nDivisionID = rows[0].nDivisionID;
 
-    pool.query(
-      query,
-      [
-        nDivProDtlID,
-        nDivisionID,
-        nNo_of_Emp,
-        vHeadDept,
-        vContactH,
-        nAreaManagerID,
-        vContactAM,
-      ],
-      (error, results) => {
-        if (error) {
-          console.error("Error Editing:", error);
-          res.status(500).json({ error: "Error Editing data" });
-        }
-        console.log("Data Edited successfully");
-        res.status(201).json({ message: "Data Edited successfully" });
-      }
-    );
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
-  }
-});
+//     pool.query(
+//       query,
+//       [
+//         nDivProDtlID,
+//         nDivisionID,
+//         nNo_of_Emp,
+//         vHeadDept,
+//         vContactH,
+//         nAreaManagerID,
+//         vContactAM,
+//       ],
+//       (error, results) => {
+//         if (error) {
+//           console.error("Error Editing:", error);
+//           res.status(500).json({ error: "Error Editing data" });
+//         }
+//         console.log("Data Edited successfully");
+//         res.status(201).json({ message: "Data Edited successfully" });
+//       }
+//     );
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Server error");
+//   }
+// });
 
 router.post("/divisionDetails/delete", authMiddleware, async (req, res) => {
-  const { nDivProDtlID } = req.body;
+  const { idToDelete } = req.body;
 
   const query = `
     UPDATE "DivisionProfileDetails"
@@ -751,7 +851,7 @@ router.post("/divisionDetails/delete", authMiddleware, async (req, res) => {
     `;
 
   try {
-    pool.query(query, [nDivProDtlID], (error, results) => {
+    pool.query(query, [idToDelete], (error, results) => {
       if (error) {
         console.error("Error deleting row:", error);
         res.status(500).json({ error: "Error deleting data" });

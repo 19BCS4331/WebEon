@@ -618,6 +618,11 @@ const LoginNew = () => {
                       : false
                   }
                   onChange={(e) => setUsername(e.target.value)}
+                  autofillStyle={{
+                    background: Colortheme.secondaryBG,
+                    textColor: Colortheme.text,
+                    caretColor: Colortheme.text,
+                  }}
                 />
 
                 <CustomTextField
@@ -631,6 +636,11 @@ const LoginNew = () => {
                       : false
                   }
                   onChange={(e) => setPassword(e.target.value)}
+                  autofillStyle={{
+                    background: Colortheme.secondaryBG,
+                    textColor: Colortheme.text,
+                    caretColor: Colortheme.text,
+                  }}
                 />
               </Box>
               <StyledButton

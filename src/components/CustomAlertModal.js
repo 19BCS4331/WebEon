@@ -1,17 +1,19 @@
 // CustomAlertModal.js
 import * as React from "react";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useToast } from "../contexts/ToastContext";
 import { AnimatePresence, motion } from "framer-motion";
 import CancelIcon from "@mui/icons-material/Cancel";
 import Backdrop from "@mui/material/Backdrop";
 import ThemeContext from "../contexts/ThemeContext";
 import { useContext } from "react";
+import StyledButton from "./global/StyledButton";
 
 export default function CustomAlertModal() {
   const { Colortheme } = useContext(ThemeContext);
   const { alertModal, hideAlertDialog } = useToast();
-
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { open, title, dialogMsg, handleAction } = alertModal;
 
   return (
@@ -26,8 +28,10 @@ export default function CustomAlertModal() {
             display={"flex"}
             flexDirection={"column"}
             sx={{ backgroundColor: Colortheme.secondaryBG }}
-            width={"auto"}
+            width={isMobile ? "60%" : "auto"}
+            height={isMobile ? "100px" : "auto"}
             p={5}
+            pt={isMobile ? 2 : 5}
             alignItems={"center"}
             // justifyContent={"center"}
             borderRadius={"30px"}
@@ -35,7 +39,7 @@ export default function CustomAlertModal() {
             <p
               style={{
                 color: Colortheme.text,
-                fontSize: 20,
+                fontSize: isMobile ? 16 : 20,
                 userSelect: "none",
               }}
             >
@@ -44,36 +48,42 @@ export default function CustomAlertModal() {
             <Box>{dialogMsg}</Box>
             <Box display={"flex"} flexDirection={"row"} gap={3} marginTop={2}>
               <Box>
-                <button
-                  className="AlertDialogButtons"
+                <StyledButton
+                  // className="AlertDialogButtons"
+                  bgColor={Colortheme.text}
+                  textColor={Colortheme.background}
                   onClick={hideAlertDialog}
                   style={{
-                    border: "none",
-                    width: 120,
-                    borderRadius: 20,
-                    height: 40,
-                    fontSize: 18,
+                    // border: "none",
+                    width: isMobile ? 100 : 120,
+                    // borderRadius: 20,
+                    // height: 40,
+                    // fontSize: 18,
                   }}
                 >
                   No
-                </button>
+                </StyledButton>
               </Box>
-              <button
-                className="AlertDialogButtons"
+              <StyledButton
+                // className="AlertDialogButtons"
+                bgColor={Colortheme.text}
+                textColor={Colortheme.background}
+                bgColorHover={"red"}
+                textColOnHover={"white"}
                 onClick={() => {
                   handleAction();
                   hideAlertDialog();
                 }}
                 style={{
-                  border: "none",
-                  width: 120,
-                  borderRadius: 20,
-                  height: 40,
-                  fontSize: 18,
+                  // border: "none",
+                  width: isMobile ? 100 : 120,
+                  // borderRadius: 20,
+                  // height: 40,
+                  // fontSize: 18,
                 }}
               >
                 Yes
-              </button>
+              </StyledButton>
             </Box>
           </Box>
         )}
