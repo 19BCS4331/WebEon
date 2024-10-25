@@ -68,7 +68,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       if (
         !field.dependsOn &&
         !field.fetchNotNeeded &&
-        field.type === ("autocomplete" && "select")
+        field.type === "autocomplete"
       ) {
         fetchIndependantOptions(field);
       }
