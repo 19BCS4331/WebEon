@@ -35,49 +35,6 @@ const Ad1Provider = lazy(() =>
 
 //   Party Profiles ------------------------------------------------------------------
 
-const CategoryMaster = lazy(() =>
-  import("./pages/Master/Party Profiles/CategoryMaster")
-);
-const CorporateClientProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/CorporateClientProfile")
-);
-const FFMCProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/FFMCProfile")
-);
-const BanksProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/BanksProfile")
-);
-const RMCProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/RMCProfile")
-);
-const FranchiseeMaster = lazy(() =>
-  import("./pages/Master/Party Profiles/FranchiseeMaster")
-);
-const ForeignCorrespondents = lazy(() =>
-  import("./pages/Master/Party Profiles/ForeignCorrespondents")
-);
-const AgentProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/AgentsProfile")
-);
-const MiscSuppliers = lazy(() =>
-  import("./pages/Master/Party Profiles/MiscSupplier")
-);
-const TCIssuerProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/TCIssuerProfile")
-);
-const InsuranceMaster = lazy(() =>
-  import("./pages/Master/Party Profiles/InsuranceMaster")
-);
-const EmployeeProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/EmployeeProfile")
-);
-const MrktExecutive = lazy(() =>
-  import("./pages/Master/Party Profiles/MrktExecutive")
-);
-const BranchProfile = lazy(() =>
-  import("./pages/Master/Party Profiles/BranchProfile")
-);
-
 const MainIndexComp = lazy(() =>
   import("./pages/Master/Party Profiles/IndexPartyProfiles")
 );
@@ -102,9 +59,13 @@ const BranchSettings = lazy(() =>
   import("./pages/Master/SystemSetup/BranchSettings")
 );
 
-const UserGroup = lazy(() => import("./pages/Master/SystemSetup/UserGroup"));
+// const UserGroup = lazy(() => import("./pages/Master/SystemSetup/UserGroup"));
 
-const UserProfile = lazy(() => import("./pages/Master/SystemSetup/UserGroup"));
+// const UserProfile = lazy(() => import("./pages/Master/SystemSetup/UserGroup"));
+
+const UserComp = lazy(() =>
+  import("./pages/Master/SystemSetup/UserProfileIndex")
+);
 
 const ProductProfile = lazy(() =>
   import("./pages/Master/SystemSetup/ProductProfile")
@@ -652,86 +613,6 @@ const routes = [
   // Master Profiles END-------------------------------------------------------------------------------------------
 
   //   Party Profiles ------------------------------------------------------------------
-  // {
-  //   path: "/party-profiles/category-master",
-  //   element: <CategoryMaster />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/corporate-client-profile",
-  //   element: <CorporateClientProfile />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/ffmc-profile",
-  //   element: <FFMCProfile />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/banks-profile",
-  //   element: <BanksProfile />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/rmc-profile",
-  //   element: <RMCProfile />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/franchisee-profile",
-  //   element: <FranchiseeMaster />,
-  //   protected: true,
-  // },
-  // {
-  //   path: "/party-profiles/foreign-correspondents-profile",
-  //   element: <ForeignCorrespondents />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/agents-profile",
-  //   element: <AgentProfile />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/misc-supplier-profile",
-  //   element: <MiscSuppliers />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/tc-issuer-profile",
-  //   element: <TCIssuerProfile />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/insurance-profile",
-  //   element: <InsuranceMaster />,
-  //   protected: true,
-  // },
-  // {
-  //   path: "/party-profiles/employee-profile",
-  //   element: <EmployeeProfile />,
-  //   protected: true,
-  // },
-  // {
-  //   path: "/party-profiles/marketing-exec-profile",
-  //   element: <MrktExecutive />,
-  //   protected: true,
-  // },
-
-  // {
-  //   path: "/party-profiles/branch-profile",
-  //   element: <BranchProfile />,
-  //   protected: true,
-  // },
 
   // --------------------------------------SINGLE PARAM URL FOR PARTY PROFILES------------------------------------------------
 
@@ -771,14 +652,8 @@ const routes = [
   },
 
   {
-    path: "/system-setup/user-groups",
-    element: <UserGroup />,
-    protected: true,
-  },
-
-  {
-    path: "/system-setup/user-profile",
-    element: <UserProfile />,
+    path: "/system-setup/UserGroup/:isGroup",
+    element: <UserComp />,
     protected: true,
   },
 

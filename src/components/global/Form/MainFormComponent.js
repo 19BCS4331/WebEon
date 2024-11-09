@@ -13,11 +13,11 @@ import { MutatingDots } from "react-loader-spinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { Home } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import CustomDatePicker from "../CustomDatePicker";
 
 const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const { token } = useContext(AuthContext);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { Colortheme } = useContext(ThemeContext);
   const { showToast, hideToast } = useToast();
 
@@ -29,8 +29,22 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState({});
+  const [selectAPIOptions, setSelectAPIOptions] = useState({});
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const isSmallDesktop = useMediaQuery(theme.breakpoints.between("md", "lg"));
+  const isLargeDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
   const navigation = useNavigate();
+
+  const getGridTemplateColumns = () => {
+    if (isMobile) return "repeat(1, 1fr)";
+    if (isTablet) return "repeat(2, 1fr)";
+    if (isSmallDesktop) return "repeat(4, 1fr)";
+    if (isLargeDesktop) return "repeat(5, 1fr)";
+    return "repeat(5, 1fr)";
+  };
 
   useEffect(() => {
     const initialFormData = {};
@@ -38,12 +52,26 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
     // First pass: Set initial values and handle explicitly disabled fields
     formConfig.fields.forEach((field) => {
-      initialFormData[field.name] = "";
+      switch (field.type) {
+        case "text":
+          initialFormData[field.name] = "";
+          break;
+        case "autocomplete":
+          initialFormData[field.name] = "";
+          break;
+        case "checkbox":
+          initialFormData[field.name] = false;
+          break;
+        default:
+          initialFormData[field.name] = "";
+          break;
+      }
       initialDisabledFields[field.name] = field.disabled || false;
     });
 
-    // Second pass: Handle dependencies
+    // Second pass: Handle dependencies and enableWhen conditions
     formConfig.fields.forEach((field) => {
+      // Handle regular dependencies
       if (field.dependsOn) {
         const parentField = formConfig.fields.find(
           (f) => f.name === field.dependsOn
@@ -57,13 +85,21 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
           initialDisabledFields[field.name] = isParentEmpty;
         }
       }
+
+      // Handle enableWhen conditions
+      if (field.enableWhen) {
+        const { field: controllingField, value: requiredValue } =
+          field.enableWhen;
+        const controllingValue = initialFormData[controllingField];
+        initialDisabledFields[field.name] = controllingValue !== requiredValue;
+      }
     });
 
     // Set initial states
     setFormData(initialFormData);
     setDisabledFields(initialDisabledFields);
 
-    // Fetch initial options for non-dependent autocomplete fields
+    // Fetch options for non-dependent fields
     formConfig.fields.forEach((field) => {
       if (
         !field.dependsOn &&
@@ -72,8 +108,116 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       ) {
         fetchIndependantOptions(field);
       }
+      if (
+        !field.dependsOn &&
+        !field.fetchNotNeeded &&
+        field.type === "select" &&
+        field.isApi
+      ) {
+        fetchIndependantSelectOptions(field);
+      }
     });
   }, [formConfig]);
+
+  useEffect(() => {
+    const updatedDisabledFields = { ...disabledFields };
+
+    if (formData[formDataID]) {
+      formConfig.fields.forEach((field) => {
+        if (field.enableWhen) {
+          // Handle enableWhen conditions
+          const { field: controllingField, value: requiredValue } =
+            field.enableWhen;
+          const controllingValue = formData[controllingField];
+          updatedDisabledFields[field.name] =
+            controllingValue !== requiredValue;
+        } else if (field.dependsOn) {
+          // Handle dependsOn conditions
+          const parentValue = formData[field.dependsOn];
+          updatedDisabledFields[field.name] = !parentValue;
+        }
+        setDisabledFields(updatedDisabledFields);
+      });
+    }
+  }, [formData[formDataID]]);
+
+  useEffect(() => {
+    if (formData[formDataID]) {
+      formConfig.fields.forEach((field) => {
+        if (field.dependsOn && field.type === "autocomplete") {
+          const parentValue = formData[field.dependsOn];
+
+          if (parentValue) {
+            fetchOptions(field, parentValue); // Assuming fetchOptions fetches based on parent value
+          }
+        }
+
+        if (field.dependsOn && field.type === "select" && field.isApi) {
+          const parentValue = formData[field.dependsOn];
+
+          if (parentValue) {
+            fetchSelectOptions(field, parentValue);
+          }
+        }
+      });
+    }
+  }, [formData]); // Run after formData is set in edit mode
+
+  const fetchIndependantSelectOptions = async (field) => {
+    try {
+      const response = await fetch(field.fetchOptions, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorMessage = `Error ${response.status}: ${response.statusText}`;
+        console.error(errorMessage);
+        showToast(errorMessage, "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        return;
+      }
+
+      const result = await response.json();
+
+      if (Array.isArray(result)) {
+        // Create default option
+        const defaultOption = {
+          value: "",
+          label: `Select ${field.label}`, // or just field.label if you prefer
+        };
+
+        // Combine default option with API results
+        const optionsWithDefault = [
+          defaultOption,
+          ...result.map((item) => ({
+            value: item.value,
+            label: item.label,
+          })),
+        ];
+
+        setSelectAPIOptions((prevOptions) => ({
+          ...prevOptions,
+          [field.name]: optionsWithDefault,
+        }));
+      } else {
+        console.error("API response is not in the expected format:", result);
+        showToast("Invalid data format received from server", "fail");
+      }
+    } catch (error) {
+      console.error("Error fetching options for Select:", error);
+      const errorMessage = error.response?.status
+        ? `Error ${error.response.status}: ${error.response.statusText}`
+        : "Network error or server unreachable";
+      showToast(errorMessage, "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+    }
+  };
 
   const fetchIndependantOptions = async (field) => {
     try {
@@ -96,10 +240,78 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       }
 
       const result = await response.json();
+
+      // Ensure options are in { value, label } format
+      const formattedOptions = result.map((item) =>
+        typeof item === "object" && item.value && item.label
+          ? item
+          : { value: item, label: item }
+      );
+
       setOptions((prevOptions) => ({
         ...prevOptions,
-        [field.name]: result,
+        [field.name]: formattedOptions,
       }));
+    } catch (error) {
+      console.error("Error fetching options:", error);
+      const errorMessage = error.response?.status
+        ? `Error ${error.response.status}: ${error.response.statusText}`
+        : "Network error or server unreachable";
+      showToast(errorMessage, "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+    }
+  };
+
+  const fetchSelectOptions = async (field, value) => {
+    try {
+      const url = field.dependent && value && field.fetchOptions;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ [field.dependsOn]: value }),
+      });
+
+      if (!response.ok) {
+        const errorMessage = `Error ${response.status}: ${response.statusText}`;
+        console.error(errorMessage);
+        showToast(errorMessage, "fail");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        return;
+      }
+
+      const result = await response.json();
+      if (Array.isArray(result)) {
+        // Create default option
+        const defaultOption = {
+          value: "",
+          label: `Select ${field.label}`, // or just field.label if you prefer
+        };
+
+        // Combine default option with API results
+        const optionsWithDefault = [
+          defaultOption,
+          ...result.map((item) => ({
+            value: item.value,
+            label: item.label,
+          })),
+        ];
+
+        setSelectAPIOptions((prevOptions) => ({
+          ...prevOptions,
+          [field.name]: optionsWithDefault,
+        }));
+      } else {
+        console.error("API response is not in the expected format:", result);
+        showToast("Invalid data format received from server", "fail");
+      }
     } catch (error) {
       console.error("Error fetching options:", error);
       const errorMessage = error.response?.status
@@ -136,9 +348,17 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       }
 
       const result = await response.json();
+
+      // Ensure options are in { value, label } format
+      const formattedOptions = result.map((item) =>
+        typeof item === "object" && item.value && item.label
+          ? item
+          : { value: item, label: item }
+      );
+
       setOptions((prevOptions) => ({
         ...prevOptions,
-        [field.name]: result,
+        [field.name]: formattedOptions,
       }));
     } catch (error) {
       console.error("Error fetching options:", error);
@@ -158,39 +378,65 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   //     [field.name]: value,
   //   }));
 
-  //   // Enable or disable dependent fields and reset the selected value
-  //   formConfig.fields.forEach((f) => {
-  //     if (f.dependsOn === field.name) {
-  //       // Reset the value of the dependent field
+  //   // Find all fields that depend on the current field
+  //   const dependentFields = formConfig.fields.filter(
+  //     (f) => f.dependsOn === field.name
+  //   );
+
+  //   if (dependentFields.length > 0) {
+  //     const isValidValue =
+  //       value !== null && value !== "" && value !== undefined;
+
+  //     // Update all dependent fields
+  //     dependentFields.forEach((dependentField) => {
+  //       // Clear dependent field values
   //       setFormData((prevData) => ({
   //         ...prevData,
-  //         [f.name]: "", // Clear the dependent field's value
+  //         [dependentField.name]: "",
   //       }));
 
-  //       const isValidValue =
-  //         value !== null && value !== "" && value !== undefined;
-
-  //       // Enable or disable the dependent field
+  //       // Update disabled state
   //       setDisabledFields((prev) => ({
   //         ...prev,
-  //         [f.name]: !isValidValue, // Disable if the parent field doesn't have a valid value
+  //         [dependentField.name]: !isValidValue,
   //       }));
 
-  //       // If the parent field has a valid value, fetch new options for the dependent field
-  //       if (isValidValue) {
-  //         fetchOptions(f, value); // Fetch new options for the dependent field
+  //       // If parent has valid value, fetch new options
+  //       if (isValidValue && dependentField.type === "autocomplete") {
+  //         fetchOptions(dependentField, value);
   //       }
-  //     }
-  //   });
+
+  //       // If parent has valid value, fetch new options
+  //       if (isValidValue && dependentField.type === "select") {
+  //         fetchSelectOptions(dependentField, value);
+  //       }
+
+  //       // Additionally handle nested dependencies
+  //       const nestedDependents = formConfig.fields.filter(
+  //         (f) => f.dependsOn === dependentField.name
+  //       );
+  //       nestedDependents.forEach((nestedField) => {
+  //         setFormData((prevData) => ({
+  //           ...prevData,
+  //           [nestedField.name]: "",
+  //         }));
+  //         setDisabledFields((prev) => ({
+  //           ...prev,
+  //           [nestedField.name]: true, // Always disable nested dependents when parent changes
+  //         }));
+  //       });
+  //     });
+  //   }
   // };
 
   const handleChange = (field, value) => {
+    // Update the form data for the changed field
     setFormData((prevData) => ({
       ...prevData,
       [field.name]: value,
     }));
 
-    // Find all fields that depend on the current field
+    // Handle dependencies
     const dependentFields = formConfig.fields.filter(
       (f) => f.dependsOn === field.name
     );
@@ -207,18 +453,23 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
           [dependentField.name]: "",
         }));
 
-        // Update disabled state
+        // Update disabled state for dependencies
         setDisabledFields((prev) => ({
           ...prev,
           [dependentField.name]: !isValidValue,
         }));
 
         // If parent has valid value, fetch new options
-        if (isValidValue && dependentField.type === "autocomplete") {
-          fetchOptions(dependentField, value);
+        if (isValidValue) {
+          if (dependentField.type === "autocomplete") {
+            fetchOptions(dependentField, value);
+          }
+          if (dependentField.type === "select") {
+            fetchSelectOptions(dependentField, value);
+          }
         }
 
-        // Additionally handle nested dependencies
+        // Handle nested dependencies
         const nestedDependents = formConfig.fields.filter(
           (f) => f.dependsOn === dependentField.name
         );
@@ -229,11 +480,57 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
           }));
           setDisabledFields((prev) => ({
             ...prev,
-            [nestedField.name]: true, // Always disable nested dependents when parent changes
+            [nestedField.name]: true,
           }));
         });
       });
     }
+
+    // Handle enableWhen conditions for all fields
+    formConfig.fields.forEach((formField) => {
+      if (formField.enableWhen) {
+        // Handle single condition
+        if (!Array.isArray(formField.enableWhen.conditions)) {
+          if (formField.enableWhen.field === field.name) {
+            setDisabledFields((prev) => ({
+              ...prev,
+              [formField.name]: value !== formField.enableWhen.value,
+            }));
+          }
+        }
+        // Handle multiple conditions
+        else {
+          const conditions = formField.enableWhen.conditions;
+          const operator = formField.enableWhen.operator || "AND";
+
+          // Only update if the changed field is part of the conditions
+          if (conditions.some((condition) => condition.field === field.name)) {
+            setDisabledFields((prev) => ({
+              ...prev,
+              [formField.name]: evaluateConditions(
+                conditions,
+                operator,
+                { ...formData, [field.name]: value } // Include the new value
+              ),
+            }));
+          }
+        }
+      }
+    });
+  };
+
+  // Helper function to evaluate multiple conditions
+  const evaluateConditions = (conditions, operator, currentFormData) => {
+    const results = conditions.map(
+      (condition) => currentFormData[condition.field] === condition.value
+    );
+
+    if (operator === "AND") {
+      return !results.every((result) => result);
+    } else if (operator === "OR") {
+      return !results.some((result) => result);
+    }
+    return true; // Default to disabled if operator is invalid
   };
 
   const fetchData = async () => {
@@ -268,6 +565,15 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     const method = formData[formDataID] ? "PUT" : "POST";
     const endpoint = formConfig.endpoint;
 
+    // Create a new object with only the enabled fields
+    const enabledFields = Object.keys(formData).filter(
+      (key) => !disabledFields[key]
+    );
+    const enabledFormData = enabledFields.reduce((obj, key) => {
+      obj[key] = formData[key];
+      return obj;
+    }, {});
+
     try {
       const response = await fetch(endpoint, {
         method,
@@ -275,7 +581,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(enabledFormData),
       });
 
       const result = await response.json();
@@ -321,102 +627,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     }
   };
 
-  // const handleSubmit = async (e) => {
-  //   setIsLoading(true);
-  //   e.preventDefault();
-  //   const endpoint = formConfig.endpoint;
-  //   const updateEndPoint = formConfig.tableNameEndpoint;
-  //   // const method = formData[formDataID] ? "PUT" : "POST";
-
-  //   if (!formData[formDataID]) {
-  //     try {
-  //       const response = await fetch(endpoint, {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify(formData),
-  //       });
-
-  //       const result = await response.json();
-
-  //       if (response.ok) {
-  //         console.log(result.message);
-  //         // Refresh data grid or perform other actions
-  //         setRows((prevRows) => [...prevRows, result]);
-  //         setIsFormVisible(false);
-  //         fetchData();
-  //         setFormData({});
-  //         setIsLoading(false);
-  //         showToast("Data Inserted Successfully!", "success");
-  //         setTimeout(() => {
-  //           hideToast();
-  //         }, 2000);
-  //       } else {
-  //         console.error(result.error);
-  //         showToast("Error Occurred!", "fail");
-  //         setTimeout(() => {
-  //           hideToast();
-  //         }, 2000);
-  //         setIsLoading(false);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error:", error);
-  //       showToast("Error Occurred!", "fail");
-  //       setTimeout(() => {
-  //         hideToast();
-  //       }, 2000);
-  //       setIsLoading(false);
-  //     }
-  //   } else {
-  //     try {
-  //       const response = await fetch(updateEndPoint, {
-  //         method: "PUT",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify(formData),
-  //       });
-
-  //       const result = await response.json();
-
-  //       if (response.ok) {
-  //         console.log(result.message);
-  //         // Refresh data grid or perform other actions
-  //         setRows((prevRows) =>
-  //           prevRows.map((row) =>
-  //             row[formDataID] === result[formDataID] ? result : row
-  //           )
-  //         );
-  //         setIsFormVisible(false);
-  //         fetchData();
-  //         setFormData({});
-  //         setIsLoading(false);
-  //         showToast("Data Edited Successfully!", "success");
-  //         setTimeout(() => {
-  //           hideToast();
-  //         }, 2000);
-  //       } else {
-  //         console.error(result.error);
-  //         showToast("Error Occurred!", "fail");
-  //         setTimeout(() => {
-  //           hideToast();
-  //         }, 2000);
-  //         setIsLoading(false);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error:", error);
-  //       showToast("Error Occurred!", "fail");
-  //       setTimeout(() => {
-  //         hideToast();
-  //       }, 2000);
-  //       setIsLoading(false);
-  //     }
-  //   }
-  // };
-
   const handleSearch = async () => {
     setIsLoading(true);
     try {
@@ -443,47 +653,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       setIsLoading(false);
     }
   };
-
-  // const generateColumns = (dynamicFields) => {
-  //   // Map the dynamic fields to the column structure
-  //   const dynamicColumns = dynamicFields.map((field) => ({
-  //     field: field.field,
-  //     headerName: field.headerName,
-  //     width: field.width || 150, // Default width if not specified
-  //   }));
-
-  //   return [
-  //     ...dynamicColumns,
-  //     {
-  //       field: "actions",
-  //       headerName: "Actions",
-  //       width: 200,
-  //       renderCell: (params) => (
-  //         <Box display={"flex"} gap={2}>
-  //           <StyledButton
-  //             onClick={() => handleEdit(params.row)}
-  //             bgColor={Colortheme.buttonBg}
-  //             bgColorHover={Colortheme.buttonBgHover}
-  //             style={{ width: 80, height: 30 }}
-  //           >
-  //             Edit
-  //           </StyledButton>
-  //           <StyledButton
-  //             onClick={() => handleDelete(params.row[formDataID])}
-  //             bgColor={Colortheme.buttonBg}
-  //             bgColorHover={"red"}
-  //             textColOnHover={"white"}
-  //             style={{ width: 80, height: 30 }}
-  //           >
-  //             Delete
-  //           </StyledButton>
-  //         </Box>
-  //       ),
-  //     },
-  //   ];
-  // };
-
-  // const columns = generateColumns(formConfig.columns);
 
   // Memoized Columns
   const columns = useMemo(() => {
@@ -525,40 +694,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       },
     ];
   }, [formConfig.columns, Colortheme, formDataID]);
-
-  //   const columns = [
-  //     { field: "vSubFinCode", headerName: "Sub Fin Code", width: 150 },
-  //     { field: "vSubFinName", headerName: "Sub Fin Name", width: 150 },
-  //     { field: "vFinCode", headerName: "Fin Code", width: 150 },
-
-  //     // Add other columns as needed
-  //     {
-  //       field: "actions",
-  //       headerName: "Actions",
-  //       width: 200,
-  //       renderCell: (params) => (
-  //         <Box display={"flex"} gap={2}>
-  //           <StyledButton
-  //             onClick={() => handleEdit(params.row)}
-  //             bgColor={Colortheme.buttonBg}
-  //             bgColorHover={Colortheme.buttonBgHover}
-  //             style={{ width: 80, height: 30 }}
-  //           >
-  //             Edit
-  //           </StyledButton>
-  //           <StyledButton
-  //             onClick={() => handleDelete(params.row[formDataID])}
-  //             bgColor={Colortheme.buttonBg}
-  //             bgColorHover={"red"}
-  //             textColOnHover={"white"}
-  //             style={{ width: 80, height: 30 }}
-  //           >
-  //             Delete
-  //           </StyledButton>
-  //         </Box>
-  //       ),
-  //     },
-  //   ];
 
   const handleEdit = (row) => {
     setFormData(row);
@@ -678,6 +813,9 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                 component={motion.div}
                 initial={{ x: 50 }}
                 animate={{ x: 0 }}
+                alignItems={"center"}
+                display={"flex"}
+                width={"100%"}
               >
                 {/* Form container with grid layout */}
                 <Box
@@ -695,6 +833,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                     maxHeight: isMobile
                       ? "calc(100vh - 200px)"
                       : "calc(100vh - 100px)",
+                    width: "100%",
                   }}
                 >
                   <Box display={"flex"} alignItems={"center"}>
@@ -758,9 +897,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                     sx={{
                       overflowX: "hidden",
                     }}
-                    gridTemplateColumns={
-                      isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"
-                    }
+                    gridTemplateColumns={getGridTemplateColumns()}
                     gridTemplateRows={"repeat(3, 1fr)"}
                     columnGap={"60px"}
                     rowGap={"40px"}
@@ -779,16 +916,29 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                             }
                             required={field.required}
                             disabled={disabledFields[field.name]}
+                            style={isMobile ? { width: "100%" } : {}}
                           />
                         ) : field.type === "autocomplete" ? (
                           <CustomAutocomplete
                             options={options[field.name] || []}
                             label={field.label}
                             name={field.name}
-                            value={formData[field.name]}
-                            onChange={(e, newValue) =>
-                              handleChange(field, newValue)
+                            value={
+                              options[field.name]?.find(
+                                (opt) => opt.value === formData[field.name]
+                              ) || null
+                            } // Select the option by its value
+                            onChange={
+                              (e, newValue) =>
+                                handleChange(
+                                  field,
+                                  newValue ? newValue.value : ""
+                                ) // Store value in formData
                             }
+                            getOptionLabel={(option) => option.label || ""} // Display the label in dropdown
+                            isOptionEqualToValue={(option, value) =>
+                              option.value === value.value
+                            } // Match by value
                             required={field.required}
                             disabled={disabledFields[field.name]}
                             styleTF={isMobile ? { width: "100%" } : {}}
@@ -811,7 +961,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                           >
                             {field.label}
                           </StyledButton>
-                        ) : field.type === "select" ? (
+                        ) : field.type === "select" && !field.isApi ? (
                           <CustomTextField
                             label={field.label}
                             select
@@ -834,6 +984,37 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                                 </MenuItem>
                               ))}
                           </CustomTextField>
+                        ) : field.type === "select" && field.isApi ? (
+                          <CustomTextField
+                            label={field.label}
+                            select
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={(e) =>
+                              handleChange(field, e.target.value)
+                            }
+                            required={field.required}
+                            disabled={disabledFields[field.name]}
+                            style={isMobile ? { width: "100%" } : {}}
+                          >
+                            {selectAPIOptions[field.name]?.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </CustomTextField>
+                        ) : field.type === "date" ? (
+                          <CustomDatePicker
+                            label={field.label}
+                            value={formData[field.name]}
+                            onChange={(newValue) =>
+                              handleChange(field, newValue)
+                            }
+                            name={field.name}
+                            required={field.required}
+                            disablePast={false} // Change this to true if you want to disable past dates
+                            disabled={disabledFields[field.name]}
+                          />
                         ) : null}
                       </div>
                     ))}

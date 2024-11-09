@@ -384,7 +384,7 @@ const CustomTextField = ({
       onChange={onChange}
       {...props}
     >
-      {select ? children : null}
+      {select && children}
     </TextField>
   );
 };

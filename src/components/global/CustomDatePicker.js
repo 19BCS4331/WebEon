@@ -168,7 +168,7 @@ const CustomDatePicker = (props) => {
                 color: "gray",
               },
             },
-            width: isMobile ? "auto" : "12vw",
+            width: isMobile ? "100%" : "12vw",
           },
         },
       }}

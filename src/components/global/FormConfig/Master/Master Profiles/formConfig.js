@@ -364,6 +364,7 @@ export const formConfigs = {
         name: "nDivisionID",
         label: "Division / Dept",
         type: "select",
+        isApi: true,
         fetchOptions: `${FinalBaseURL}/accountsProfile/division`,
         required: true,
       },
@@ -385,17 +386,23 @@ export const formConfigs = {
         name: "vNature",
         label: "Account Type",
         type: "select",
+        isApi: true,
         fetchOptions: `${FinalBaseURL}/accountsProfile/accType`,
-
         required: false,
+        dependencies: ["vSblnat"],
       },
 
       {
         name: "vSblnat",
         label: "Sub Ledger Type",
         type: "select",
+        isApi: true,
         fetchOptions: `${FinalBaseURL}/accountsProfile/subLedgerType`,
         required: false,
+        enableWhen: {
+          field: "vNature",
+          value: "S",
+        },
       },
 
       {
@@ -403,18 +410,28 @@ export const formConfigs = {
         label: "Bank Nature",
         type: "select",
         options: [
+          { value: "", label: "Select Bank Nature" },
           { value: 0, label: "Local" },
           { value: 1, label: "Nostro" },
         ],
         required: false,
+        enableWhen: {
+          field: "vNature",
+          value: "B",
+        },
       },
 
       {
         name: "nCurrencyID",
         label: "Currency",
         type: "select",
+        isApi: true,
         fetchOptions: `${FinalBaseURL}/accountsProfile/currency`,
         required: false,
+        enableWhen: {
+          field: "vBankType",
+          value: 1,
+        },
       },
 
       {
@@ -422,12 +439,13 @@ export const formConfigs = {
         label: "Financial Type",
         type: "select",
         options: [
+          { value: "", label: "Select Financial Type" },
           { value: "B", label: "Balance Sheet" },
           { value: "P", label: "Profit & Loss" },
           { value: "T", label: "Trading" },
         ],
         required: true,
-        // dependencies: ["vFinCode"],
+        dependencies: ["vFinCode"],
       },
 
       {
@@ -438,12 +456,16 @@ export const formConfigs = {
         required: true,
         dependent: true,
         dependsOn: "vFinType",
+        dependencies: ["vSubFinCode"],
       },
       {
         name: "vSubFinCode",
         label: "Financial Sub Code",
         type: "select",
-        fetchOptions: `${FinalBaseURL}/accountsProfile/finSubCode`,
+        isApi: true,
+        dependent: true,
+        dependsOn: "vFinCode",
+        fetchOptions: `${FinalBaseURL}/accountsProfile/subfinCode`,
         required: false,
       },
 
@@ -465,8 +487,13 @@ export const formConfigs = {
         name: "nBranchIDtoTransfer",
         label: "Branch To Transfer",
         type: "select",
+        isApi: true,
         fetchOptions: `${FinalBaseURL}/accountsProfile/branchTransfer`,
         required: false,
+        enableWhen: {
+          field: "bZeroBalatEOD",
+          value: true,
+        },
       },
 
       {
@@ -516,6 +543,11 @@ export const formConfigs = {
 
   ad1MasterForm: {
     endpoint: `${FinalBaseURL}/ad1Master`,
+    columns: [
+      { field: "vCode", headerName: "Code", width: 150 },
+      { field: "vName", headerName: "Name", width: 200 },
+      { field: "vEmail", headerName: "Email", width: 150 },
+    ],
 
     fields: [
       {
@@ -601,6 +633,7 @@ export const formConfigs = {
         label: "Type",
         type: "select",
         options: [
+          { value: "", label: "Select Type" },
           { value: "BN", label: "Bank" },
           { value: "AD", label: "AD II" },
         ],

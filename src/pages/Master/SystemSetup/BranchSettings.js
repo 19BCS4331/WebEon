@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useContext } from "react";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import axios from "axios";
-import { Grid, Box, Paper, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Grid,
+  Box,
+  Paper,
+  useMediaQuery,
+  useTheme,
+  Modal,
+  Typography,
+  IconButton,
+  InputAdornment,
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useToast } from "../../../contexts/ToastContext";
 import { useBaseUrl } from "../../../contexts/BaseUrl";
@@ -11,6 +21,8 @@ import CustomDatePicker from "../../../components/global/CustomDatePicker";
 import StyledButton from "../../../components/global/StyledButton";
 import CustomCheckbox from "../../../components/global/CustomCheckbox";
 import styled from "styled-components";
+import CloseIcon from "@mui/icons-material/Close";
+import * as MaterialIcons from "@mui/icons-material";
 
 const BUTTONS = styled.button`
   border: none;
@@ -97,6 +109,22 @@ const BranchSettings = () => {
   const [filteredSettings, setFilteredSettings] = useState([]);
   const [formData, setFormData] = useState({});
   const [initialFormData, setInitialFormData] = useState({}); // To track original data
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+
+  // New state for search inputs
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState("");
+
+  const handleSettingsButtonClick = (category) => {
+    setSelectedCategory(category);
+
+    if (isMobile) {
+      setIsModalOpen(true);
+    }
+    setSettingsSearchQuery("");
+  };
+
+  const handleCloseModal = () => setIsModalOpen(false);
 
   useEffect(() => {
     if (settingsData.length > 0) {
@@ -140,15 +168,28 @@ const BranchSettings = () => {
       });
   }, []);
 
+  // Filter categories by search
+  const filteredCategories = Array.from(
+    new Set(settingsData.map((item) => item.SETTINGCATEGORY))
+  ).filter(
+    (category) =>
+      category &&
+      category.toLowerCase().includes(categorySearchQuery.toLowerCase())
+  );
+
+  // Filter settings within selected category by search
   useEffect(() => {
     if (selectedCategory) {
-      // Filter settings based on selected category
       const filtered = settingsData.filter(
-        (setting) => setting.SETTINGCATEGORY === selectedCategory
+        (setting) =>
+          setting.SETTINGCATEGORY === selectedCategory &&
+          setting.DATADISPLAY.toLowerCase().includes(
+            settingsSearchQuery.toLowerCase()
+          )
       );
       setFilteredSettings(filtered);
     }
-  }, [selectedCategory, settingsData]);
+  }, [selectedCategory, settingsData, settingsSearchQuery]);
 
   const handleInputChange = (e, setting) => {
     const { name, checked, type } = e.target;
@@ -280,34 +321,205 @@ const BranchSettings = () => {
     >
       <Grid
         container
-        spacing={2}
-        width={"80%"}
+        spacing={isMobile ? 0 : 2}
+        width={isMobile ? "95%" : "80%"}
         maxHeight={"80vh"}
-        sx={{ backgroundColor: Colortheme.background, p: 2, borderRadius: 5 }}
+        sx={{
+          backgroundColor: Colortheme.background,
+          p: 2,
+          borderRadius: 5,
+        }}
       >
-        <Grid item xs={3}>
+        <Grid item xs={12} sm={3}>
           <LeftBox>
-            {Array.from(
+            <CustomTextField
+              placeholder="Search Categories..."
+              value={categorySearchQuery}
+              onChange={(e) => setCategorySearchQuery(e.target.value)}
+              fullWidth
+              // sx={{ marginBottom: 2 }}
+              style={{ width: "100%", marginBottom: 20 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MaterialIcons.Search
+                      sx={{
+                        width: 25,
+                        height: 25,
+                        color: "#141619",
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {/* {Array.from(
               new Set(
                 settingsData.map(
                   (item) =>
                     item.SETTINGCATEGORY !== null && item.SETTINGCATEGORY
                 )
               )
-            ).map((category, index) => (
+            ) */}
+            {filteredCategories.map((category, index) => (
               <BUTTONS
                 id={index}
                 key={index}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => handleSettingsButtonClick(category)}
               >
                 {category}
               </BUTTONS>
             ))}
           </LeftBox>
         </Grid>
-        <Grid item xs={9}>
-          <RightBox>
-            <Paper sx={{ height: "90%", width: "100%", boxShadow: "none" }}>
+
+        {isMobile ? (
+          <>
+            <Modal
+              open={isModalOpen}
+              onClose={handleCloseModal}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Paper
+                sx={{
+                  width: "75vw",
+                  height: "75vh",
+                  backgroundColor: Colortheme.background,
+                  overflow: "auto",
+                  p: 2,
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <IconButton
+                  onClick={handleCloseModal}
+                  sx={{ position: "absolute", top: 8, right: 8 }}
+                >
+                  <CloseIcon sx={{ color: Colortheme.text }} />
+                </IconButton>
+                <Typography
+                  variant="h6"
+                  color={Colortheme.text}
+                  align="center"
+                  fontFamily={"Poppins"}
+                >
+                  {selectedCategory}
+                </Typography>
+
+                <CustomTextField
+                  placeholder="Search Settings..."
+                  value={settingsSearchQuery}
+                  onChange={(e) => setSettingsSearchQuery(e.target.value)}
+                  fullWidth
+                  style={{ width: "100%", marginTop: 20 }}
+                  // sx={{ marginBottom: 2 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <MaterialIcons.Search
+                          sx={{
+                            width: 25,
+                            height: 25,
+                            color: "#141619",
+                          }}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <DataGrid
+                  rows={filteredSettings}
+                  columns={columns}
+                  getRowId={(row) => row.ID}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  rowHeight={70}
+                  // hideFooterSelectedRowCount={true}
+                  sx={{
+                    backgroundColor: Colortheme.background,
+                    p: isMobile ? "10px" : "20px",
+                    maxHeight: "70vh",
+                    width: isMobile ? "95vw" : "auto",
+                    maxWidth: isMobile ? "75vw" : "100%",
+                    borderRadius: 0,
+
+                    border: "2px solid",
+                    borderColor: Colortheme.background,
+                    "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
+                      {
+                        display: "none",
+                      },
+                    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+                      backgroundColor: Colortheme.background,
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiTablePagination-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiSvgIcon-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-toolbarContainer": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                      backgroundColor: Colortheme.background,
+                    },
+                    "& .MuiButtonBase-root": {
+                      color: Colortheme.text,
+                    },
+                    // Custom Scrollbar Styling
+                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
+                      width: "8px",
+                      height: "8px",
+                    },
+                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb": {
+                      backgroundColor: Colortheme.text,
+                      borderRadius: "8px",
+                    },
+                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track": {
+                      backgroundColor: Colortheme.secondaryBG,
+                    },
+                  }}
+                  autoPageSize
+                  // pagination
+                  // pageSizeOptions={[5, 10, 20]}
+                />
+                {filteredSettings.length > 0 && (
+                  <Box
+                    width={"100%"}
+                    display={"flex"}
+                    justifyContent={"center"}
+                    mt={2}
+                  >
+                    <StyledButton
+                      onClick={handleSubmit}
+                      style={{ width: "100%" }}
+                    >
+                      Save Settings
+                    </StyledButton>
+                  </Box>
+                )}
+              </Paper>
+              {/* <Box display="flex" justifyContent="center" mt={2}>
+                <StyledButton onClick={handleSubmit}>
+                  Save Settings
+                </StyledButton>
+              </Box> */}
+            </Modal>
+          </>
+        ) : (
+          <Grid item xs={12} sm={9}>
+            <RightBox>
               <Box
                 display={"flex"}
                 justifyContent={"center"}
@@ -320,86 +532,97 @@ const BranchSettings = () => {
                   {selectedCategory}
                 </h3>
               </Box>
-              <DataGrid
-                rows={filteredSettings}
-                columns={columns}
-                getRowId={(row) => row.ID}
-                checkboxSelection={false}
-                disableSelectionOnClick
-                rowHeight={70}
-                hideFooterSelectedRowCount={true}
-                sx={{
-                  backgroundColor: Colortheme.background,
-                  p: isMobile ? "10px" : "20px",
-                  maxHeight: "60vh",
-                  width: isMobile ? "95vw" : "auto",
-                  maxWidth: isMobile ? "75vw" : "100%",
-                  borderRadius: 0,
-
-                  border: "2px solid",
-                  borderColor: Colortheme.background,
-                  "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                    {
-                      display: "none",
-                    },
-                  "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                    backgroundColor: Colortheme.background,
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiTablePagination-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-toolbarContainer": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-footerContainer": {
-                    backgroundColor: Colortheme.background,
-                  },
-                  "& .MuiButtonBase-root": {
-                    color: Colortheme.text,
-                  },
-                  // Custom Scrollbar Styling
-                  "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
-                    width: "8px",
-                    height: "8px",
-                  },
-                  "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb": {
-                    backgroundColor: Colortheme.text,
-                    borderRadius: "8px",
-                  },
-                  "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track": {
-                    backgroundColor: Colortheme.secondaryBG,
-                  },
+              {/* Search bar for filtering settings */}
+              <CustomTextField
+                placeholder="Search Settings..."
+                value={settingsSearchQuery}
+                onChange={(e) => setSettingsSearchQuery(e.target.value)}
+                fullWidth
+                style={{ width: "100%", marginTop: 20 }}
+                // sx={{ marginBottom: 2 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <MaterialIcons.Search
+                        sx={{
+                          width: 25,
+                          height: 25,
+                          color: "#141619",
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
                 }}
-                pageSize={10}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 10 },
-                  },
-                }}
-                pageSizeOptions={[10, 20]}
               />
-            </Paper>
-            {filteredSettings.length > 0 && (
-              <Box
-                width={"100%"}
-                display={"flex"}
-                justifyContent={"center"}
-                mt={2}
-              >
+              <Paper sx={{ height: "90%", width: "100%", boxShadow: "none" }}>
+                <DataGrid
+                  rows={filteredSettings}
+                  columns={columns}
+                  getRowId={(row) => row.ID}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  rowHeight={70}
+                  hideFooterSelectedRowCount={true}
+                  sx={{
+                    backgroundColor: Colortheme.background,
+                    p: isMobile ? "10px" : "20px",
+                    maxHeight: "50vh",
+                    width: isMobile ? "95vw" : "auto",
+                    maxWidth: isMobile ? "75vw" : "100%",
+                    borderRadius: 0,
+
+                    border: "2px solid",
+                    borderColor: Colortheme.background,
+                    "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
+                      {
+                        display: "none",
+                      },
+                    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+                      backgroundColor: Colortheme.background,
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiTablePagination-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiSvgIcon-root": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-toolbarContainer": {
+                      color: Colortheme.text,
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                      backgroundColor: Colortheme.background,
+                    },
+                    "& .MuiButtonBase-root": {
+                      color: Colortheme.text,
+                    },
+                    // Custom Scrollbar Styling
+                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
+                      width: "8px",
+                      height: "8px",
+                    },
+                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb": {
+                      backgroundColor: Colortheme.text,
+                      borderRadius: "8px",
+                    },
+                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track": {
+                      backgroundColor: Colortheme.secondaryBG,
+                    },
+                  }}
+                  pageSize={10}
+                />
+              </Paper>
+              <Box display="flex" justifyContent="center">
                 <StyledButton onClick={handleSubmit}>
                   Save Settings
                 </StyledButton>
               </Box>
-            )}
-          </RightBox>
-        </Grid>
+            </RightBox>
+          </Grid>
+        )}
       </Grid>
     </MainContainerCompilation>
   );

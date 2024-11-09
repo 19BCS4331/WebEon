@@ -62,34 +62,42 @@ const CompanyProfile = () => {
   return (
     <MainContainerCompilation title={title}>
       <Box
-        width={isMobile ? "65vw" : "60vw"}
+        width={"75%"}
         display="flex"
         flexDirection="column"
         gap={2}
         p={5}
         bgcolor={Colortheme.background}
         borderRadius="20px"
+        maxHeight={isMobile ? "80%" : "90%"}
+        sx={{
+          overflowX: "hidden", // Custom Scrollbar Styling
+          overflowY: "auto",
+        }}
       >
         <Box display={"flex"} alignItems={"center"}>
-          <Tooltip title="Go To Dashboard">
-            <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
-              <StyledButton
-                onClick={() => navigate("/Dashboard")}
-                style={{
-                  width: isMobile ? 70 : 100,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
-              </StyledButton>
-            </Box>
-          </Tooltip>
+          {!isMobile && (
+            <Tooltip title="Go To Dashboard">
+              <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
+                <StyledButton
+                  onClick={() => navigate("/Dashboard")}
+                  style={{
+                    width: isMobile ? 70 : 100,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+                </StyledButton>
+              </Box>
+            </Tooltip>
+          )}
+
           <h2
             style={{
               color: Colortheme.text,
-              marginLeft: isMobile ? "5%" : "30%",
+              marginLeft: isMobile ? "8%" : "30%",
               marginTop: isMobile ? 0 : -8,
             }}
           >

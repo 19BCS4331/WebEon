@@ -395,8 +395,8 @@ const BranchLocationProfile = () => {
           animate={{ y: 0 }}
           exit={{ y: -50 }}
           sx={{
-            width: "90vw",
-            height: "70vh",
+            width: "85%",
+            height: "85%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -407,20 +407,23 @@ const BranchLocationProfile = () => {
           }}
           maxWidth={isMobile ? "60vw" : "90%"}
         >
-          <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
-            <StyledButton
-              onClick={() => setShowForm(false)}
-              style={{
-                width: 100,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
-            </StyledButton>
-          </Box>
-          <Box marginTop={-10}>
+          {!isMobile && (
+            <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
+              <StyledButton
+                onClick={() => setShowForm(false)}
+                style={{
+                  width: 100,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+              </StyledButton>
+            </Box>
+          )}
+
+          <Box marginTop={isMobile ? 0 : -10}>
             {editData ? (
               <h2 style={{ color: Colortheme.text }}>EDIT</h2>
             ) : (

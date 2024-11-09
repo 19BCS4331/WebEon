@@ -16,8 +16,8 @@ import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModal from "../../../components/CustomAlertModal";
 import { useBaseUrl } from "../../../contexts/BaseUrl";
 import UserProfileForm from "../../../components/global/FormConfig/Master/SystemSetup/UserProfileForm";
-import ProductProfileForm from "../../../components/global/FormConfig/Master/SystemSetup/ProductProfileForm";
-const ProductProfile = () => {
+const UserProfileIndex = () => {
+  const { isGroup } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { Colortheme } = useContext(ThemeContext);
@@ -33,17 +33,29 @@ const ProductProfile = () => {
   const navigate = useNavigate();
   const { baseUrl } = useBaseUrl();
 
+  const titleMapping = {
+    true: "User Group Profile",
+    false: "User Profile",
+    // Add other mappings as needed
+  };
+
+  // Get the title based on the isGroup parameter
+  const title = titleMapping[isGroup] || "Default Profile Title";
+
   useEffect(() => {
     setLoading(true);
     const token = localStorage.getItem("token");
     axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/productProfile`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+      .get(
+        `${baseUrl}/pages/Master/SystemSetup/userProfile?isGroup=${isGroup}`,
+        {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        }
+      )
       .then((response) => {
-        setRows(response.data.filter((row) => row.nProductID));
+        setRows(response.data.filter((row) => row.nUserID));
         setLoading(false);
       })
       .catch((error) => {
@@ -54,7 +66,7 @@ const ProductProfile = () => {
           hideToast();
         }, 2000);
       });
-  }, []);
+  }, [isGroup]);
 
   const handleSelectionModelChange = (newSelection) => {
     setSelectionModel(newSelection);
@@ -75,20 +87,20 @@ const ProductProfile = () => {
   };
 
   const handleDeleteClick = (row) => {
-    const rowid = row.nProductID;
-    console.log("Delete button clicked for ID:", row.nProductID);
-    showAlertDialog(`Delete the Product : ${row.DESCRIPTION} `, "", () =>
+    const rowid = row.nUserID;
+    console.log("Delete button clicked for ID:", row.nUserID);
+    showAlertDialog(`Delete the User : ${row.vUID} `, "", () =>
       DeleteFunc(rowid)
     );
   };
 
-  const DeleteFunc = async (nProductID) => {
+  const DeleteFunc = async (nUserID) => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `${baseUrl}/pages/Master/SystemSetup/productProfile/delete`,
-        { nProductID: nProductID },
+        `${baseUrl}/pages/Master/SystemSetup/userProfile/delete`,
+        { nUserID: nUserID },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -96,7 +108,7 @@ const ProductProfile = () => {
         }
       );
       console.log(response.data);
-      setRows((prev) => prev.filter((row) => row.nProductID !== nProductID));
+      setRows((prev) => prev.filter((row) => row.nUserID !== nUserID));
       setLoading(false);
       showToast("Successfully Deleted!", "success");
       setTimeout(() => {
@@ -120,7 +132,7 @@ const ProductProfile = () => {
     setLoading(true);
     if (editData) {
       axios
-        .put(`${baseUrl}/pages/Master/SystemSetup/productProfile`, formData, {
+        .put(`${baseUrl}/pages/Master/SystemSetup/userProfile`, formData, {
           headers: {
             Authorization: "Bearer " + token,
           },
@@ -128,7 +140,7 @@ const ProductProfile = () => {
         .then((response) => {
           setRows((prev) =>
             prev.map((row) =>
-              row.nProductID === editData.nProductID ? response.data : row
+              row.nUserID === editData.nUserID ? response.data : row
             )
           );
           setShowForm(false);
@@ -149,7 +161,7 @@ const ProductProfile = () => {
         });
     } else {
       axios
-        .post(`${baseUrl}/pages/Master/SystemSetup/productProfile`, formData, {
+        .post(`${baseUrl}/pages/Master/SystemSetup/userProfile`, formData, {
           headers: {
             Authorization: "Bearer " + token,
           },
@@ -184,14 +196,16 @@ const ProductProfile = () => {
   // }
 
   const columns = [
-    { field: "PRODUCTCODE", headerName: "Code", width: 200 },
-    { field: "DESCRIPTION", headerName: "Name", width: 200 },
+    { field: "vUID", headerName: "Code", width: 200 },
+    { field: "vName", headerName: "Name", width: 200 },
+    { field: "vCellNo", headerName: "Cell Number", width: 200 },
     {
-      field: "isActive",
+      field: "bActive",
       headerName: "Status",
       width: 120,
-      valueGetter: (params) => (params.row.isActive ? "Active" : "Inactive"),
+      valueGetter: (params) => (params.row.bActive ? "Active" : "Inactive"),
     },
+    { field: "bIsAdministrator", headerName: "Is Administrator", width: 200 },
 
     {
       field: "actions",
@@ -222,7 +236,7 @@ const ProductProfile = () => {
   ];
 
   const filteredRows = rows
-    .filter((row) => row.nProductID) // Ensure each row has a nProductID
+    .filter((row) => row.nUserID) // Ensure each row has a nUserID
     .map((row) => {
       // Add any additional transformations needed for your data
       return row;
@@ -246,7 +260,7 @@ const ProductProfile = () => {
     });
 
   return (
-    <MainContainerCompilation title={"Product Profile"}>
+    <MainContainerCompilation title={title}>
       {!showForm ? (
         <AnimatePresence>
           <Box
@@ -312,12 +326,12 @@ const ProductProfile = () => {
               pageSize={5}
               disableRowSelectionOnClick
               disableColumnFilter
-              getRowId={(row) => row.nProductID}
+              getRowId={(row) => row.nUserID}
               rowSelectionModel={selectionModel}
               onRowSelectionModelChange={handleSelectionModelChange}
               sortModel={[
                 {
-                  field: "nProductID",
+                  field: "nUserID",
                   sort: "asc",
                 },
               ]}
@@ -424,7 +438,7 @@ const ProductProfile = () => {
               <h2 style={{ color: Colortheme.text }}>CREATE</h2>
             )}
           </Box>
-          <ProductProfileForm
+          <UserProfileForm
             initialData={editData}
             onSubmit={handleFormSubmit}
             onCancel={() => setShowForm(false)}
@@ -436,4 +450,4 @@ const ProductProfile = () => {
   );
 };
 
-export default ProductProfile;
+export default UserProfileIndex;

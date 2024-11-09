@@ -1,9 +1,16 @@
 // CustomCheckbox.js
 import React, { useContext } from "react";
-import { Checkbox, FormControlLabel } from "@mui/material";
+import { Checkbox, FormControlLabel, Typography } from "@mui/material";
 import ThemeContext from "../../contexts/ThemeContext";
 
-const CustomCheckbox = ({ name, label, checked, onChange, ...props }) => {
+const CustomCheckbox = ({
+  name,
+  label,
+  checked,
+  onChange,
+  disabled,
+  ...props
+}) => {
   const { Colortheme } = useContext(ThemeContext);
 
   return (
@@ -13,22 +20,25 @@ const CustomCheckbox = ({ name, label, checked, onChange, ...props }) => {
           name={name}
           checked={checked}
           onChange={onChange}
+          disabled={disabled}
           sx={{
-            color: Colortheme.text,
+            color: disabled ? "gray" : Colortheme.text,
             "&.Mui-checked": {
-              color: Colortheme.text,
+              color: disabled ? "gray" : Colortheme.text,
             },
             "& .MuiSvgIcon-root": {
               fontSize: 28,
+              color: disabled ? "gray" : Colortheme.text,
             },
           }}
           {...props}
         />
       }
-      label={label}
-      sx={{
-        color: Colortheme.text,
-      }}
+      label={
+        <Typography sx={{ color: disabled ? "gray" : Colortheme.text }}>
+          {label}
+        </Typography>
+      }
     />
   );
 };

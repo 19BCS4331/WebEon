@@ -45,6 +45,9 @@ const BoxButton = styled.div`
   cursor: pointer;
   border: 1px solid ${(props) => props.theme.text};
   color: ${(props) => props.theme.text};
+  text-align: center;
+  font-size: 16px;
+  padding: 2px;
   &:hover {
     background-color: ${(props) => props.theme.text};
     color: ${(props) => props.theme.background};
@@ -88,6 +91,8 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   const { showToast, hideToast } = useToast();
   const { baseUrl } = useBaseUrl();
   const [bcRows, setBCRows] = useState([]);
+  const [pendingBCChanges, setPendingBCChanges] = useState([]);
+  const [pendingBpChanges, setPendingBpChanges] = useState([]);
   const [bpRows, setBPRows] = useState([]);
   const { token } = useContext(AuthContext);
 
@@ -135,24 +140,6 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
       });
   }, []);
 
-  //   useEffect(() => {
-  //     setLoading(true);
-  //     const token = localStorage.getItem("token");
-  //     axios
-  //       .get(`${baseUrl}/pages/Master/SystemSetup/CityOptions`, {
-  //         headers: {
-  //           Authorization: "Bearer " + token,
-  //         },
-  //       })
-  //       .then((response) => {
-  //         setCityOptions(response.data);
-  //         setLoading(false);
-  //       })
-  //       .catch((error) => {
-  //         console.log(error);
-  //         setLoading(false);
-  //       });
-  //   }, []);
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
@@ -560,7 +547,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             }
           );
           const data = response.data.map((row, index) => ({
-            id: index, // unique identifier for the row
+            id: row.nCounterID, // use nCounterID as unique identifier
             ...row,
           }));
           setBCRows(data);
@@ -598,8 +585,6 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
     }
   }, [openSectionDialog]);
 
-  console.log("Vcity", formData.vCity);
-
   const renderSectionFields = () => {
     switch (openSectionDialog) {
       case "Location / Contact Details":
@@ -611,7 +596,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vAddress1}
               onChange={handleChange}
               fullWidth
-              style={{ width: 280 }}
+              style={{ width: isMobile ? 250 : 280 }}
             />
             <CustomTextField
               name="vAddress2"
@@ -619,7 +604,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vAddress2}
               onChange={handleChange}
               fullWidth
-              style={{ width: 280 }}
+              style={{ width: isMobile ? 250 : 280 }}
             />
             <CustomTextField
               name="vAddress3"
@@ -627,7 +612,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vAddress3}
               onChange={handleChange}
               fullWidth
-              style={{ width: 280 }}
+              style={{ width: isMobile ? 250 : 280 }}
             />
             <CustomTextField
               select={true}
@@ -636,6 +621,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vOperationalGrp}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             >
               <MenuItem value="" key="Select7">
                 Select
@@ -655,44 +641,11 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vLocation}
               onChange={handleChange}
               fullWidth
-            >
-              {/* <MenuItem value="" key="Select7">
-                Select
-              </MenuItem>
-              {locationOptions &&
-                locationOptions.map((item) => (
-                  <MenuItem value={item.value} key={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))} */}
-            </CustomTextField>
+              style={{ width: isMobile ? "64vw" : "12vw" }}
+            ></CustomTextField>
 
-            {/* <CustomTextField
-              select={true}
-              name="vCity"
-              label="City"
-              value={formData.vCity}
-              onChange={handleChange}
-              fullWidth
-            >
-              <MenuItem value="" key="Select7">
-                Select
-              </MenuItem>
-              {cityOptions &&
-                cityOptions.map((item) => (
-                  <MenuItem value={item.value} key={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-            </CustomTextField> */}
             <CustomAutocomplete
-              //   name="vCity"
-              //   disablePortal
               id="CitySelect"
-              //   options={cityOptions.map((city) => city.label)}
-              //   isOptionEqualToValue={(option, value) =>
-              //     option.label === value.value
-              //   }
               getOptionKey={(option) => option.key}
               options={cityOptions}
               getOptionLabel={(option) => option.label}
@@ -707,33 +660,9 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
                   vCity: newValue,
                 }));
               }}
-              styleTF={{ width: isMobile ? "55vw" : "12vw" }}
+              styleTF={{ width: isMobile ? "64vw" : "12vw" }}
               label="City"
             />
-
-            {/* <CustomAutocomplete
-              className="LowerInputs"
-              disablePortal
-              id="CounterSelect"
-              noOptionsText={"Select A Branch"}
-              // options={counters.map((counter) =>
-              //   counter.nCounterID.toString()
-              // )}
-              // isOptionEqualToValue={(option, value) =>
-              //   option.nCounterID === value.nCounterID
-              // }
-              options={counters}
-              getOptionLabel={(option) => option.nCounterID.toString()}
-              isOptionEqualToValue={(option, value) =>
-                option.nCounterID === value.nCounterID
-              }
-              value={counter || null} // Set the value to the selectedBranch state
-              onChange={(event, newValue) => {
-                setCounter(newValue); // Update the selectedBranch state
-              }}
-              style={{ width: isMobile ? "30vw" : "12vw" }}
-              label="Counter"
-            /> */}
 
             <CustomTextField
               name="vPinCode"
@@ -741,6 +670,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vPinCode}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
 
             <CustomTextField
@@ -749,6 +679,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.STDCode}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
             <CustomTextField
               name="vTelNo1"
@@ -756,6 +687,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vTelNo1}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
             <CustomTextField
               name="vTelNo2"
@@ -763,6 +695,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vTelNo2}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
 
             <CustomTextField
@@ -771,6 +704,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vFaxNo1}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
 
             <CustomTextField
@@ -779,6 +713,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vFaxNo2}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
 
             <CustomTextField
@@ -787,6 +722,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vEmailID}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
 
             <CustomTextField
@@ -796,6 +732,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.nLocationType}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             >
               <MenuItem value="" key="Select7">
                 Select
@@ -814,6 +751,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vContactPerson}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
             <CustomTextField
               name="vContactPersonNo"
@@ -821,6 +759,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vContactPersonNo}
               onChange={handleChange}
               fullWidth
+              style={{ width: isMobile ? "64vw" : "12vw" }}
             />
           </>
         );
@@ -1037,10 +976,8 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               ]}
               sx={{
                 backgroundColor: Colortheme.background,
-                // p: isMobile ? "10px" : "20px",
                 width: isMobile ? "95vw" : "100%",
                 height: "auto",
-                // maxWidth: isMobile ? "75vw" : "100%",
                 border: "2px solid",
                 borderColor: Colortheme.background,
                 "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
@@ -1149,74 +1086,74 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
           </Box>
         );
 
-      case "Division Link":
-        return (
-          <Box width={"100%"}>
-            <Box display={"flex"} flexDirection={"column"}>
-              <p style={{ color: Colortheme.text }}>
-                Branch : {initialData.vBranchCode}
-              </p>
-              <p style={{ color: Colortheme.text }}>
-                (Check the box to link the respective Product)
-              </p>
-            </Box>
-            <DataGrid
-              rows={bpRows}
-              columns={bpColumns}
-              pageSize={5}
-              disableRowSelectionOnClick
-              disableColumnFilter
-              getRowId={(row) => row.id}
-              sortModel={[
-                {
-                  field: "id",
-                  sort: "asc",
-                },
-              ]}
-              sx={{
-                backgroundColor: Colortheme.background,
-                // p: isMobile ? "10px" : "20px",
-                width: isMobile ? "95vw" : "70vw",
-                height: "auto",
-                // maxWidth: isMobile ? "75vw" : "100%",
-                border: "2px solid",
-                borderColor: Colortheme.background,
-                "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                  {
-                    display: "none",
-                  },
-                "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiTablePagination-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiSvgIcon-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-toolbarContainer": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  backgroundColor: Colortheme.background,
-                },
-                "& .MuiButtonBase-root": {
-                  color: Colortheme.text,
-                },
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 5 },
-                },
-              }}
-              pageSizeOptions={[5, 10]}
-            />
-          </Box>
-        );
+      // case "Division Link":
+      //   return (
+      //     <Box width={"100%"}>
+      //       <Box display={"flex"} flexDirection={"column"}>
+      //         <p style={{ color: Colortheme.text }}>
+      //           Branch : {initialData.vBranchCode}
+      //         </p>
+      //         <p style={{ color: Colortheme.text }}>
+      //           (Check the box to link the respective Product)
+      //         </p>
+      //       </Box>
+      //       <DataGrid
+      //         rows={bpRows}
+      //         columns={bpColumns}
+      //         pageSize={5}
+      //         disableRowSelectionOnClick
+      //         disableColumnFilter
+      //         getRowId={(row) => row.id}
+      //         sortModel={[
+      //           {
+      //             field: "id",
+      //             sort: "asc",
+      //           },
+      //         ]}
+      //         sx={{
+      //           backgroundColor: Colortheme.background,
+      //           // p: isMobile ? "10px" : "20px",
+      //           width: isMobile ? "95vw" : "70vw",
+      //           height: "auto",
+      //           // maxWidth: isMobile ? "75vw" : "100%",
+      //           border: "2px solid",
+      //           borderColor: Colortheme.background,
+      //           "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
+      //             {
+      //               display: "none",
+      //             },
+      //           "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+      //             backgroundColor: Colortheme.background,
+      //             color: Colortheme.text,
+      //           },
+      //           "& .MuiDataGrid-root": {
+      //             color: Colortheme.text,
+      //           },
+      //           "& .MuiTablePagination-root": {
+      //             color: Colortheme.text,
+      //           },
+      //           "& .MuiSvgIcon-root": {
+      //             color: Colortheme.text,
+      //           },
+      //           "& .MuiDataGrid-toolbarContainer": {
+      //             color: Colortheme.text,
+      //           },
+      //           "& .MuiDataGrid-footerContainer": {
+      //             backgroundColor: Colortheme.background,
+      //           },
+      //           "& .MuiButtonBase-root": {
+      //             color: Colortheme.text,
+      //           },
+      //         }}
+      //         initialState={{
+      //           pagination: {
+      //             paginationModel: { page: 0, pageSize: 5 },
+      //           },
+      //         }}
+      //         pageSizeOptions={[5, 10]}
+      //       />
+      //     </Box>
+      //   );
 
       default:
         return null;
@@ -1230,6 +1167,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
 
   const bcColumns = [
     { field: "nCounterID", headerName: "Counter ID", width: 150 },
+    // { field: "vCounterName", headerName: "Counter Name", width: 150 },
     {
       field: "bIsActive",
       headerName: "Active",
@@ -1269,90 +1207,221 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
     },
   ];
 
-  const handleBcCheckboxChange = async (params, event) => {
+  // const handleBcCheckboxChange = async (params, event) => {
+  //   const newIsActive = !params.row.bIsActive;
+  //   try {
+  //     // Update the state
+  //     setBCRows((prevRows) =>
+  //       prevRows.map((row) =>
+  //         row.id === params.id ? { ...row, bIsActive: newIsActive } : row
+  //       )
+  //     );
+
+  //     // Send update request to the backend
+  //     await axios.put(
+  //       `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
+  //       {
+  //         nCounterID: params.row.nCounterID,
+  //         nBranchID: params.row.nBranchID,
+  //         bIsActive: newIsActive,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: "Bearer " + token,
+  //         },
+  //       }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error updating data", error);
+  //   }
+  // };
+
+  // const handleBcCheckboxChange = async (params, event) => {
+  //   const newIsActive = !params.row.bIsActive;
+  //   try {
+  //     // Update the state
+  //     setBCRows((prevRows) =>
+  //       prevRows.map((row) =>
+  //         row.id === params.id ? { ...row, bIsActive: newIsActive } : row
+  //       )
+  //     );
+
+  //     // Send update request to the backend
+  //     await axios.put(
+  //       `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
+  //       {
+  //         nCounterID: params.row.nCounterID,
+  //         nBranchID: initialData.nBranchID,
+  //         bIsActive: newIsActive,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: "Bearer " + token,
+  //         },
+  //       }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error updating data", error);
+  //   }
+  // };
+
+  // Function to handle checkbox state change
+  const handleBcCheckboxChange = (params, event) => {
     const newIsActive = !params.row.bIsActive;
+
+    // Update the state
+    setBCRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === params.id ? { ...row, bIsActive: newIsActive } : row
+      )
+    );
+
+    // Add the change to the pending changes list
+    setPendingBCChanges((prevChanges) => [
+      ...prevChanges,
+      {
+        nCounterID: params.row.nCounterID,
+        nBranchID: initialData.nBranchID,
+        bIsActive: newIsActive,
+      },
+    ]);
+  };
+
+  // Function to save the changes to the database
+  const saveBCChanges = async () => {
     try {
-      // Update the state
-      setBCRows((prevRows) =>
-        prevRows.map((row) =>
-          row.id === params.id ? { ...row, bIsActive: newIsActive } : row
+      await Promise.all(
+        pendingBCChanges.map((change) =>
+          axios.put(
+            `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
+            change,
+            {
+              headers: {
+                Authorization: "Bearer " + token,
+              },
+            }
+          )
         )
       );
 
-      // Send update request to the backend
-      await axios.put(
-        `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
-        {
-          nCounterID: params.row.nCounterID,
-          nBranchID: params.row.nBranchID,
-          bIsActive: newIsActive,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
+      // Clear the pending changes after successful save
+      setPendingBCChanges([]);
+      console.log("Changes saved successfully");
+      showToast("Changes saved successfully", "success");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
     } catch (error) {
-      console.error("Error updating data", error);
+      console.error("Error saving changes", error);
+      showToast("Error saving changes", "error");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
     }
   };
 
-  const handleBpCheckboxChange = async (params, event) => {
+  const handleBpCheckboxChange = (params, event) => {
     const newIsActive = !params.row.bActive;
-    try {
-      // Update the state
-      setBPRows((prevRows) =>
-        prevRows.map((row) =>
-          row.id === params.id ? { ...row, bActive: newIsActive } : row
-        )
+
+    // Update the state
+    setBPRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === params.id ? { ...row, bActive: newIsActive } : row
+      )
+    );
+
+    // Add or update the change in the pending changes list
+    setPendingBpChanges((prevChanges) => {
+      const existingChangeIndex = prevChanges.findIndex(
+        (change) =>
+          change.nBranchProductLinkID === params.row.nBranchProductLinkID
       );
 
-      // Send update request to the backend
-      await axios.put(
-        `${baseUrl}/pages/Master/SystemSetup/BranchProductLink`,
+      if (existingChangeIndex !== -1) {
+        // Update the existing change
+        const updatedChanges = [...prevChanges];
+        updatedChanges[existingChangeIndex].bActive = newIsActive;
+        return updatedChanges;
+      }
+
+      return [
+        ...prevChanges,
         {
           nBranchProductLinkID: params.row.nBranchProductLinkID,
           bActive: newIsActive,
           bRevEffect: params.row.bRevEffect,
         },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Error updating data", error);
-    }
+      ];
+    });
   };
 
-  const handleBpRevCheckboxChange = async (params, event) => {
+  // Function to handle checkbox state change for bRevEffect
+  const handleBpRevCheckboxChange = (params, event) => {
     const newRevEffect = !params.row.bRevEffect;
-    try {
-      // Update the state
-      setBPRows((prevRows) =>
-        prevRows.map((row) =>
-          row.id === params.id ? { ...row, bRevEffect: newRevEffect } : row
-        )
+
+    // Update the state
+    setBPRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === params.id ? { ...row, bRevEffect: newRevEffect } : row
+      )
+    );
+
+    // Add or update the change in the pending changes list
+    setPendingBpChanges((prevChanges) => {
+      const existingChangeIndex = prevChanges.findIndex(
+        (change) =>
+          change.nBranchProductLinkID === params.row.nBranchProductLinkID
       );
 
-      // Send update request to the backend
-      await axios.put(
-        `${baseUrl}/pages/Master/SystemSetup/BranchProductLink/Rev`,
+      if (existingChangeIndex !== -1) {
+        // Update the existing change
+        const updatedChanges = [...prevChanges];
+        updatedChanges[existingChangeIndex].bRevEffect = newRevEffect;
+        return updatedChanges;
+      }
+
+      return [
+        ...prevChanges,
         {
           nBranchProductLinkID: params.row.nBranchProductLinkID,
           bActive: params.row.bActive,
           bRevEffect: newRevEffect,
         },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
+      ];
+    });
+  };
+
+  // Function to save the changes to the database for BranchProductLink
+  const saveBpChanges = async () => {
+    try {
+      await Promise.all(
+        pendingBpChanges.map((change) =>
+          axios.put(
+            `${baseUrl}/pages/Master/SystemSetup/BranchProductLink`,
+            change,
+            {
+              headers: {
+                Authorization: "Bearer " + token,
+              },
+            }
+          )
+        )
       );
+
+      // Clear the pending changes after successful save
+      setPendingBpChanges([]);
+      showToast("Changes saved successfully", "success");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+
+      console.log("Branch product link changes saved successfully");
     } catch (error) {
-      console.error("Error updating data", error);
+      showToast("Error saving changes", "error");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      console.error("Error saving branch product link changes", error);
     }
   };
 
@@ -1398,6 +1467,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             value={formData.vBranchCode}
             onChange={handleChange}
             fullWidth
+            style={isMobile ? { width: "100%" } : {}}
           />
         </Box>
         {initialData && (
@@ -1409,6 +1479,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.nBranchID}
               onChange={handleChange}
               fullWidth
+              style={isMobile ? { width: "100%" } : {}}
             />
           </Box>
         )}
@@ -1417,7 +1488,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
           <BoxButton
             isMobile={isMobile}
             onClick={() => handleSectionEdit("Location / Contact Details")}
-            style={{ width: 250 }}
+            style={{ width: isMobile ? "100%" : 200 }}
           >
             Location / Contact Details
           </BoxButton>
@@ -1427,6 +1498,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
           <BoxButton
             isMobile={isMobile}
             onClick={() => handleSectionEdit("Settings")}
+            style={{ width: isMobile ? "100%" : 200 }}
           >
             Settings
           </BoxButton>
@@ -1436,6 +1508,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
           <BoxButton
             isMobile={isMobile}
             onClick={() => handleSectionEdit("IBM Details")}
+            style={{ width: isMobile ? "100%" : 200 }}
           >
             IBM Details
           </BoxButton>
@@ -1448,6 +1521,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             value={formData.vRBILicenseNo}
             onChange={handleChange}
             fullWidth
+            style={isMobile ? { width: "100%" } : {}}
           />
         </Box>
         <Box>
@@ -1466,6 +1540,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             value={formData.nLastTCSettRefNo}
             onChange={handleChange}
             fullWidth
+            style={isMobile ? { width: "100%" } : {}}
           />
         </Box>
 
@@ -1476,6 +1551,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             value={formData.vAuthorizedSignatory}
             onChange={handleChange}
             fullWidth
+            style={isMobile ? { width: "100%" } : {}}
           />
         </Box>
 
@@ -1485,6 +1561,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               <BoxButtonLink
                 isMobile={isMobile}
                 onClick={() => handleSectionEdit("Counter Link")}
+                style={{ width: isMobile ? "100%" : 200 }}
               >
                 Counter Link
               </BoxButtonLink>
@@ -1494,19 +1571,21 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               <BoxButtonLink
                 isMobile={isMobile}
                 onClick={() => handleSectionEdit("Product Link")}
+                style={{ width: isMobile ? "100%" : 200 }}
               >
                 Product Link
               </BoxButtonLink>
             </Box>
 
-            <Box>
+            {/* <Box>
               <BoxButtonLink
                 isMobile={isMobile}
                 onClick={() => handleSectionEdit("Division Link")}
+                style={{ width: isMobile ? "100%" : 200 }}
               >
                 Division Link
               </BoxButtonLink>
-            </Box>
+            </Box> */}
           </>
         )}
         <Box>
@@ -1518,7 +1597,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
           />
         </Box>
       </Box>
-      <Box display={"flex"} justifyContent={"center"} marginTop={13}>
+      <Box display={"flex"} justifyContent={"center"} marginTop={5}>
         <Box
           display={"flex"}
           width={isMobile ? "100%" : "60%"}
@@ -1568,10 +1647,14 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             sx={{
               height: 500,
               marginTop: 2,
-              border: `1px solid ${Colortheme.text}`,
+              border: isMobile ? "none" : `1px solid ${Colortheme.text}`,
               borderRadius: "10px",
               padding: 5,
-              display: "grid",
+              width: isMobile ? "100%" : "auto",
+
+              paddingLeft: isMobile ? 0 : 5,
+              display: isMobile ? "flex" : "grid",
+              flexDirection: "column",
               overflow: "initial",
 
               backgroundColor: Colortheme.background,
@@ -1600,6 +1683,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             justifyContent: "center",
             width: isMobile ? "100%" : "50%",
             gap: isMobile ? 3 : 10,
+            marginTop: 2,
           }}
         >
           {/* <StyledButton onClick={handleDialogClose}>Cancel</StyledButton> */}
@@ -1655,6 +1739,26 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
           {openSectionDialog === "Bank Details" && (
             <StyledButton
               onClick={handleBankDetails}
+              variant="contained"
+              color="primary"
+            >
+              Save
+            </StyledButton>
+          )}
+
+          {openSectionDialog === "Counter Link" && (
+            <StyledButton
+              onClick={saveBCChanges}
+              variant="contained"
+              color="primary"
+            >
+              Save
+            </StyledButton>
+          )}
+
+          {openSectionDialog === "Product Link" && (
+            <StyledButton
+              onClick={saveBpChanges}
               variant="contained"
               color="primary"
             >
