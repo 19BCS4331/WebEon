@@ -3,6 +3,14 @@ import { useIdleTimer } from "react-idle-timer";
 import CloseIcon from "@mui/icons-material/Close";
 import { AnimatePresence, motion } from "framer-motion";
 import { Box } from "@mui/material";
+import {
+  apiClient,
+  setLogoutCallback,
+  setNoTokenCallback,
+  setUserNotFoundCallback,
+  setTokenExpiredCallback,
+  setInvalidTokenCallback,
+} from "../services/apiClient";
 
 const AuthContext = createContext();
 
@@ -11,6 +19,7 @@ export const useAuth = () => {
 };
 
 const AuthProvider = ({ children }) => {
+  // const { showToast, hideToast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState(null);
   const [username, setUsername] = useState("");
@@ -24,7 +33,11 @@ const AuthProvider = ({ children }) => {
   const [remaining, setRemaining] = useState(0);
   const [loginData, setLoginData] = useState({});
   let [show, setShow] = useState(false);
-
+  let [showAnotherLocation, setShowAnotherLocation] = useState(false);
+  let [showNoToken, setShowNoToken] = useState(false);
+  let [showUserNotFound, setShowUserNotFound] = useState(false);
+  let [showTokenExpired, setShowTokenExpired] = useState(false);
+  let [showInvalidToken, setShowInvalidToken] = useState(false);
   const onIdle = () => {
     setState("Idle");
 
@@ -124,6 +137,132 @@ const AuthProvider = ({ children }) => {
     setCounter("");
   };
 
+  const logoutAnotherLocation = () => {
+    setShowAnotherLocation(true);
+    setTimeout(() => {
+      setShowAnotherLocation(false);
+    }, 2000);
+    setIsAuthenticated(false);
+    localStorage.removeItem("isAuth");
+    localStorage.removeItem("menuData");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("finyear");
+    localStorage.removeItem("username");
+    localStorage.removeItem("branch");
+    localStorage.removeItem("counter");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userid");
+
+    setUserId(null);
+    setToken(null);
+    setFinyear(null);
+    setUsername("");
+    setBranch("");
+    setCounter("");
+  };
+
+  const logoutNoToken = () => {
+    setShowNoToken(true);
+    setTimeout(() => {
+      setShowNoToken(false);
+    }, 2000);
+    setIsAuthenticated(false);
+    localStorage.removeItem("isAuth");
+    localStorage.removeItem("menuData");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("finyear");
+    localStorage.removeItem("username");
+    localStorage.removeItem("branch");
+    localStorage.removeItem("counter");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userid");
+
+    setUserId(null);
+    setToken(null);
+    setFinyear(null);
+    setUsername("");
+    setBranch("");
+    setCounter("");
+  };
+
+  const logoutNoUser = () => {
+    setShowUserNotFound(true);
+    setTimeout(() => {
+      setShowUserNotFound(false);
+    }, 2000);
+    setIsAuthenticated(false);
+    localStorage.removeItem("isAuth");
+    localStorage.removeItem("menuData");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("finyear");
+    localStorage.removeItem("username");
+    localStorage.removeItem("branch");
+    localStorage.removeItem("counter");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userid");
+
+    setUserId(null);
+    setToken(null);
+    setFinyear(null);
+    setUsername("");
+    setBranch("");
+    setCounter("");
+  };
+
+  const logoutTokenExpired = () => {
+    setShowTokenExpired(true);
+    setTimeout(() => {
+      setShowTokenExpired(false);
+    }, 2000);
+    setIsAuthenticated(false);
+    localStorage.removeItem("isAuth");
+    localStorage.removeItem("menuData");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("finyear");
+    localStorage.removeItem("username");
+    localStorage.removeItem("branch");
+    localStorage.removeItem("counter");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userid");
+
+    setUserId(null);
+    setToken(null);
+    setFinyear(null);
+    setUsername("");
+    setBranch("");
+    setCounter("");
+  };
+
+  const logoutInvalidToken = () => {
+    setShowInvalidToken(true);
+    setTimeout(() => {
+      setShowInvalidToken(false);
+    }, 2000);
+    setIsAuthenticated(false);
+    localStorage.removeItem("isAuth");
+    localStorage.removeItem("menuData");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("finyear");
+    localStorage.removeItem("username");
+    localStorage.removeItem("branch");
+    localStorage.removeItem("counter");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userid");
+
+    setUserId(null);
+    setToken(null);
+    setFinyear(null);
+    setUsername("");
+    setBranch("");
+    setCounter("");
+  };
+
+  setLogoutCallback(logoutAnotherLocation);
+  setNoTokenCallback(logoutNoToken);
+  setUserNotFoundCallback(logoutNoUser);
+  setTokenExpiredCallback(logoutTokenExpired);
+  setInvalidTokenCallback(logoutInvalidToken);
+
   return (
     <AuthContext.Provider
       value={{
@@ -178,6 +317,131 @@ const AuthProvider = ({ children }) => {
             Logged Out Due To Inactivity
           </Box>
         )}
+
+        {showAnotherLocation && (
+          <Box
+            component={motion.div}
+            initial={{ y: -180 }}
+            animate={{ y: 0 }}
+            display={"flex"}
+            exit={{ y: -180 }}
+            alignItems={"center"}
+            justifyContent={"center"}
+            position={"absolute"}
+            top={30}
+            right={20}
+            height={40}
+            width={"auto"}
+            borderRadius={20}
+            sx={{ backgroundColor: "white", userSelect: "none" }}
+            p={2}
+            gap={2}
+            zIndex={999999}
+          >
+            <CloseIcon style={{ color: "red" }} />
+            Logged In From Another Location!
+          </Box>
+        )}
+
+        {showNoToken && (
+          <Box
+            component={motion.div}
+            initial={{ y: -180 }}
+            animate={{ y: 0 }}
+            display={"flex"}
+            exit={{ y: -180 }}
+            alignItems={"center"}
+            justifyContent={"center"}
+            position={"absolute"}
+            top={30}
+            right={20}
+            height={40}
+            width={"auto"}
+            borderRadius={20}
+            sx={{ backgroundColor: "white", userSelect: "none" }}
+            p={2}
+            gap={2}
+            zIndex={999999}
+          >
+            <CloseIcon style={{ color: "red" }} />
+            Not Authorized!
+          </Box>
+        )}
+
+        {showUserNotFound && (
+          <Box
+            component={motion.div}
+            initial={{ y: -180 }}
+            animate={{ y: 0 }}
+            display={"flex"}
+            exit={{ y: -180 }}
+            alignItems={"center"}
+            justifyContent={"center"}
+            position={"absolute"}
+            top={30}
+            right={20}
+            height={40}
+            width={"auto"}
+            borderRadius={20}
+            sx={{ backgroundColor: "white", userSelect: "none" }}
+            p={2}
+            gap={2}
+            zIndex={999999}
+          >
+            <CloseIcon style={{ color: "red" }} />
+            User Not Found!
+          </Box>
+        )}
+
+        {showTokenExpired && (
+          <Box
+            component={motion.div}
+            initial={{ y: -180 }}
+            animate={{ y: 0 }}
+            display={"flex"}
+            exit={{ y: -180 }}
+            alignItems={"center"}
+            justifyContent={"center"}
+            position={"absolute"}
+            top={30}
+            right={20}
+            height={40}
+            width={"auto"}
+            borderRadius={20}
+            sx={{ backgroundColor: "white", userSelect: "none" }}
+            p={2}
+            gap={2}
+            zIndex={999999}
+          >
+            <CloseIcon style={{ color: "red" }} />
+            Session Expired, Please Login Again
+          </Box>
+        )}
+
+        {showInvalidToken && (
+          <Box
+            component={motion.div}
+            initial={{ y: -180 }}
+            animate={{ y: 0 }}
+            display={"flex"}
+            exit={{ y: -180 }}
+            alignItems={"center"}
+            justifyContent={"center"}
+            position={"absolute"}
+            top={30}
+            right={20}
+            height={40}
+            width={"auto"}
+            borderRadius={20}
+            sx={{ backgroundColor: "white", userSelect: "none" }}
+            p={2}
+            gap={2}
+            zIndex={999999}
+          >
+            <CloseIcon style={{ color: "red" }} />
+            Invalid Session, Login Again.
+          </Box>
+        )}
       </AnimatePresence>
 
       {children}
@@ -185,4 +449,4 @@ const AuthProvider = ({ children }) => {
   );
 };
 
-export { AuthContext, AuthProvider }; // Export the useLogout custom hook
+export { AuthContext, AuthProvider };

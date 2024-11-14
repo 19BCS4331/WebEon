@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Home } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import CustomDatePicker from "../CustomDatePicker";
+import { apiClient } from "../../../services/apiClient";
 
 const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const { token } = useContext(AuthContext);
@@ -165,23 +166,19 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
   const fetchIndependantSelectOptions = async (field) => {
     try {
-      const response = await fetch(field.fetchOptions, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(field.fetchOptions);
 
-      if (!response.ok) {
+      if (response.status < 200 || response.status >= 300) {
         const errorMessage = `Error ${response.status}: ${response.statusText}`;
         console.error(errorMessage);
-        showToast(errorMessage, "fail");
+        // showToast(errorMessage, "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
         return;
       }
 
-      const result = await response.json();
+      const result = response.data;
 
       if (Array.isArray(result)) {
         // Create default option
@@ -212,7 +209,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       const errorMessage = error.response?.status
         ? `Error ${error.response.status}: ${error.response.statusText}`
         : "Network error or server unreachable";
-      showToast(errorMessage, "fail");
+      // showToast(errorMessage, "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -221,25 +218,20 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
   const fetchIndependantOptions = async (field) => {
     try {
-      // const url = field.dependent && value && field.fetchOptions;
+      const response = await apiClient.get(field.fetchOptions);
 
-      const response = await fetch(field.fetchOptions, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
+      if (response.status < 200 || response.status >= 300) {
         const errorMessage = `Error ${response.status}: ${response.statusText}`;
         console.error(errorMessage);
-        showToast(errorMessage, "fail");
+        // showToast(errorMessage, "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
         return;
       }
 
-      const result = await response.json();
+      const result = response.data;
+      console.log("response INDEPED", result);
 
       // Ensure options are in { value, label } format
       const formattedOptions = result.map((item) =>
@@ -257,7 +249,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       const errorMessage = error.response?.status
         ? `Error ${error.response.status}: ${error.response.statusText}`
         : "Network error or server unreachable";
-      showToast(errorMessage, "fail");
+      // showToast(errorMessage, "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -268,26 +260,20 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     try {
       const url = field.dependent && value && field.fetchOptions;
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ [field.dependsOn]: value }),
-      });
+      const response = await apiClient.post(url, { [field.dependsOn]: value });
 
-      if (!response.ok) {
+      // Axios does not have an 'ok' property, so we check the status code
+      if (response.status < 200 || response.status >= 300) {
         const errorMessage = `Error ${response.status}: ${response.statusText}`;
         console.error(errorMessage);
-        showToast(errorMessage, "fail");
+        // showToast(errorMessage, "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
         return;
       }
 
-      const result = await response.json();
+      const result = await response.data;
       if (Array.isArray(result)) {
         // Create default option
         const defaultOption = {
@@ -317,7 +303,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       const errorMessage = error.response?.status
         ? `Error ${error.response.status}: ${error.response.statusText}`
         : "Network error or server unreachable";
-      showToast(errorMessage, "fail");
+      // showToast(errorMessage, "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -328,26 +314,20 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     try {
       const url = field.dependent && value && field.fetchOptions;
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ [field.dependsOn]: value }),
-      });
+      const response = await apiClient.post(url, { [field.dependsOn]: value });
 
-      if (!response.ok) {
+      // Axios does not have an 'ok' property, so we check the status code
+      if (response.status < 200 || response.status >= 300) {
         const errorMessage = `Error ${response.status}: ${response.statusText}`;
         console.error(errorMessage);
-        showToast(errorMessage, "fail");
+        // showToast(errorMessage, "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
         return;
       }
 
-      const result = await response.json();
+      const result = await response.data;
 
       // Ensure options are in { value, label } format
       const formattedOptions = result.map((item) =>
@@ -365,69 +345,12 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       const errorMessage = error.response?.status
         ? `Error ${error.response.status}: ${error.response.statusText}`
         : "Network error or server unreachable";
-      showToast(errorMessage, "fail");
+      // showToast(errorMessage, "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
     }
   };
-
-  // const handleChange = (field, value) => {
-  //   setFormData((prevData) => ({
-  //     ...prevData,
-  //     [field.name]: value,
-  //   }));
-
-  //   // Find all fields that depend on the current field
-  //   const dependentFields = formConfig.fields.filter(
-  //     (f) => f.dependsOn === field.name
-  //   );
-
-  //   if (dependentFields.length > 0) {
-  //     const isValidValue =
-  //       value !== null && value !== "" && value !== undefined;
-
-  //     // Update all dependent fields
-  //     dependentFields.forEach((dependentField) => {
-  //       // Clear dependent field values
-  //       setFormData((prevData) => ({
-  //         ...prevData,
-  //         [dependentField.name]: "",
-  //       }));
-
-  //       // Update disabled state
-  //       setDisabledFields((prev) => ({
-  //         ...prev,
-  //         [dependentField.name]: !isValidValue,
-  //       }));
-
-  //       // If parent has valid value, fetch new options
-  //       if (isValidValue && dependentField.type === "autocomplete") {
-  //         fetchOptions(dependentField, value);
-  //       }
-
-  //       // If parent has valid value, fetch new options
-  //       if (isValidValue && dependentField.type === "select") {
-  //         fetchSelectOptions(dependentField, value);
-  //       }
-
-  //       // Additionally handle nested dependencies
-  //       const nestedDependents = formConfig.fields.filter(
-  //         (f) => f.dependsOn === dependentField.name
-  //       );
-  //       nestedDependents.forEach((nestedField) => {
-  //         setFormData((prevData) => ({
-  //           ...prevData,
-  //           [nestedField.name]: "",
-  //         }));
-  //         setDisabledFields((prev) => ({
-  //           ...prev,
-  //           [nestedField.name]: true, // Always disable nested dependents when parent changes
-  //         }));
-  //       });
-  //     });
-  //   }
-  // };
 
   const handleChange = (field, value) => {
     // Update the form data for the changed field
@@ -536,18 +459,13 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(formConfig.endpoint, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const result = await response.json();
+      const response = await apiClient.get(formConfig.endpoint);
+      const result = await response.data;
       setRows(result.filter((row) => row[formDataID]));
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
-      showToast("Error Occurred!", "fail");
+      // showToast("Error Occurred!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -575,18 +493,15 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     }, {});
 
     try {
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(enabledFormData),
+      const response = await apiClient({
+        url: endpoint,
+        method: method,
+        data: enabledFormData,
       });
 
-      const result = await response.json();
+      const result = await response.data;
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         console.log(result.message);
         // Refresh data grid or perform other actions
         if (!formData[formDataID]) {
@@ -630,13 +545,8 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const handleSearch = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(formConfig.endpoint, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const result = await response.json();
+      const response = await apiClient.get(formConfig.endpoint);
+      const result = await response.data;
 
       // Filter out any invalid rows (rows that don't have a formDataID)
       const validRows = result.filter((row) => row[formDataID]);
@@ -704,16 +614,11 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const handleDelete = async (idToDelete) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${formConfig.endpoint}/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ idToDelete }),
+      const response = await apiClient.post(`${formConfig.endpoint}/delete`, {
+        idToDelete,
       });
-      const result = await response.json();
-      if (response.ok) {
+      const result = await response.data;
+      if (response.status >= 200 && response.status < 300) {
         console.log(result.message);
         setRows((prevRows) =>
           prevRows.filter((row) => row[formDataID] !== idToDelete)

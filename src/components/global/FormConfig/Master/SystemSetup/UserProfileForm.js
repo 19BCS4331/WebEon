@@ -18,6 +18,7 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Modal,
 } from "@mui/material";
 import dayjs from "dayjs";
 import CustomTextField from "../../../CustomTextField";
@@ -104,6 +105,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   const isLargeDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const { showToast, hideToast } = useToast();
   const { baseUrl } = useBaseUrl();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   //   Fetch Options for BranchList and GroupList from API
@@ -487,6 +489,10 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     const token = localStorage.getItem("token");
     setSelectedParent(parent);
 
+    if (isMobile || isTablet || isSmallDesktop) {
+      setIsModalOpen(true);
+    }
+
     if (!selectedGroup) {
       console.error("No group selected");
       setLoading(false);
@@ -676,6 +682,219 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     }
   };
 
+  // const renderRightsTable = () => {
+  //   if (!selectedParent) {
+  //     return (
+  //       <CustomScrollbarBox
+  //         display={"flex"}
+  //         width={"100%"}
+  //         height={"100%"}
+  //         textAlign={"center"}
+  //         borderRadius={"20px"}
+  //         sx={{ color: Colortheme.text, fontSize: "20px", fontWeight: "bold" }}
+  //         justifyContent={"center"}
+  //         alignItems={"center"}
+  //       >
+  //         Select a parent item to configure rights
+  //       </CustomScrollbarBox>
+  //     );
+  //   }
+
+  //   const rightsData = isGroupBool ? groupRights : userRights;
+
+  //   const rows = selectedParent.subItems.map((child) => ({
+  //     id: child.id,
+  //     name: child.name,
+  //     add: rightsData[child.id]?.add ?? false,
+  //     modify: rightsData[child.id]?.modify ?? false,
+  //     delete: rightsData[child.id]?.delete ?? false,
+  //     view: rightsData[child.id]?.view ?? false,
+  //     export: rightsData[child.id]?.export ?? false,
+  //   }));
+
+  //   const columns = [
+  //     { field: "name", headerName: "Menu Item", width: 200, sortable: false },
+  //     {
+  //       field: "add",
+  //       headerName: (
+  //         <CustomCheckbox
+  //           name="add"
+  //           label="Add"
+  //           checked={selectAll.add}
+  //           onChange={handleSelectAllChange}
+  //         />
+  //       ),
+  //       width: 150,
+  //       sortable: false,
+  //       renderCell: (params) => (
+  //         <CustomCheckbox
+  //           name={`${params.row.id}_add`}
+  //           checked={params.value || false}
+  //           onChange={handleRightsChange}
+  //         />
+  //       ),
+  //     },
+  //     {
+  //       field: "modify",
+  //       headerName: (
+  //         <CustomCheckbox
+  //           name="modify"
+  //           label="Modify"
+  //           checked={selectAll.modify}
+  //           onChange={handleSelectAllChange}
+  //         />
+  //       ),
+  //       width: 150,
+  //       sortable: false,
+  //       renderCell: (params) => (
+  //         <CustomCheckbox
+  //           name={`${params.row.id}_modify`}
+  //           checked={params.value || false}
+  //           onChange={handleRightsChange}
+  //         />
+  //       ),
+  //     },
+  //     {
+  //       field: "delete",
+  //       headerName: (
+  //         <CustomCheckbox
+  //           name="delete"
+  //           label="Delete"
+  //           checked={selectAll.delete}
+  //           onChange={handleSelectAllChange}
+  //         />
+  //       ),
+  //       width: 150,
+  //       sortable: false,
+  //       renderCell: (params) => (
+  //         <CustomCheckbox
+  //           name={`${params.row.id}_delete`}
+  //           checked={params.value || false}
+  //           onChange={handleRightsChange}
+  //         />
+  //       ),
+  //     },
+  //     {
+  //       field: "view",
+  //       headerName: (
+  //         <CustomCheckbox
+  //           name="view"
+  //           label="View"
+  //           checked={selectAll.view}
+  //           onChange={handleSelectAllChange}
+  //         />
+  //       ),
+  //       width: 150,
+  //       sortable: false,
+  //       renderCell: (params) => (
+  //         <CustomCheckbox
+  //           name={`${params.row.id}_view`}
+  //           checked={params.value || false}
+  //           onChange={handleRightsChange}
+  //         />
+  //       ),
+  //     },
+  //     {
+  //       field: "export",
+  //       headerName: (
+  //         <CustomCheckbox
+  //           name="export"
+  //           label="Export"
+  //           checked={selectAll.export}
+  //           onChange={handleSelectAllChange}
+  //         />
+  //       ),
+  //       width: 150,
+  //       sortable: false,
+  //       renderCell: (params) => (
+  //         <CustomCheckbox
+  //           name={`${params.row.id}_export`}
+  //           checked={params.value || false}
+  //           onChange={handleRightsChange}
+  //         />
+  //       ),
+  //     },
+  //   ];
+
+  //   return (
+  //     <CustomScrollbarBox style={{ flex: 2, padding: "0 20px" }}>
+  //       <h3 style={{ color: Colortheme.text, textAlign: "center" }}>
+  //         Rights for {selectedParent.name}
+  //       </h3>
+  //       <CustomScrollbarBox style={{ height: 400, width: "100%" }}>
+  //         {loading ? (
+  //           <Box
+  //             sx={{
+  //               display: "flex",
+  //               height: "90%",
+  //               alignItems: "center",
+  //               justifyContent: "center",
+  //             }}
+  //           >
+  //             <CircularProgress
+  //               size="50px"
+  //               style={{ color: Colortheme.text }}
+  //             />
+  //           </Box>
+  //         ) : (
+  //           <DataGrid
+  //             rows={rows}
+  //             columns={columns}
+  //             pageSize={5}
+  //             disableSelectionOnClick
+  //             sx={{
+  //               backgroundColor: Colortheme.background,
+  //               p: isMobile ? "10px" : "20px",
+  //               maxHeight: "50vh",
+  //               width: isMobile ? "95vw" : "auto",
+  //               maxWidth: isMobile ? "75vw" : "100%",
+  //               border: "2px solid",
+  //               borderColor: Colortheme.background,
+  //               "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
+  //                 {
+  //                   display: "none",
+  //                 },
+  //               "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
+  //                 backgroundColor: Colortheme.background,
+  //                 color: Colortheme.text,
+  //               },
+  //               "& .MuiDataGrid-root": {
+  //                 color: Colortheme.text,
+  //               },
+  //               "& .MuiTablePagination-root": {
+  //                 color: Colortheme.text,
+  //               },
+  //               "& .MuiSvgIcon-root": {
+  //                 color: Colortheme.text,
+  //               },
+  //               "& .MuiDataGrid-toolbarContainer": {
+  //                 color: Colortheme.text,
+  //               },
+  //               "& .MuiDataGrid-footerContainer": {
+  //                 backgroundColor: Colortheme.background,
+  //               },
+  //               "& .MuiButtonBase-root": {
+  //                 color: Colortheme.text,
+  //               },
+  //             }}
+  //           />
+  //         )}
+  //       </CustomScrollbarBox>
+  //       <CustomScrollbarBox
+  //         width={"100%"}
+  //         display={"flex"}
+  //         justifyContent={"center"}
+  //         // marginTop={"20px"}
+  //         marginBottom={"20px"}
+  //       >
+  //         <StyledButton color="primary" onClick={handleSaveRights}>
+  //           Save
+  //         </StyledButton>
+  //       </CustomScrollbarBox>
+  //     </CustomScrollbarBox>
+  //   );
+  // };
+
   const renderRightsTable = () => {
     if (!selectedParent) {
       return (
@@ -820,15 +1039,21 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
             <Box
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 height: "90%",
                 alignItems: "center",
                 justifyContent: "center",
+                width: isMobile ? "95vw" : "auto",
+                maxWidth: isMobile ? "75vw" : "100%",
+                gap: 2,
+                color: Colortheme.text,
               }}
             >
               <CircularProgress
                 size="50px"
                 style={{ color: Colortheme.text }}
               />
+              Please Wait...
             </Box>
           ) : (
             <DataGrid
@@ -844,6 +1069,18 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
                 maxWidth: isMobile ? "75vw" : "100%",
                 border: "2px solid",
                 borderColor: Colortheme.background,
+                // Custom Scrollbar Styling
+                "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
+                  width: "8px",
+                  height: "8px",
+                },
+                "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb": {
+                  backgroundColor: Colortheme.text,
+                  borderRadius: "8px",
+                },
+                "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track": {
+                  backgroundColor: Colortheme.secondaryBG,
+                },
                 "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
                   {
                     display: "none",
@@ -880,7 +1117,14 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
           justifyContent={"center"}
           // marginTop={"20px"}
           marginBottom={"20px"}
+          gap={5}
         >
+          {isMobile && (
+            <StyledButton color="primary" onClick={() => setIsModalOpen(false)}>
+              Close
+            </StyledButton>
+          )}
+
           <StyledButton color="primary" onClick={handleSaveRights}>
             Save
           </StyledButton>
@@ -909,17 +1153,28 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   //               border: `1px solid ${Colortheme.text}`,
   //               padding: "10px",
   //               borderRadius: "10px",
+  //               display: "flex",
+  //               alignItems: "center",
+  //               justifyContent: "space-between",
   //             }}
   //           >
-  //             {item.name} {expandedSuperParent === item ? "-" : "+"}
+  //             {item.name}
+  //             {expandedSuperParent === item ? <ExpandLess /> : <ExpandMore />}
   //           </CustomScrollbarBox>
 
-  //           {expandedSuperParent === item && (
+  //           <Collapse
+  //             in={expandedSuperParent === item}
+  //             timeout="auto"
+  //             unmountOnExit
+  //           >
   //             <CustomScrollbarBox
   //               display={"flex"}
   //               flexDirection={"column"}
   //               width={"100%"}
   //               alignItems={"center"}
+  //               sx={{
+  //                 transition: "all 0.3s ease",
+  //               }}
   //             >
   //               {item.subItems.map((subItem) => (
   //                 <CustomScrollbarBox
@@ -941,7 +1196,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   //                 </CustomScrollbarBox>
   //               ))}
   //             </CustomScrollbarBox>
-  //           )}
+  //           </Collapse>
   //         </CustomScrollbarBox>
   //       );
   //     }
@@ -997,7 +1252,10 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
                     key={subItem.id}
                     onClick={() => handleParentClick(subItem)}
                     sx={{
-                      color: Colortheme.text,
+                      color:
+                        selectedParent === subItem
+                          ? Colortheme.background
+                          : Colortheme.text,
                       width: "70%",
                       cursor: "pointer",
                       fontSize: "15px",
@@ -1006,6 +1264,10 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
                       border: `1px solid ${Colortheme.text}`,
                       padding: "10px",
                       borderRadius: "10px",
+                      backgroundColor:
+                        selectedParent === subItem
+                          ? Colortheme.text
+                          : Colortheme.background,
                     }}
                   >
                     {subItem.name}
@@ -1486,52 +1748,81 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
 
       case "Rights":
         return (
-          <CustomScrollbarBox
-            style={{ display: "flex", width: "100%", gap: 20 }}
-          >
+          <>
             <CustomScrollbarBox
-              border={`1px solid ${Colortheme.text}`}
-              borderRadius={"20px"}
+              style={{ display: "flex", width: "100%", gap: 15 }}
+            >
+              <CustomScrollbarBox
+                border={`1px solid ${Colortheme.text}`}
+                borderRadius={"20px"}
+                maxHeight={"80%"}
+                sx={{
+                  flex: 1,
+                  overflowY: "auto",
+                  padding: isMobile ? "10px" : "20px",
+                  minWidth: isMobile ? "80%" : "25%", // Set a minimum width for mobile and larger screens
+                }}
+              >
+                <Box
+                  sx={{
+                    color: Colortheme.text,
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    marginBottom: "10px",
+                  }}
+                >
+                  Menu of rights (click to select)
+                </Box>
+                <CustomScrollbarBox
+                  sx={{
+                    width: "100%",
+                    backgroundColor: Colortheme.text,
+                    height: "0.5px",
+                    marginBottom: "25px",
+                  }}
+                />
+                {renderNavigationTree(navigationItems)}
+              </CustomScrollbarBox>
+
+              {!isMobile && !isTablet && !isSmallDesktop && (
+                <CustomScrollbarBox
+                  sx={{
+                    flex: 2,
+                    width: "100%",
+                    maxHeight: "80%",
+                  }}
+                  border={`1px solid ${Colortheme.text}`}
+                  borderRadius={"20px"}
+                >
+                  {renderRightsTable()}
+                </CustomScrollbarBox>
+              )}
+            </CustomScrollbarBox>
+
+            <Modal
+              open={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
               sx={{
-                flex: 1,
-                overflowY: "auto",
-                maxHeight: "75vh",
-                padding: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <Box
                 sx={{
-                  color: Colortheme.text,
-                  textAlign: "center",
-                  fontWeight: "bold",
-                  marginBottom: "10px",
+                  backgroundColor: Colortheme.background,
+                  padding: "20px",
+                  borderRadius: "20px",
+                  width: "80%",
+                  maxHeight: "80vh",
+                  overflowY: "auto",
+                  margin: "20px auto",
                 }}
               >
-                Menu of rights (click to select)
+                {renderRightsTable()}
               </Box>
-              {/* Make a divider between the navigation tree and the rights table using MUI Box*/}
-              <CustomScrollbarBox
-                sx={{
-                  width: "100%",
-                  backgroundColor: Colortheme.text,
-                  height: "0.5px",
-                  marginBottom: "25px",
-                }}
-              />
-              {renderNavigationTree(navigationItems)}
-            </CustomScrollbarBox>
-            <CustomScrollbarBox
-              sx={{
-                flex: 2,
-                width: "100%",
-                maxHeight: "75vh",
-              }}
-              border={`1px solid ${Colortheme.text}`}
-              borderRadius={"20px"}
-            >
-              {renderRightsTable()}
-            </CustomScrollbarBox>
-          </CustomScrollbarBox>
+            </Modal>
+          </>
         );
 
       case "Branch Link":
@@ -1981,7 +2272,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
-            padding: 2,
+            padding: isMobile ? 1 : 2,
             width: "90vw",
             backgroundColor: Colortheme.background,
             overflowX: "hidden",
@@ -2026,9 +2317,9 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
                     rowGap: "25px",
                   }
                 : {
-                    padding: 5,
-                    border: `1px solid ${Colortheme.text}`,
-                    borderRadius: "10px",
+                    // padding: isMobile ? 0 : 5,
+                    // border: `1px solid ${Colortheme.text}`,
+                    borderRadius: isMobile ? "20px" : "10px",
                     marginTop: 2,
                   }
             }

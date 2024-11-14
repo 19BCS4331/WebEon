@@ -20,8 +20,7 @@ import {
   postPaxDetails,
 } from "../../../apis/IndiviOrCorp/Buy";
 import { useToast } from "../../../contexts/ToastContext";
-import { COLORS } from "../../../assets/colors/COLORS";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   fetchCityOptions,
   fetchCountryOptions,
@@ -44,6 +43,7 @@ import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import Skeleton from "@mui/material/Skeleton";
+import ThemeContext from "../../../contexts/ThemeContext";
 
 const PaxModal = ({
   showPaxModal,
@@ -56,6 +56,7 @@ const PaxModal = ({
   setIsPaxSaved,
   setPaxData,
 }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast, hideToast } = useToast();
@@ -466,10 +467,10 @@ const PaxModal = ({
                     overflowX: "auto",
                     width: isMobile ? "76vw" : "auto",
                   }}
-                  border={`1px solid ${COLORS.secondaryBG}`}
+                  border={`1px solid ${Colortheme.secondaryBG}`}
                   borderRadius={"5px"}
                 >
-                  <p style={{ marginTop: -2, color: COLORS.background }}>
+                  <p style={{ marginTop: -2, color: Colortheme.background }}>
                     PAX Details
                   </p>
                   <Box
@@ -882,7 +883,7 @@ const PaxModal = ({
                   display={"flex"}
                   flexDirection={"column"}
                   gap={2}
-                  border={`1px solid ${COLORS.secondaryBG}`}
+                  border={`1px solid ${Colortheme.secondaryBG}`}
                   sx={{
                     padding: 4,
                     overflow: "scroll",
@@ -900,10 +901,12 @@ const PaxModal = ({
                         overflow: "hidden",
                         p: 2,
                       }}
-                      border={`1px solid ${COLORS.secondaryBG}`}
+                      border={`1px solid ${Colortheme.secondaryBG}`}
                       borderRadius={"5px"}
                     >
-                      <p style={{ marginTop: -2, color: COLORS.background }}>
+                      <p
+                        style={{ marginTop: -2, color: Colortheme.background }}
+                      >
                         Passport Information
                       </p>
                       <Box
@@ -1014,10 +1017,12 @@ const PaxModal = ({
                     <Box
                       // component={"form"}
                       sx={{ maxHeight: "20vh", overflow: "hidden", p: 2 }}
-                      border={`1px solid ${COLORS.secondaryBG}`}
+                      border={`1px solid ${Colortheme.secondaryBG}`}
                       borderRadius={"5px"}
                     >
-                      <p style={{ marginTop: -5, color: COLORS.background }}>
+                      <p
+                        style={{ marginTop: -5, color: Colortheme.background }}
+                      >
                         Other ID Details
                       </p>
                       <Box
@@ -1105,10 +1110,12 @@ const PaxModal = ({
                     <Box
                       // component={"form"}
                       sx={{ maxHeight: "20vh", overflow: "hidden", p: 2 }}
-                      border={`1px solid ${COLORS.secondaryBG}`}
+                      border={`1px solid ${Colortheme.secondaryBG}`}
                       borderRadius={"5px"}
                     >
-                      <p style={{ marginTop: -5, color: COLORS.background }}>
+                      <p
+                        style={{ marginTop: -5, color: Colortheme.background }}
+                      >
                         TCS Exemption
                       </p>
                       <Box
@@ -1180,7 +1187,7 @@ const PaxModal = ({
                   fontSize="large"
                   sx={{
                     alignSelf: "flex-start",
-                    color: COLORS.secondaryBG,
+                    color: Colortheme.secondaryBG,
                     position: "absolute",
                     cursor: "pointer",
                   }}
@@ -1196,9 +1203,9 @@ const PaxModal = ({
                   style={{
                     display: "flex",
                     width: isMobile ? "auto" : "16vw",
-                    backgroundColor: COLORS.text,
+                    backgroundColor: Colortheme.text,
                     borderRadius: "20px",
-                    border: `2px solid ${COLORS.secondaryBG}`,
+                    border: `2px solid ${Colortheme.secondaryBG}`,
                     height: 50,
                     justifyContent: "center",
                     boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.1)",
@@ -1293,14 +1300,14 @@ const PaxModal = ({
                         }
                       }}
                       sx={{
-                        backgroundColor: COLORS.text,
+                        backgroundColor: Colortheme.text,
                         p: "20px",
                         maxHeight: isMobile ? "500px" : "400px",
                         height: isMobile ? "500px" : "400px",
                         // width: "50vw",
                         boxShadow: 3,
                         border: "2px solid",
-                        borderColor: COLORS.secondaryBG,
+                        borderColor: Colortheme.secondaryBG,
                         "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
                           {
                             display: "none",

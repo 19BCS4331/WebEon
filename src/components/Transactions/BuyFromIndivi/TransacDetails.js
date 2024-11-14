@@ -8,8 +8,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { COLORS } from "../../../assets/colors/COLORS";
+import React, { useContext, useEffect, useState } from "react";
+import { Colortheme } from "../../../assets/colors/COLORS";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import {
   fetchCurrencyNames,
@@ -28,6 +28,7 @@ import {
   useFormData,
 } from "../../../contexts/FormDataContext";
 import RecPay from "./RecPay";
+import ThemeContext from "../../../contexts/ThemeContext";
 // import CustomSearch from "../../global/CustomSearch";
 
 const TransacDetails = ({
@@ -36,6 +37,7 @@ const TransacDetails = ({
   setIsTransacDetailsView,
   comission,
 }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const { updateFormData } = useFormData();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -406,7 +408,7 @@ const TransacDetails = ({
           flexDirection={"column"}
           alignItems={"center"}
           sx={{
-            backgroundColor: COLORS.text,
+            backgroundColor: Colortheme.text,
             overflow: isMobile ? "auto" : "visible",
           }}
           width={isMobile ? "70vw" : "50vw"}
@@ -422,7 +424,7 @@ const TransacDetails = ({
           borderRadius={"25px"}
           boxShadow={"0px 10px 15px -3px rgba(0,0,0,0.1)"}
         >
-          <p style={{ color: COLORS.background, fontSize: "16px" }}>
+          <p style={{ color: Colortheme.background, fontSize: "16px" }}>
             Transaction Details
           </p>
           <KeyboardBackspaceIcon
@@ -430,7 +432,7 @@ const TransacDetails = ({
             fontSize="large"
             sx={{
               alignSelf: "flex-start",
-              color: COLORS.secondaryBG,
+              color: Colortheme.secondaryBG,
               position: "absolute",
               cursor: "pointer",
               marginTop: 1.5,
@@ -445,7 +447,7 @@ const TransacDetails = ({
             gap={3}
             flexDirection={"column"}
             mt={5}
-            border={`1px solid ${COLORS.secondaryBG}`}
+            border={`1px solid ${Colortheme.secondaryBG}`}
             padding={2}
             borderRadius={"10px"}
             height={isMobile ? "40vh" : "auto"}
@@ -617,7 +619,7 @@ const TransacDetails = ({
             <SouthIcon
               style={{
                 marginTop: isMobile ? 5 : 10,
-                color: `${COLORS.secondaryBG}`,
+                color: `${Colortheme.secondaryBG}`,
               }}
             />
           )}
@@ -631,7 +633,7 @@ const TransacDetails = ({
                 mt={isMobile ? 0 : 2}
                 p={0}
                 sx={{
-                  border: `1px solid ${COLORS.secondaryBG}`,
+                  border: `1px solid ${Colortheme.secondaryBG}`,
                   borderRadius: 2,
                   maxHeight: isMobile ? "150px" : "195px",
                 }}
@@ -666,7 +668,7 @@ const TransacDetails = ({
                               <Tooltip title="Commission Details">
                                 <InfoIcon
                                   style={{
-                                    color: COLORS.secondaryBG,
+                                    color: Colortheme.secondaryBG,
                                     cursor: "pointer",
                                   }}
                                   onClick={() =>
@@ -746,7 +748,7 @@ const TransacDetails = ({
                               style={{
                                 width: 80,
                                 height: 40,
-                                borderColor: `${COLORS.secondaryBG}`,
+                                borderColor: `${Colortheme.secondaryBG}`,
                                 borderRadius: "10px",
                                 paddingLeft: 10,
                                 fontSize: 16,
@@ -862,7 +864,7 @@ const TransacDetails = ({
                 display={"flex"}
                 justifyContent={"center"}
                 fontWeight={"bold"}
-                color={COLORS.secondaryBG}
+                color={Colortheme.secondaryBG}
               >
                 Commission Details ( Sr.No : {selectedTransac.id} )
               </Box>

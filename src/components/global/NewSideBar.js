@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   Drawer,
   List,
@@ -20,11 +19,9 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { AuthContext } from "../../contexts/AuthContext";
 import ThemeContext from "../../contexts/ThemeContext";
-import useAxiosInterceptor from "./AxiosIntercept";
 import CloseIcon from "@mui/icons-material/Close";
 import * as MaterialIcons from "@mui/icons-material";
-
-const baseUrl = process.env.REACT_APP_BASE_URL;
+import { fetchNavigationItems } from "../../services/routeServices/navbarService";
 
 const SubItem = ({
   subItem,
@@ -135,7 +132,6 @@ const NewSidebar = () => {
     setOpenItems,
     toggleDrawer,
   } = useContext(ThemeContext);
-  useAxiosInterceptor();
 
   // const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -144,28 +140,43 @@ const NewSidebar = () => {
   const { token } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // useEffect(() => {
+  //   if (!isLoginPage) {
+  //     const fetchItems = async () => {
+  //       try {
+  //         const response = await axios.get(`${baseUrl}/nav/navigation`, {
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         });
+  //         const fetchedItems = response.data.map((item) => ({
+  //           ...item,
+  //           open: false,
+  //         }));
+  //         setItems(fetchedItems);
+  //         setFilteredItems(fetchedItems); // Set initial filtered items
+  //       } catch (error) {
+  //         console.error("Error fetching navigation items:", error);
+  //       }
+  //     };
+  //     fetchItems();
+  //   }
+  // }, [isLoginPage, token]);
+
   useEffect(() => {
     if (!isLoginPage) {
       const fetchItems = async () => {
         try {
-          const response = await axios.get(`${baseUrl}/nav/navigation`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const fetchedItems = response.data.map((item) => ({
-            ...item,
-            open: false,
-          }));
-          setItems(fetchedItems);
-          setFilteredItems(fetchedItems); // Set initial filtered items
+          const data = await fetchNavigationItems();
+          setItems(data);
+          setFilteredItems(data); // Set initial filtered items
         } catch (error) {
           console.error("Error fetching navigation items:", error);
         }
       };
       fetchItems();
     }
-  }, [isLoginPage, token]);
+  }, [isLoginPage]);
 
   const toggleSubItems = (itemId) => {
     setOpenItems((prevOpenItems) => {

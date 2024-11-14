@@ -135,8 +135,12 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
   }, [initialData]);
 
   const piColumns = [
-    { field: "nCodesID", headerName: "Issuer ID", width: 150 },
-    { field: "vCode", headerName: "Issuer Name", width: 200 },
+    {
+      field: "nCodesID",
+      headerName: "Issuer ID",
+      width: 150,
+    },
+    { field: "vCode", headerName: "Issuer Name", width: isMobile ? 150 : 200 },
     {
       field: "bIsActive",
       headerName: "Active",
@@ -1043,13 +1047,15 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
               getRowId={(row) => row.id}
               sortModel={[
                 {
-                  field: "id",
+                  field: "nCodesID",
                   sort: "asc",
                 },
               ]}
+              loading={loading}
+              columnVisibilityModel={isMobile ? { nCodesID: false } : {}}
               sx={{
                 backgroundColor: Colortheme.background,
-                width: isMobile ? "95vw" : "100%",
+                width: isMobile ? "100%" : "100%",
                 height: "auto",
                 border: "2px solid",
                 borderColor: Colortheme.background,

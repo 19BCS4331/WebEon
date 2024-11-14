@@ -10,11 +10,12 @@ import {
 } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "../../../../contexts/ToastContext";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import "../../../../css/Masters/SystemSetup/TransConfigModal.css";
-import { COLORS } from "../../../../assets/colors/COLORS";
+
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import ThemeContext from "../../../../contexts/ThemeContext";
 
 const OtherInfo = ({
   showOtherInfoModal,
@@ -24,6 +25,7 @@ const OtherInfo = ({
   isEdit,
   fetchedData,
 }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast, hideToast } = useToast();
@@ -362,7 +364,7 @@ const OtherInfo = ({
                     <button
                       type="submit"
                       style={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         color: "white",
                         borderRadius: 20,
                         width: 100,
@@ -558,7 +560,7 @@ const OtherInfo = ({
                     <button
                       type="submit"
                       style={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         color: "white",
                         borderRadius: 20,
                         width: 100,

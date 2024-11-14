@@ -9,7 +9,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { AuthContext } from "../../contexts/AuthContext";
 import CustomAlertModal from "../CustomAlertModal";
 import ThemeContext from "../../contexts/ThemeContext";
-import ThemeToggleButton from "./ThemeToggleButton";
+// import ThemeToggleButton from "./ThemeToggleButton";
 import ProfileDropdown from "./ProfileDropdown";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -155,7 +155,7 @@ const Topbar = ({ title }) => {
             showAlertDialog("Log Out", "", () => handleLogoutAuth())
           }
           Colortheme={Colortheme}
-          ThemeToggleButton={ThemeToggleButton}
+          // ThemeToggleButton={ThemeToggleButton}
         />
       </Box>
       <CustomAlertModal />

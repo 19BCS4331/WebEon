@@ -88,6 +88,10 @@ const MailServerConfig = lazy(() =>
 const MailSendingConfig = lazy(() =>
   import("./pages/Master/SystemSetup/MailSendingConfig")
 );
+
+const ThemeSelect = lazy(() =>
+  import("./pages/Master/SystemSetup/ThemeSelect")
+);
 // System Setup End ---------------------------------------------------------------------
 
 // Rates ---------------------------------------
@@ -690,6 +694,12 @@ const routes = [
   {
     path: "/system-setup/mail-sending-config",
     element: <MailSendingConfig />,
+    protected: true,
+  },
+
+  {
+    path: "/system-setup/select-theme",
+    element: <ThemeSelect />,
     protected: true,
   },
 

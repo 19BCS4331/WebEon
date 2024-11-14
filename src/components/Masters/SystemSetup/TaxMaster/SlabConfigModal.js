@@ -2,9 +2,10 @@ import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useToast } from "../../../../contexts/ToastContext";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import "../../../../css/Masters/SystemSetup/SlabConfigModal.css";
-import { COLORS } from "../../../../assets/colors/COLORS";
+import { Colortheme } from "../../../../assets/colors/COLORS";
+import ThemeContext from "../../../../contexts/ThemeContext";
 
 const SlabConfigModal = ({
   showSlabConfigModal,
@@ -15,6 +16,7 @@ const SlabConfigModal = ({
   isEdit,
   isCreate,
 }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast, hideToast } = useToast();
@@ -363,7 +365,7 @@ const SlabConfigModal = ({
                   <Box display={"flex"} justifyContent={"center"}>
                     <button
                       style={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         border: "none",
                         color: "white",
                         cursor: "pointer",
@@ -553,7 +555,7 @@ const SlabConfigModal = ({
                   <Box display={"flex"} justifyContent={"center"}>
                     <button
                       style={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         border: "none",
                         color: "white",
                         cursor: "pointer",

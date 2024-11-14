@@ -2,9 +2,9 @@ import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useToast } from "../../../../contexts/ToastContext";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import "../../../../css/Masters/SystemSetup/TransConfigModal.css";
-import { COLORS } from "../../../../assets/colors/COLORS";
+import ThemeContext from "../../../../contexts/ThemeContext";
 
 const TransConfigModal = ({
   showTransConfigModal,
@@ -14,6 +14,7 @@ const TransConfigModal = ({
   isEdit,
   fetchedData,
 }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast, hideToast } = useToast();
@@ -236,7 +237,7 @@ const TransConfigModal = ({
                     <button
                       onClick={handleSave}
                       style={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         color: "white",
                         borderRadius: 20,
                         width: 100,
@@ -305,7 +306,7 @@ const TransConfigModal = ({
                     <button
                       onClick={handleEditSave}
                       style={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         color: "white",
                         borderRadius: 20,
                         width: 100,

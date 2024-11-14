@@ -1,31 +1,27 @@
-import {
-  Box,
-  MenuItem,
-  TextField,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import React, { useEffect, useState, useContext } from "react";
 import "../css/pages/Login.css";
-// import CustomTextField from "@mui/material/CustomTextField";
-import Autocomplete from "@mui/material/Autocomplete";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import axios from "axios";
 import { useToast } from "../contexts/ToastContext";
 import { AuthContext } from "../contexts/AuthContext";
 import CircularProgress from "@mui/material/CircularProgress";
 import ThemeContext from "../contexts/ThemeContext";
-import { useBaseUrl } from "../contexts/BaseUrl";
 import KeyboardBackspace from "@mui/icons-material/KeyboardBackspace";
 import StyledButton from "../components/global/StyledButton";
 import CustomTextField from "../components/global/CustomTextField";
 import CustomAutocomplete from "../components/global/CustomAutocomplete";
 import ThemeToggleButton from "../components/global/ThemeToggleButton";
+import {
+  fetchBranchesData,
+  fetchCounters,
+  fetchFinYearData,
+  loginPreFetch,
+} from "../services/routeServices/authService";
+import { apiClient } from "../services/apiClient";
 
 const LoginNew = () => {
-  const { baseUrl } = useBaseUrl();
-  const { Colortheme } = useContext(ThemeContext);
+  const { Colortheme, setThemeName, setIsDarkMode } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
@@ -40,11 +36,10 @@ const LoginNew = () => {
     finyear,
     setFinyear,
     isAuthenticated,
-    userId,
     setUserId,
+    userId,
     username,
     setUsername,
-    token,
     setToken,
   } = useContext(AuthContext);
 
@@ -65,158 +60,78 @@ const LoginNew = () => {
 
   const fetchBranches = async (username) => {
     try {
-      const response = await axios.post(`${baseUrl}/auth/login/branchOnUser`, {
-        username: username,
-      });
-      setBranches(response.data);
+      const data = await fetchBranchesData(username);
+      setBranches(data);
     } catch (err) {
-      console.log("error", err);
+      console.error("Error fetching branches:", err);
     }
   };
 
   useEffect(() => {
     if (branch) {
-      const fetchCounters = async () => {
+      const fetchCountersData = async () => {
         try {
-          const response = await axios.post(
-            `${baseUrl}/auth/login/CounterOnBranchAndUser`,
-            {
-              vBranchCode: branch.vBranchCode,
-              vUID: successRes.vUID,
-              nBranchID: branch.nBranchID,
-              nUserID: successRes.nUserID,
-            }
-          );
-          setCounters(response.data);
+          const data = await fetchCounters(branch, successRes);
+          setCounters(data);
         } catch (err) {
-          console.log("error", err);
+          console.error("Error fetching counters:", err);
         }
       };
-      fetchCounters();
+      fetchCountersData();
     } else {
       setCounters([]);
       setCounter(null);
     }
-  }, [branch]);
+  }, [branch, username, successRes]);
 
-  const fetchFinYearData = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/auth/login/finYear`); // Replace with your API endpoint
-      const data = await response.data;
+  useEffect(() => {
+    const fetchFinYearDataAsync = async () => {
+      try {
+        const data = await fetchFinYearData();
+        const currentDate = new Date();
 
-      const currentDate = new Date();
+        const formattedData = data.map((finyear) => ({
+          ...finyear,
+          value: `${formatDate(finyear.fromDate)} - ${formatDate(
+            finyear.tillDate
+          )}`,
+        }));
 
-      const formattedData = data.map((finyear) => ({
-        ...finyear,
-        value: `${formatDate(finyear.fromDate)} - ${formatDate(
-          finyear.tillDate
-        )}`,
-      }));
+        // Filter to get only the current financial year
+        const currentFinYear = formattedData.filter((finyear) => {
+          const fromDate = new Date(finyear.fromDate);
+          const tillDate = new Date(finyear.tillDate);
+          return currentDate >= fromDate && currentDate <= tillDate;
+        });
 
-      // Filter to get only the current financial year
-      const currentFinYear = formattedData.filter((finyear) => {
-        const fromDate = new Date(finyear.fromDate);
-        const tillDate = new Date(finyear.tillDate);
-        return currentDate >= fromDate && currentDate <= tillDate;
-      });
+        console.log("Current financial year:", currentFinYear);
+        setFinYearOptions(currentFinYear);
+      } catch (error) {
+        console.error("Error fetching financial years:", error);
+      }
+    };
 
-      console.log("Current financial year:", currentFinYear);
-      setFinYearOptions(currentFinYear);
-    } catch (error) {
-      console.error("Error fetching financial years:", error);
-    }
-  };
+    fetchFinYearDataAsync();
+  }, []);
 
   const formatDate = (dateString) => {
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
     return new Date(dateString).toLocaleDateString("en-GB", options);
   };
 
-  // const ProceedClick = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const response = await axios.post(`${baseUrl}/auth/login`, {
-  //       username: username.toUpperCase(),
-  //       password: password,
-  //     });
-  //     if (response.data.token) {
-  //       // Store the token in localStorage
-  //       setToken(response.data.token);
-  //       setUserId(response.data.user.nUserID);
-  //       setUsername(response.data.user.vUID);
-
-  //       localStorage.setItem("token", response.data.token);
-  //       localStorage.setItem("userid", response.data.user.nUserID);
-  //       localStorage.setItem("username", response.data.user.vUID);
-  //     }
-  //     const successRes = response.data.user;
-
-  //     setSuccessRes(successRes);
-
-  //     fetchFinYearData();
-  //     if (successRes) {
-  //       await fetchBranches(successRes.vUID);
-  //     }
-  //     setIsLowerInputsVis(true);
-  //     setIsLoading(false);
-  //     setErrorMsg("");
-  //     setPassword("");
-  //   } catch (error) {
-  //     // Handle login failure here
-  //     console.error(error);
-  //     setIsLoading(false);
-
-  //     if (error.response) {
-  //       // The request was made and the server responded with a status code
-  //       console.log(error.response.data.error);
-
-  //       setErrorMsg(error.response.data.error);
-
-  //       showToast(error.response.data.error || "An error occurred", "error");
-  //       setIsLoading(false);
-  //       setIsLowerInputsVis(false);
-  //     } else if (error.request) {
-  //       // The request was made but no response was received
-  //       showToast("No response from server", "error");
-  //       setIsLoading(false);
-  //       setIsLowerInputsVis(false);
-  //     } else {
-  //       // Something else happened while setting up the request
-  //       showToast("An error occurred", "error");
-  //       setIsLoading(false);
-  //       setIsLowerInputsVis(false);
-  //     }
-  //   } finally {
-  //     setIsLoading(false);
-  //     // Hide the toast after a certain time (e.g., 2 seconds)
-  //     setTimeout(() => {
-  //       hideToast();
-  //     }, 800);
-  //   }
-  // };
-
   const ProceedClick = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(`${baseUrl}/auth/login`, {
-        username: username.toUpperCase(),
-        password: password,
-      });
-
-      const { token, user } = response.data;
+      const { token, user } = await loginPreFetch(username, password);
 
       if (token) {
         setToken(token);
         setUserId(user.nUserID);
         setUsername(user.vUID);
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("userid", user.nUserID);
-        localStorage.setItem("username", user.vUID);
       }
 
       setSuccessRes(user);
-      fetchFinYearData();
+      await fetchFinYearData();
 
       if (user) {
         await fetchBranches(user.vUID);
@@ -236,67 +151,6 @@ const LoginNew = () => {
       setTimeout(hideToast, 800);
     }
   };
-
-  // const loginUser = async () => {
-  //   setIsLoading(true);
-  //   if (
-  //     branch !== null &&
-  //     branch !== "" &&
-  //     finyear !== null &&
-  //     finyear !== "" &&
-  //     counter !== null &&
-  //     counter !== ""
-  //   ) {
-
-  //     try {
-  //       login();
-  //       setIsLoading(false);
-  //       localStorage.setItem("branch", JSON.stringify(branch));
-  //       localStorage.setItem("finyear", JSON.stringify(finyear));
-  //       localStorage.setItem("counter", JSON.stringify(counter));
-  //       setFinyear(finyear.value);
-
-  //       // Handle login success here
-  //       showToast("Successfully Logged In !", "success");
-  //       navigate("/Dashboard");
-
-  //       // Schedule logout after 1 hour
-  //     } catch (error) {
-  //       // Handle login failure here
-  //       console.error(error);
-  //       setIsLoading(false);
-
-  //       if (error.response) {
-  //         // The request was made and the server responded with a status code
-  //         const { data } = error.response;
-
-  //         setErrorMsg(data.msg);
-
-  //         showToast(data.msg || "An error occurred", "error");
-  //         setIsLoading(false);
-  //       } else if (error.request) {
-  //         // The request was made but no response was received
-  //         showToast("No response from server", "error");
-  //         setIsLoading(false);
-  //       } else {
-  //         // Something else happened while setting up the request
-  //         showToast("An error occurred", "error");
-  //         setIsLoading(false);
-  //       }
-  //     } finally {
-  //       // Hide the toast after a certain time (e.g., 2 seconds)
-  //       setTimeout(() => {
-  //         hideToast();
-  //       }, 800);
-  //     }
-  //   } else {
-  //     showToast("Please Enter All Details!", "error");
-  //     setIsLoading(false);
-  //     setTimeout(() => {
-  //       hideToast();
-  //     }, 1000);
-  //   }
-  // };
 
   const loginUser = async () => {
     setIsLoading(true);
@@ -355,7 +209,7 @@ const LoginNew = () => {
       }}
     >
       <Box position={"absolute"} top={20} right={20}>
-        <ThemeToggleButton />
+        <ThemeToggleButton isLoggedIn={false} />
       </Box>
       <Box
         sx={{ backgroundColor: Colortheme.text, opacity: 0.6 }}

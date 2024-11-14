@@ -17,8 +17,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { COLORS } from "../../../assets/colors/COLORS";
+import React, { useContext, useEffect, useState } from "react";
+
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 
@@ -29,8 +29,10 @@ import { DataGrid } from "@mui/x-data-grid";
 
 import { AccProfileFetchBuyFromIndi } from "../../../apis/IndiviOrCorp/Buy";
 import { useFormData } from "../../../contexts/FormDataContext";
+import ThemeContext from "../../../contexts/ThemeContext";
 
 const RecPay = ({ handlebackClickOnRecPay, isRecPay }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const { buyFromIndiviformData, updateFormData } = useFormData();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -65,7 +67,7 @@ const RecPay = ({ handlebackClickOnRecPay, isRecPay }) => {
           flexDirection={"column"}
           alignItems={"center"}
           sx={{
-            backgroundColor: COLORS.text,
+            backgroundColor: Colortheme.text,
             overflow: isMobile ? "auto" : "visible",
           }}
           width={isMobile ? "70vw" : "50vw"}
@@ -75,7 +77,7 @@ const RecPay = ({ handlebackClickOnRecPay, isRecPay }) => {
         >
           <p
             style={{
-              color: COLORS.secondaryBG,
+              color: Colortheme.secondaryBG,
               fontSize: "18px",
               fontWeight: "bold",
             }}
@@ -87,7 +89,7 @@ const RecPay = ({ handlebackClickOnRecPay, isRecPay }) => {
             fontSize="large"
             sx={{
               alignSelf: "flex-start",
-              color: COLORS.secondaryBG,
+              color: Colortheme.secondaryBG,
               position: "absolute",
               cursor: "pointer",
               marginTop: 1.5,
@@ -100,7 +102,7 @@ const RecPay = ({ handlebackClickOnRecPay, isRecPay }) => {
               fontSize="large"
               sx={{
                 alignSelf: "flex-end",
-                color: COLORS.secondaryBG,
+                color: Colortheme.secondaryBG,
                 position: "absolute",
                 cursor: "pointer",
                 marginTop: 1.5,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import {
   Alert,
@@ -23,7 +23,7 @@ import "../../../css/pages/CurrencyProfile.css";
 import { useToast } from "../../../contexts/ToastContext";
 
 import { useNavigate } from "react-router-dom";
-import { COLORS } from "../../../assets/colors/COLORS";
+import { Colortheme } from "../../../assets/colors/COLORS.js";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import "../../../css/components/buyfromindiv.css";
 import dayjs from "dayjs";
@@ -37,15 +37,16 @@ import {
 } from "../../../apis/IndiviOrCorp/Buy/index.js";
 import PaxModal from "../../../components/Transactions/BuyFromIndivi/PaxModal.js";
 import TransacDetails from "../../../components/Transactions/BuyFromIndivi/TransacDetails.js";
-import useAxiosInterceptor from "../../../components/global/AxiosIntercept.js";
+
 import {
   FormDataProvider,
   useFormData,
 } from "../../../contexts/FormDataContext.js";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import ThemeContext from "../../../contexts/ThemeContext.js";
 
 const BuyFromIndivi = () => {
-  useAxiosInterceptor();
+  const { Colortheme } = useContext(ThemeContext);
   // -----------------STATES START---------------------
 
   useEffect(() => {
@@ -596,7 +597,7 @@ const BuyFromIndivi = () => {
               component={"form"}
               onSubmit={handleSubmitCreate}
               sx={{
-                backgroundColor: COLORS.text,
+                backgroundColor: Colortheme.text,
                 overflow: isMobile ? "auto" : "visible",
                 maxHeight: isMobile ? "70vh" : "auto",
                 maxWidth: isMobile ? "60vw" : "auto",
@@ -612,7 +613,7 @@ const BuyFromIndivi = () => {
                 fontSize="large"
                 sx={{
                   alignSelf: "flex-start",
-                  color: COLORS.secondaryBG,
+                  color: Colortheme.secondaryBG,
                   position: "absolute",
                   cursor: "pointer",
                 }}
@@ -714,7 +715,7 @@ const BuyFromIndivi = () => {
                         display={"flex"}
                         width={isMobile ? "auto" : "12vw"}
                         sx={{
-                          border: `solid 1px ${COLORS.background}`,
+                          border: `solid 1px ${Colortheme.background}`,
                           borderRadius: "5px",
                           alignItems: "center",
                           justifyContent: "center",
@@ -724,7 +725,7 @@ const BuyFromIndivi = () => {
                         {paxData && (
                           <p
                             style={{
-                              color: COLORS.background,
+                              color: Colortheme.background,
                               fontWeight: "bold",
                             }}
                           >
@@ -747,7 +748,9 @@ const BuyFromIndivi = () => {
                       }}
                     >
                       Select Party
-                      <PersonAddAlt1Icon style={{ color: COLORS.background }} />
+                      <PersonAddAlt1Icon
+                        style={{ color: Colortheme.background }}
+                      />
                     </button>
                   )}
 
@@ -1034,7 +1037,7 @@ const BuyFromIndivi = () => {
               name="ContainerBox"
               component={"form"}
               onSubmit={handleSubmitEdit}
-              sx={{ backgroundColor: COLORS.text }}
+              sx={{ backgroundColor: Colortheme.text }}
               height={"auto"}
               p={3}
               width={"auto"}

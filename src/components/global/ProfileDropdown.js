@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { styled } from "@mui/material/styles";
 import * as MaterialIcons from "@mui/icons-material";
+import ThemeToggleButton from "./ThemeToggleButton";
 
 // Styled components
 const ProfileContainer = styled(motion.div)(({ theme, colortheme }) => ({
@@ -63,7 +64,6 @@ const ProfileDropdown = ({
   finyear,
   handleLogoutAuth,
   Colortheme,
-  ThemeToggleButton,
 }) => {
   // Animation variants
   const dropdownVariants = {
@@ -119,7 +119,7 @@ const ProfileDropdown = ({
           ))}
 
           <Box>
-            <ThemeToggleButton />
+            <ThemeToggleButton isLoggedIn={true} />
           </Box>
 
           <Divider />

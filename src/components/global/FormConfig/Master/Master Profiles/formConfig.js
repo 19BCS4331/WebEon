@@ -1,5 +1,5 @@
 const baseUrl = process.env.REACT_APP_BASE_URL;
-const FinalBaseURL = `${baseUrl}/pages/Master/MasterProfiles`;
+const FinalBaseURL = `/pages/Master/MasterProfiles`;
 
 const financialTypeLabels = {
   B: "Balance Sheet",

@@ -50,7 +50,7 @@
 
 // export default App;
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { BrowserRouter, Routes } from "react-router-dom";
 import { ToastProvider } from "./contexts/ToastContext";
 import Toast from "./components/Toast";
@@ -67,7 +67,7 @@ import { BaseUrlProvider } from "./contexts/BaseUrl";
 import { FormDataProvider } from "./contexts/FormDataContext";
 import NewSidebar from "./components/global/NewSideBar";
 import useAuthHook from "./hooks/useAuthHook";
-import AxiosInterceptorProvider from "./hooks/interceptorAxios";
+// import AxiosInterceptorProvider from "./hooks/interceptorAxios";
 import renderRoutes from "./routes";
 import LazyFallBack from "./pages/LazyFallBack";
 
@@ -86,11 +86,11 @@ const App = () => {
                         <ToastProvider>
                           <Toast />
                           <AuthBasedSidebar />
-                          <AxiosInterceptorProvider>
-                            <Suspense fallback={<LazyFallBack />}>
-                              <Routes>{renderRoutes()}</Routes>
-                            </Suspense>
-                          </AxiosInterceptorProvider>
+                          {/* <AxiosInterceptorProvider> */}
+                          <Suspense fallback={<LazyFallBack />}>
+                            <Routes>{renderRoutes()}</Routes>
+                          </Suspense>
+                          {/* </AxiosInterceptorProvider> */}
                         </ToastProvider>
                       </ModalProvider>
                     </BrowserRouter>

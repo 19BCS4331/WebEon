@@ -17,8 +17,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { COLORS } from "../../../assets/colors/COLORS";
+import React, { useContext, useEffect, useState } from "react";
+
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 
@@ -35,6 +35,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { AccProfileFetchBuyFromIndi } from "../../../apis/IndiviOrCorp/Buy";
 import { useFormData } from "../../../contexts/FormDataContext";
 import { useToast } from "../../../contexts/ToastContext";
+import ThemeContext from "../../../contexts/ThemeContext";
 
 const Taxes = ({
   isTaxView,
@@ -42,6 +43,7 @@ const Taxes = ({
   handlebackClickOnTaxView,
   handleRecPayView,
 }) => {
+  const { Colortheme } = useContext(ThemeContext);
   const { showToast, hideToast } = useToast();
 
   const { buyFromIndiviformData, updateFormData } = useFormData();
@@ -290,7 +292,7 @@ const Taxes = ({
           flexDirection={"column"}
           alignItems={"center"}
           sx={{
-            backgroundColor: COLORS.text,
+            backgroundColor: Colortheme.text,
             overflow: isMobile ? "auto" : "visible",
           }}
           width={isMobile ? "70vw" : "50vw"}
@@ -300,7 +302,7 @@ const Taxes = ({
         >
           <p
             style={{
-              color: COLORS.secondaryBG,
+              color: Colortheme.secondaryBG,
               fontSize: "18px",
               fontWeight: "bold",
             }}
@@ -312,7 +314,7 @@ const Taxes = ({
             fontSize="large"
             sx={{
               alignSelf: "flex-start",
-              color: COLORS.secondaryBG,
+              color: Colortheme.secondaryBG,
               position: "absolute",
               cursor: "pointer",
               marginTop: 1.5,
@@ -325,7 +327,7 @@ const Taxes = ({
               fontSize="large"
               sx={{
                 alignSelf: "flex-end",
-                color: COLORS.secondaryBG,
+                color: Colortheme.secondaryBG,
                 position: "absolute",
                 cursor: "pointer",
                 marginTop: 1.5,
@@ -340,8 +342,8 @@ const Taxes = ({
               onClick={handleShowFee}
               style={
                 isFee
-                  ? { backgroundColor: COLORS.background }
-                  : { backgroundColor: COLORS.secondaryBG }
+                  ? { backgroundColor: Colortheme.background }
+                  : { backgroundColor: Colortheme.secondaryBG }
               }
             >
               Fee/Tax
@@ -351,8 +353,8 @@ const Taxes = ({
               onClick={handleShowCharges}
               style={
                 isCharges
-                  ? { backgroundColor: COLORS.background }
-                  : { backgroundColor: COLORS.secondaryBG }
+                  ? { backgroundColor: Colortheme.background }
+                  : { backgroundColor: Colortheme.secondaryBG }
               }
             >
               Other Charges
@@ -369,7 +371,7 @@ const Taxes = ({
               overflow={"auto"}
               width={"auto"}
               // boxShadow={"0px 2px 5px 0px rgba(0,0,0,0.5);"}
-              border={`3px solid ${COLORS.secondaryBG}`}
+              border={`3px solid ${Colortheme.secondaryBG}`}
               display={"flex"}
               flexDirection={"column"}
               alignItems={"center"}
@@ -389,7 +391,7 @@ const Taxes = ({
                     id="FinalAmountContainer"
                     display={"flex"}
                     gap={1}
-                    border={`2px solid ${COLORS.secondaryBG}`}
+                    border={`2px solid ${Colortheme.secondaryBG}`}
                     borderRadius={20}
                     p={1}
                     height={30}
@@ -398,7 +400,7 @@ const Taxes = ({
                     <p
                       style={{
                         fontWeight: "bold",
-                        color: COLORS.secondaryBG,
+                        color: Colortheme.secondaryBG,
                         fontSize: 17,
                       }}
                     >
@@ -407,7 +409,7 @@ const Taxes = ({
                     <p
                       style={{
                         fontWeight: "bold",
-                        color: COLORS.secondaryBG,
+                        color: Colortheme.secondaryBG,
                         fontSize: 17,
                       }}
                     >
@@ -512,7 +514,7 @@ const Taxes = ({
                       justifyContent={"center"}
                       width={"100%"}
                       sx={{
-                        backgroundColor: COLORS.secondaryBG,
+                        backgroundColor: Colortheme.secondaryBG,
                         color: "white",
                       }}
                     >
@@ -523,7 +525,12 @@ const Taxes = ({
                       )}
                     </Box>
                   </div>
-                  <p style={{ color: COLORS.secondaryBG, fontWeight: "bold" }}>
+                  <p
+                    style={{
+                      color: Colortheme.secondaryBG,
+                      fontWeight: "bold",
+                    }}
+                  >
                     New Final Amount : Rs.
                     {totalNewAmount.toLocaleString("en-IN")}
                   </p>
@@ -552,7 +559,7 @@ const Taxes = ({
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 5,
-                      border: `2px solid ${COLORS.secondaryBG}`,
+                      border: `2px solid ${Colortheme.secondaryBG}`,
                       borderRadius: 20,
                       width: "80%",
                       padding: 5,
@@ -570,7 +577,7 @@ const Taxes = ({
 
                         cursor: "pointer",
                         backgroundColor:
-                          page === 0 ? "gray" : COLORS.secondaryBG,
+                          page === 0 ? "gray" : Colortheme.secondaryBG,
                         color: "white",
                       }}
                     >
@@ -579,7 +586,7 @@ const Taxes = ({
                     <span
                       style={{
                         margin: "0 10px",
-                        color: COLORS.secondaryBG,
+                        color: Colortheme.secondaryBG,
                         fontWeight: "bold",
                       }}
                     >
@@ -599,7 +606,9 @@ const Taxes = ({
 
                         cursor: "pointer",
                         backgroundColor:
-                          page === totalPages - 1 ? "gray" : COLORS.secondaryBG,
+                          page === totalPages - 1
+                            ? "gray"
+                            : Colortheme.secondaryBG,
                         color: "white",
                       }}
                     >
@@ -616,7 +625,7 @@ const Taxes = ({
                     >
                       <p
                         style={{
-                          color: COLORS.secondaryBG,
+                          color: Colortheme.secondaryBG,
                           fontWeight: "bold",
                           fontSize: 12,
                         }}
@@ -649,7 +658,7 @@ const Taxes = ({
                 height={"auto"}
                 width={"auto"}
                 p={2}
-                border={`3px solid ${COLORS.secondaryBG}`}
+                border={`3px solid ${Colortheme.secondaryBG}`}
                 display={"flex"}
                 flexDirection={"column"}
                 alignItems={"center"}
@@ -724,7 +733,7 @@ const Taxes = ({
               <button
                 style={{
                   border: "none",
-                  backgroundColor: COLORS.secondaryBG,
+                  backgroundColor: Colortheme.secondaryBG,
                   color: "white",
                   borderRadius: 20,
                   cursor: "pointer",
