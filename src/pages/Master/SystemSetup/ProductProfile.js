@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import { Box, Tooltip, useMediaQuery, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,13 +9,13 @@ import CustomTextField from "../../../components/global/CustomTextField";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import { DataGrid } from "@mui/x-data-grid";
 import LazyFallBack from "../../LazyFallBack";
-import dayjs from "dayjs";
-import PartyProfileForm from "../../../components/global/FormConfig/Master/Party Profiles/PartyProfileForm";
 import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModal from "../../../components/CustomAlertModal";
 import { useBaseUrl } from "../../../contexts/BaseUrl";
-import UserProfileForm from "../../../components/global/FormConfig/Master/SystemSetup/UserProfileForm";
 import ProductProfileForm from "../../../components/global/FormConfig/Master/SystemSetup/ProductProfileForm";
+import { apiClient } from "../../../services/apiClient";
+import CustomDataGrid from "../../../components/global/CustomDataGrid";
+
 const ProductProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,13 +34,8 @@ const ProductProfile = () => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/productProfile`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+    apiClient
+      .get(`/pages/Master/SystemSetup/productProfile`)
       .then((response) => {
         setRows(response.data.filter((row) => row.nProductID));
         setLoading(false);
@@ -84,16 +78,11 @@ const ProductProfile = () => {
 
   const DeleteFunc = async (nProductID) => {
     setLoading(true);
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `${baseUrl}/pages/Master/SystemSetup/productProfile/delete`,
-        { nProductID: nProductID },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await apiClient.post(
+        `/pages/Master/SystemSetup/productProfile/delete`,
+        { nProductID: nProductID }
+       
       );
       console.log(response.data);
       setRows((prev) => prev.filter((row) => row.nProductID !== nProductID));
@@ -116,15 +105,11 @@ const ProductProfile = () => {
   };
 
   const handleFormSubmit = (formData) => {
-    const token = localStorage.getItem("token");
+    
     setLoading(true);
     if (editData) {
-      axios
-        .put(`${baseUrl}/pages/Master/SystemSetup/productProfile`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .put(`/pages/Master/SystemSetup/productProfile`, formData)
         .then((response) => {
           setRows((prev) =>
             prev.map((row) =>
@@ -148,12 +133,8 @@ const ProductProfile = () => {
           }, 2000);
         });
     } else {
-      axios
-        .post(`${baseUrl}/pages/Master/SystemSetup/productProfile`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .post(`/pages/Master/SystemSetup/productProfile`, formData)
         .then((response) => {
           setRows((prev) => [...prev, response.data]);
           setShowForm(false);
@@ -254,9 +235,10 @@ const ProductProfile = () => {
             initial={{ x: -50 }}
             animate={{ x: 0 }}
             exit={{ x: -50 }}
+            maxHeight={"70vh"}
             sx={{
-              width: "95%",
-              height: "80%",
+              // width: "95%",
+              // height: "80%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -306,15 +288,11 @@ const ProductProfile = () => {
               Add New Profile
             </StyledButton>
 
-            <DataGrid
+            <CustomDataGrid
               rows={filteredRows}
               columns={columns}
-              pageSize={5}
-              disableRowSelectionOnClick
-              disableColumnFilter
+              selectionModel={selectionModel}
               getRowId={(row) => row.nProductID}
-              rowSelectionModel={selectionModel}
-              onRowSelectionModelChange={handleSelectionModelChange}
               sortModel={[
                 {
                   field: "nProductID",
@@ -333,55 +311,13 @@ const ProductProfile = () => {
                     }
                   : { id: false }
               }
-              onModelChange={(model) => {
-                if (model.filterModel && model.filterModel.items.length > 0) {
-                  setSearchKeyword(model.filterModel.items[0].value);
-                } else {
-                  setSearchKeyword("");
-                }
-              }}
-              sx={{
-                backgroundColor: Colortheme.background,
-                p: isMobile ? "10px" : "20px",
-                maxHeight: "50vh",
-                width: isMobile ? "95vw" : "auto",
-                maxWidth: isMobile ? "75vw" : "100%",
-                border: "2px solid",
-                borderColor: Colortheme.background,
-                "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                  {
-                    display: "none",
-                  },
-                "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiTablePagination-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiSvgIcon-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-toolbarContainer": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  backgroundColor: Colortheme.background,
-                },
-                "& .MuiButtonBase-root": {
-                  color: Colortheme.text,
-                },
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 5 },
-                },
-              }}
-              pageSizeOptions={[5, 10]}
+              onSelectionModelChange={handleSelectionModelChange}
+              searchKeyword={searchKeyword}
+              setSearchKeyword={setSearchKeyword}
+              Colortheme={Colortheme}
             />
+
+        
           </Box>
         </AnimatePresence>
       ) : (
@@ -392,8 +328,8 @@ const ProductProfile = () => {
           animate={{ y: 0 }}
           exit={{ y: -50 }}
           sx={{
-            width: "90vw",
-            height: "70vh",
+            // width: "90vw",
+            // height: "70vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

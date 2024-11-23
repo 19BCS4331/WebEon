@@ -10,6 +10,7 @@ import {
   setUserNotFoundCallback,
   setTokenExpiredCallback,
   setInvalidTokenCallback,
+  setDefaultCaseCallback
 } from "../services/apiClient";
 
 const AuthContext = createContext();
@@ -38,6 +39,7 @@ const AuthProvider = ({ children }) => {
   let [showUserNotFound, setShowUserNotFound] = useState(false);
   let [showTokenExpired, setShowTokenExpired] = useState(false);
   let [showInvalidToken, setShowInvalidToken] = useState(false);
+  let [showDefaultCase, setShowDefaultCase] = useState(false);
   const onIdle = () => {
     setState("Idle");
 
@@ -257,11 +259,20 @@ const AuthProvider = ({ children }) => {
     setCounter("");
   };
 
+
+  const defaultCase = () => {
+    setShowDefaultCase(true);
+    setTimeout(() => {
+      setShowDefaultCase(false);
+    }, 2000);
+  };
+
   setLogoutCallback(logoutAnotherLocation);
   setNoTokenCallback(logoutNoToken);
   setUserNotFoundCallback(logoutNoUser);
   setTokenExpiredCallback(logoutTokenExpired);
   setInvalidTokenCallback(logoutInvalidToken);
+  setDefaultCaseCallback(defaultCase);
 
   return (
     <AuthContext.Provider
@@ -440,6 +451,32 @@ const AuthProvider = ({ children }) => {
           >
             <CloseIcon style={{ color: "red" }} />
             Invalid Session, Login Again.
+          </Box>
+        )}
+
+
+{showDefaultCase && (
+          <Box
+            component={motion.div}
+            initial={{ y: -180 }}
+            animate={{ y: 0 }}
+            display={"flex"}
+            exit={{ y: -180 }}
+            alignItems={"center"}
+            justifyContent={"center"}
+            position={"absolute"}
+            top={30}
+            right={20}
+            height={40}
+            width={"auto"}
+            borderRadius={20}
+            sx={{ backgroundColor: "white", userSelect: "none" }}
+            p={2}
+            gap={2}
+            zIndex={999999}
+          >
+            <CloseIcon style={{ color: "red" }} />
+            There was a problem, Please Try Again
           </Box>
         )}
       </AnimatePresence>

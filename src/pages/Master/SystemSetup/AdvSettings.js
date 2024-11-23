@@ -23,6 +23,8 @@ import StyledButton from "../../../components/global/StyledButton";
 import CustomCheckbox from "../../../components/global/CustomCheckbox";
 import styled from "styled-components";
 import * as MaterialIcons from "@mui/icons-material";
+import { apiClient } from "../../../services/apiClient";
+import CustomDataGrid from "../../../components/global/CustomDataGrid";
 
 const BUTTONS = styled.button`
   border: none;
@@ -140,19 +142,10 @@ const AdvSettings = () => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .post(
-        `${baseUrl}/pages/Master/SystemSetup/advSettings`,
-        {
-          nBranchID: 0,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      )
+    apiClient
+      .post(`/pages/Master/SystemSetup/advSettings`, {
+        nBranchID: 0,
+      })
       .then((response) => {
         setSettingsData(response.data);
         setLoading(false);
@@ -225,20 +218,11 @@ const AdvSettings = () => {
 
     // Only proceed if there are changes
     if (updatedData.length > 0) {
-      const token = localStorage.getItem("token");
-      axios
-        .post(
-          `${baseUrl}/pages/Master/SystemSetup/advUpdate`,
-          {
-            nBranchID: 0,
-            settings: updatedData, // Send only the changed settings
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
-        )
+      apiClient
+        .post(`/pages/Master/SystemSetup/advUpdate`, {
+          nBranchID: 0,
+          settings: updatedData, // Send only the changed settings
+        })
         .then(() => {
           setSettingsSearchQuery("");
           setCategorySearchQuery("");
@@ -442,67 +426,16 @@ const AdvSettings = () => {
                     ),
                   }}
                 />
-                <DataGrid
+
+                <CustomDataGrid
                   rows={filteredSettings}
                   columns={columns}
-                  getRowId={(row) => row.ID}
                   checkboxSelection={false}
                   disableSelectionOnClick
-                  rowHeight={70}
-                  // hideFooterSelectedRowCount={true}
-                  sx={{
-                    backgroundColor: Colortheme.background,
-                    p: isMobile ? "10px" : "20px",
-                    maxHeight: "70vh",
-                    width: isMobile ? "95vw" : "auto",
-                    maxWidth: isMobile ? "75vw" : "100%",
-                    borderRadius: 0,
-
-                    border: "2px solid",
-                    borderColor: Colortheme.background,
-                    "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                      {
-                        display: "none",
-                      },
-                    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                      backgroundColor: Colortheme.background,
-                      color: Colortheme.text,
-                    },
-                    "& .MuiDataGrid-root": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiTablePagination-root": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiSvgIcon-root": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiDataGrid-toolbarContainer": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiDataGrid-footerContainer": {
-                      backgroundColor: Colortheme.background,
-                    },
-                    "& .MuiButtonBase-root": {
-                      color: Colortheme.text,
-                    },
-                    // Custom Scrollbar Styling
-                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
-                      width: "8px",
-                      height: "8px",
-                    },
-                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb": {
-                      backgroundColor: Colortheme.text,
-                      borderRadius: "8px",
-                    },
-                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track": {
-                      backgroundColor: Colortheme.secondaryBG,
-                    },
-                  }}
-                  autoPageSize
-                  // pagination
-                  // pageSizeOptions={[5, 10, 20]}
+                  getRowId={(row) => row.ID}
+                  Colortheme={Colortheme}
                 />
+
                 {filteredSettings.length > 0 && (
                   <Box
                     width={"100%"}
@@ -564,64 +497,14 @@ const AdvSettings = () => {
                 }}
               />
               <Paper sx={{ height: "90%", width: "100%", boxShadow: "none" }}>
-                <DataGrid
+                <CustomDataGrid
                   rows={filteredSettings}
                   columns={columns}
-                  getRowId={(row) => row.ID}
+                  maxHeight={"45vh"}
                   checkboxSelection={false}
                   disableSelectionOnClick
-                  rowHeight={70}
-                  hideFooterSelectedRowCount={true}
-                  sx={{
-                    backgroundColor: Colortheme.background,
-                    p: isMobile ? "10px" : "20px",
-                    maxHeight: "50vh",
-                    width: isMobile ? "95vw" : "auto",
-                    maxWidth: isMobile ? "75vw" : "100%",
-                    borderRadius: 0,
-
-                    border: "2px solid",
-                    borderColor: Colortheme.background,
-                    "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                      {
-                        display: "none",
-                      },
-                    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                      backgroundColor: Colortheme.background,
-                      color: Colortheme.text,
-                    },
-                    "& .MuiDataGrid-root": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiTablePagination-root": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiSvgIcon-root": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiDataGrid-toolbarContainer": {
-                      color: Colortheme.text,
-                    },
-                    "& .MuiDataGrid-footerContainer": {
-                      backgroundColor: Colortheme.background,
-                    },
-                    "& .MuiButtonBase-root": {
-                      color: Colortheme.text,
-                    },
-                    // Custom Scrollbar Styling
-                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
-                      width: "8px",
-                      height: "8px",
-                    },
-                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb": {
-                      backgroundColor: Colortheme.text,
-                      borderRadius: "8px",
-                    },
-                    "& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track": {
-                      backgroundColor: Colortheme.secondaryBG,
-                    },
-                  }}
-                  pageSize={10}
+                  getRowId={(row) => row.ID}
+                  Colortheme={Colortheme}
                 />
               </Paper>
               <Box display="flex" justifyContent="center">

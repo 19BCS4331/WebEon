@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import { Box, Tooltip, useMediaQuery, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,12 +9,11 @@ import CustomTextField from "../../../components/global/CustomTextField";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import { DataGrid } from "@mui/x-data-grid";
 import LazyFallBack from "../../LazyFallBack";
-import dayjs from "dayjs";
-import PartyProfileForm from "../../../components/global/FormConfig/Master/Party Profiles/PartyProfileForm";
 import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModal from "../../../components/CustomAlertModal";
-import { useBaseUrl } from "../../../contexts/BaseUrl";
 import UserProfileForm from "../../../components/global/FormConfig/Master/SystemSetup/UserProfileForm";
+import { apiClient } from "../../../services/apiClient";
+import CustomDataGrid from "../../../components/global/CustomDataGrid";
 const UserProfileIndex = () => {
   const { isGroup } = useParams();
   const [loading, setLoading] = useState(true);
@@ -31,7 +29,6 @@ const UserProfileIndex = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showAlertDialog, hideAlertDialog, showToast, hideToast } = useToast();
   const navigate = useNavigate();
-  const { baseUrl } = useBaseUrl();
 
   const titleMapping = {
     true: "User Group Profile",
@@ -44,16 +41,9 @@ const UserProfileIndex = () => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
+    apiClient
       .get(
-        `${baseUrl}/pages/Master/SystemSetup/userProfile?isGroup=${isGroup}`,
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      )
+        `/pages/Master/SystemSetup/userProfile?isGroup=${isGroup}`)
       .then((response) => {
         setRows(response.data.filter((row) => row.nUserID));
         setLoading(false);
@@ -96,16 +86,10 @@ const UserProfileIndex = () => {
 
   const DeleteFunc = async (nUserID) => {
     setLoading(true);
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `${baseUrl}/pages/Master/SystemSetup/userProfile/delete`,
-        { nUserID: nUserID },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await apiClient.post(
+        `/pages/Master/SystemSetup/userProfile/delete`,
+        { nUserID: nUserID }
       );
       console.log(response.data);
       setRows((prev) => prev.filter((row) => row.nUserID !== nUserID));
@@ -128,15 +112,10 @@ const UserProfileIndex = () => {
   };
 
   const handleFormSubmit = (formData) => {
-    const token = localStorage.getItem("token");
     setLoading(true);
     if (editData) {
-      axios
-        .put(`${baseUrl}/pages/Master/SystemSetup/userProfile`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .put(`/pages/Master/SystemSetup/userProfile`, formData)
         .then((response) => {
           setRows((prev) =>
             prev.map((row) =>
@@ -160,12 +139,8 @@ const UserProfileIndex = () => {
           }, 2000);
         });
     } else {
-      axios
-        .post(`${baseUrl}/pages/Master/SystemSetup/userProfile`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .post(`/pages/Master/SystemSetup/userProfile`, formData)
         .then((response) => {
           setRows((prev) => [...prev, response.data]);
           setShowForm(false);
@@ -269,8 +244,8 @@ const UserProfileIndex = () => {
             animate={{ x: 0 }}
             exit={{ x: -50 }}
             sx={{
-              width: "95%",
-              height: "80%",
+              // width: "95%",
+              // height: "80%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -320,15 +295,11 @@ const UserProfileIndex = () => {
               Add New Profile
             </StyledButton>
 
-            <DataGrid
+            <CustomDataGrid
               rows={filteredRows}
               columns={columns}
-              pageSize={5}
-              disableRowSelectionOnClick
-              disableColumnFilter
+              selectionModel={selectionModel}
               getRowId={(row) => row.nUserID}
-              rowSelectionModel={selectionModel}
-              onRowSelectionModelChange={handleSelectionModelChange}
               sortModel={[
                 {
                   field: "nUserID",
@@ -347,55 +318,12 @@ const UserProfileIndex = () => {
                     }
                   : { id: false }
               }
-              onModelChange={(model) => {
-                if (model.filterModel && model.filterModel.items.length > 0) {
-                  setSearchKeyword(model.filterModel.items[0].value);
-                } else {
-                  setSearchKeyword("");
-                }
-              }}
-              sx={{
-                backgroundColor: Colortheme.background,
-                p: isMobile ? "10px" : "20px",
-                maxHeight: "50vh",
-                width: isMobile ? "95vw" : "auto",
-                maxWidth: isMobile ? "75vw" : "100%",
-                border: "2px solid",
-                borderColor: Colortheme.background,
-                "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                  {
-                    display: "none",
-                  },
-                "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiTablePagination-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiSvgIcon-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-toolbarContainer": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  backgroundColor: Colortheme.background,
-                },
-                "& .MuiButtonBase-root": {
-                  color: Colortheme.text,
-                },
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 5 },
-                },
-              }}
-              pageSizeOptions={[5, 10]}
+              onSelectionModelChange={handleSelectionModelChange}
+              searchKeyword={searchKeyword}
+              setSearchKeyword={setSearchKeyword}
+              Colortheme={Colortheme}
             />
+
           </Box>
         </AnimatePresence>
       ) : (
@@ -406,8 +334,8 @@ const UserProfileIndex = () => {
           animate={{ y: 0 }}
           exit={{ y: -50 }}
           sx={{
-            width: "90vw",
-            height: "70vh",
+            // width: "90%",
+            // height: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -415,6 +343,18 @@ const UserProfileIndex = () => {
             p: 5,
             borderRadius: 10,
             overflowX: "hidden",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+              height: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: Colortheme.text,
+              borderRadius: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: Colortheme.secondaryBG,
+            },
+            
           }}
           maxWidth={isMobile ? "60vw" : "90%"}
         >
@@ -422,7 +362,7 @@ const UserProfileIndex = () => {
             <StyledButton
               onClick={() => setShowForm(false)}
               style={{
-                width: 100,
+                width: isMobile ? 60 : 100,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -431,7 +371,7 @@ const UserProfileIndex = () => {
               <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
             </StyledButton>
           </Box>
-          <Box marginTop={-10}>
+          <Box marginTop={isMobile ? -5:-10} marginBottom={2}>
             {editData ? (
               <h2 style={{ color: Colortheme.text }}>EDIT</h2>
             ) : (

@@ -1,0 +1,485 @@
+{
+  "routes": [
+    {
+      "path": "/dashboard",
+      "title": "Dashboard",
+      "description": "Main dashboard view",
+      "keywords": ["home", "main", "overview", "dashboard"]
+    },
+    {
+      "path": "/master-profiles/currency-profile",
+      "title": "Currency Profile",
+      "description": "Manage currency profiles and settings",
+      "keywords": ["currency", "forex", "exchange rate", "currency management"]
+    },
+    {
+      "path": "/master-profiles/financial-codes",
+      "title": "Financial Codes",
+      "description": "Manage financial codes and classifications",
+      "keywords": ["finance", "codes", "financial management", "accounting codes"]
+    },
+    {
+      "path": "/master-profiles/accounts-profile",
+      "title": "Accounts Profile",
+      "description": "Manage account profiles and settings",
+      "keywords": ["accounts", "profile", "account management", "financial accounts"]
+    },
+    {
+      "path": "/master-profiles/financial-sub-profile",
+      "title": "Financial Sub Profile",
+      "description": "Manage financial sub-profiles and categories",
+      "keywords": ["finance", "sub profile", "categories", "financial management"]
+    },
+    {
+      "path": "/master-profiles/division-profile",
+      "title": "Division Profile",
+      "description": "Manage organizational divisions",
+      "keywords": ["division", "department", "organization", "structure"]
+    },
+    {
+      "path": "/master-profiles/division-details",
+      "title": "Division Details",
+      "description": "View and manage detailed division information",
+      "keywords": ["division", "details", "department info", "division management"]
+    },
+    {
+      "path": "/master-profiles/ad1-provider",
+      "title": "AD1 Provider",
+      "description": "Manage AD1 provider information",
+      "keywords": ["AD1", "provider", "authorized dealer", "banking"]
+    },
+    
+    {
+      "path": "/party-profiles/CC",
+      "title": "Corporate Client Profile",
+      "description": "Manage corporate client information",
+      "keywords": ["corporate", "client", "business", "company profile"]
+    },
+    {
+      "path": "/party-profiles/FF",
+      "title": "FFMCs Profile",
+      "description": "Manage Full-Fledged Money Changers profiles",
+      "keywords": ["FFMC", "money changer", "forex dealer", "currency exchange"]
+    },
+    {
+      "path": "/party-profiles/AD",
+      "title": "Banks (A.D.) Profile",
+      "description": "Manage Authorized Dealer bank profiles",
+      "keywords": ["bank", "AD", "authorized dealer", "banking profile"]
+    },
+    {
+      "path": "/party-profiles/RM",
+      "title": "RMCs Profile",
+      "description": "Manage Restricted Money Changers profiles",
+      "keywords": ["RMC", "money changer", "restricted dealer", "forex"]
+    },
+    {
+      "path": "/party-profiles/FR",
+      "title": "Franchisee Master",
+      "description": "Manage franchisee information and profiles",
+      "keywords": ["franchisee", "partner", "business partner", "franchise"]
+    },
+    {
+      "path": "/party-profiles/EX",
+      "title": "Foreign Correspondents",
+      "description": "Manage foreign correspondent profiles",
+      "keywords": ["foreign", "correspondent", "international", "overseas partner"]
+    },
+    {
+      "path": "/party-profiles/TA",
+      "title": "Agents Profile",
+      "description": "Manage agent information and profiles",
+      "keywords": ["agent", "representative", "dealer", "partner"]
+    },
+    {
+      "path": "/party-profiles/employee-profile",
+      "title": "Employee Profile",
+      "description": "Manage employee information and settings",
+      "keywords": ["employee", "staff", "personnel", "human resources"]
+    },
+    {
+      "path": "/system-setup/company-profile",
+      "title": "Company Profile",
+      "description": "Configure company-wide settings and information",
+      "keywords": ["company", "organization", "business setup", "profile"]
+    },
+    {
+      "path": "/system-setup/branch-profile",
+      "title": "Branch/Location Profile",
+      "description": "Manage branch and location settings",
+      "keywords": ["branch", "location", "office", "site"]
+    },
+    {
+      "path": "/system-setup/UserGroup/true",
+      "title": "User Groups",
+      "description": "Manage user groups and permissions",
+      "keywords": ["groups", "teams", "user groups", "group profile", "group permissions"]
+    },
+    {
+      "path": "/system-setup/UserGroup/false",
+      "title": "User Profile",
+      "description": "Manage individual user accounts and permissions",
+      "keywords": ["user", "account", "profile", "permissions", "access"]
+    },
+    {
+      "path": "/system-setup/product-profile",
+      "title": "Product Profile",
+      "description": "Manage product configurations and settings",
+      "keywords": ["product", "configuration", "settings", "product management"]
+    },
+    {
+      "path": "/system-setup/tax-profile",
+      "title": "Tax Profile",
+      "description": "Configure tax settings and rates",
+      "keywords": ["tax", "GST", "rates", "taxation"]
+    },
+    {
+      "path": "/system-setup/monthwise-locking",
+      "title": "Monthwise Locking",
+      "description": "Manage monthly data locking settings",
+      "keywords": ["month", "lock", "period", "closing"]
+    },
+    {
+      "path": "/system-setup/mail-server-config",
+      "title": "Mail Server Configuration",
+      "description": "Configure email server settings",
+      "keywords": ["email", "mail", "SMTP", "server configuration"]
+    },
+    {
+      "path": "/system-setup/mail-sending-config",
+      "title": "Mail Sending Configuration",
+      "description": "Configure email sending settings",
+      "keywords": ["email", "sending", "notification", "mail settings"]
+    },
+    {
+      "path": "/system-setup/select-theme",
+      "title": "Select Theme",
+      "description": "Change the application's visual theme and color scheme",
+      "keywords": ["theme", "color scheme", "appearance", "visual style", "dark mode", "light mode", "customize theme", "change colors", "ui theme", "display theme"]
+    },
+    {
+      "path": "/tools/system-tools/change-password",
+      "title": "Change Password",
+      "description": "Update user password",
+      "keywords": ["password", "security", "change password", "credentials"]
+    },
+    {
+      "path": "/tools/system-tools/password-policy",
+      "title": "Password Policy",
+      "description": "Configure password requirements and policies",
+      "keywords": ["password", "policy", "security", "requirements"]
+    },
+    {
+      "path": "/tools/util/tcs-query",
+      "title": "TCS Query",
+      "description": "Query Tax Collected at Source information",
+      "keywords": ["TCS", "tax", "query", "tax collection"]
+    },
+    {
+      "path": "/lead-management/lead-handling/lead-generation",
+      "title": "Lead Generation",
+      "description": "Create and manage new business leads",
+      "keywords": ["lead", "generation", "prospect", "business development"]
+    },
+    {
+      "path": "/lead-management/lead-handling/lead-allotment",
+      "title": "Lead Allotment",
+      "description": "Assign and distribute leads",
+      "keywords": ["lead", "allotment", "assignment", "distribution"]
+    },
+    {
+      "path": "/lead-management/lead-handling/lead-process",
+      "title": "Lead Process",
+      "description": "Process and track lead progress",
+      "keywords": ["lead", "process", "tracking", "follow-up"]
+    },
+    {
+      "path": "/lead-management/lead-report/lead-status-report",
+      "title": "Lead Status Report",
+      "description": "View lead status and progress reports",
+      "keywords": ["lead", "status", "report", "tracking"]
+    },
+    {
+      "path": "/lead-management/lead-report/lead-report-by-date",
+      "title": "Lead Report By Date",
+      "description": "Generate date-wise lead reports",
+      "keywords": ["lead", "report", "date", "analytics"]
+    },
+    {
+      "path": "/transactions/accounting/receipt",
+      "title": "Receipt",
+      "description": "Process and manage receipt transactions",
+      "keywords": ["receipt", "transaction", "payment received", "accounting"]
+    },
+    {
+      "path": "/transactions/accounting/payment",
+      "title": "Payment",
+      "description": "Process and manage payment transactions",
+      "keywords": ["payment", "transaction", "pay out", "accounting"]
+    },
+    {
+      "path": "/transactions/buying-selling/buy-from-individuals",
+      "title": "Buy from Individual/Corporates",
+      "description": "Process currency purchases from individuals and corporate clients",
+      "keywords": ["buy", "purchase", "individual", "corporate", "currency exchange"]
+    },
+    {
+      "path": "/transactions/buying-selling/buy-from-ffmcs",
+      "title": "Buy from FFMCs",
+      "description": "Process currency purchases from Full-Fledged Money Changers",
+      "keywords": ["buy", "FFMC", "purchase", "money changer", "forex"]
+    },
+    {
+      "path": "/transactions/buying-selling/buy-from-rmc",
+      "title": "Buy from RMCs",
+      "description": "Process currency purchases from Restricted Money Changers",
+      "keywords": ["buy", "RMC", "purchase", "money changer", "forex"]
+    },
+    {
+      "path": "/transactions/buying-selling/sell-to-individuals",
+      "title": "Sale to Individual/Corporate",
+      "description": "Process currency sales to individuals and corporate clients",
+      "keywords": ["sell", "sale", "individual", "corporate", "currency exchange"]
+    },
+    {
+      "path": "/transactions/buying-selling/sell-to-ffmc",
+      "title": "Sale to FFMCs/ADs",
+      "description": "Process currency sales to FFMCs and Authorized Dealers",
+      "keywords": ["sell", "FFMC", "AD", "sale", "forex dealer"]
+    },
+    {
+      "path": "/transactions/buying-selling/sell-to-foreign-correspondent",
+      "title": "Sales TO Foreign Correspondent",
+      "description": "Process currency sales to foreign correspondents",
+      "keywords": ["sell", "foreign", "correspondent", "international", "sale"]
+    },
+    {
+      "path": "/transaction/stock/receipt-of-stock",
+      "title": "Receipt of Stock",
+      "description": "Process and record stock receipts",
+      "keywords": ["stock", "receipt", "inventory", "incoming stock"]
+    },
+    {
+      "path": "/transaction/stock/return-of-stock",
+      "title": "Return of Stock",
+      "description": "Process stock returns and adjustments",
+      "keywords": ["stock", "return", "inventory", "adjustment"]
+    },
+    {
+      "path": "/transaction/stock/void-of-stock",
+      "title": "Void of Stock",
+      "description": "Process stock void transactions",
+      "keywords": ["stock", "void", "cancel", "inventory adjustment"]
+    },
+    {
+      "path": "/transaction/stock/accept-stock-branch",
+      "title": "Accept Stock from Other Branch",
+      "description": "Process stock acceptance from other branches",
+      "keywords": ["stock", "accept", "branch transfer", "inventory"]
+    },
+    {
+      "path": "/transaction/stock/transfer-of-stock-branch",
+      "title": "Transfer Stock to Other Branch",
+      "description": "Process stock transfers to other branches",
+      "keywords": ["stock", "transfer", "branch", "inventory movement"]
+    },
+    {
+      "path": "/transaction/stock/transfer-of-stock-counter",
+      "title": "Transfer Stock to Other Counter",
+      "description": "Process stock transfers between counters",
+      "keywords": ["stock", "transfer", "counter", "internal movement"]
+    },
+    {
+      "path": "/transaction/stock/accept-stock-counter",
+      "title": "Accept Stock from Other Counter",
+      "description": "Process stock acceptance from other counters",
+      "keywords": ["stock", "accept", "counter", "internal transfer"]
+    },
+    {
+      "path": "/transactions/maker/receipt",
+      "title": "Receipt Maker",
+      "description": "Create and process receipt transactions",
+      "keywords": ["receipt", "maker", "create", "transaction"]
+    },
+    {
+      "path": "/transactions/maker/payment",
+      "title": "Payment Maker",
+      "description": "Create and process payment transactions",
+      "keywords": ["payment", "maker", "create", "transaction"]
+    },
+    {
+      "path": "/transactions/maker/journal-vouchers",
+      "title": "Journal Vouchers Maker",
+      "description": "Create and process journal vouchers",
+      "keywords": ["journal", "voucher", "maker", "accounting"]
+    },
+    {
+      "path": "/transactions/checker/receipt",
+      "title": "Receipt Checker",
+      "description": "Verify and approve receipt transactions",
+      "keywords": ["receipt", "checker", "approve", "verify"]
+    },
+    {
+      "path": "/transactions/checker/payment",
+      "title": "Payment Checker",
+      "description": "Verify and approve payment transactions",
+      "keywords": ["payment", "checker", "approve", "verify"]
+    },
+    {
+      "path": "/transactions/checker/journal-vouchers",
+      "title": "Journal Vouchers Checker",
+      "description": "Verify and approve journal vouchers",
+      "keywords": ["journal", "voucher", "checker", "verify"]
+    },
+    {
+      "path": "/miscellaneous/options/day-end-process",
+      "title": "Day-end Process",
+      "description": "Execute end of day procedures",
+      "keywords": ["day end", "EOD", "closing", "daily process"]
+    },
+    {
+      "path": "/miscellaneous/options/beginning-of-day",
+      "title": "Beginning of Day",
+      "description": "Execute start of day procedures",
+      "keywords": ["day start", "BOD", "opening", "daily process"]
+    },
+    {
+      "path": "/miscellaneous/options/till-sheet",
+      "title": "Till Sheet",
+      "description": "Manage and view till sheets",
+      "keywords": ["till", "cash", "balance", "sheet"]
+    },
+    {
+      "path": "/miscellaneous/options/bulk-gst",
+      "title": "BULK GST",
+      "description": "Process bulk GST transactions",
+      "keywords": ["GST", "bulk", "tax", "processing"]
+    },
+    {
+      "path": "/miscellaneous/opening-balances/all-products",
+      "title": "All Products Opening Balance",
+      "description": "Manage opening balances for all products",
+      "keywords": ["opening", "balance", "products", "initial"]
+    },
+    {
+      "path": "/miscellaneous/opening-balances/account-code",
+      "title": "Account Code Opening Balance",
+      "description": "Manage opening balances for account codes",
+      "keywords": ["opening", "balance", "account", "initial"]
+    },
+    {
+      "path": "/miscellaneous/opening-balances/sub-ledger-account",
+      "title": "Sub-Ledger Account Opening Balance",
+      "description": "Manage opening balances for sub-ledger accounts",
+      "keywords": ["opening", "balance", "sub-ledger", "initial"]
+    },
+    {
+      "path": "/tools/audit-trail/change-date-request",
+      "title": "Change Date Request",
+      "description": "Request and manage date changes",
+      "keywords": ["date", "change", "request", "audit"]
+    },
+    {
+      "path": "/tools/audit-trail/change-pax-info-request",
+      "title": "Change Pax Info Request",
+      "description": "Request and manage passenger information changes",
+      "keywords": ["pax", "passenger", "change", "information"]
+    },
+    {
+      "path": "/tools/audit-trail/change-issuer-code-request",
+      "title": "Change Issuer Code Request",
+      "description": "Request and manage issuer code changes",
+      "keywords": ["issuer", "code", "change", "request"]
+    },
+    {
+      "path": "/tools/audit-trail/change-mkt-ref-request",
+      "title": "Change Market Reference Request",
+      "description": "Request and manage market reference changes",
+      "keywords": ["market", "reference", "change", "request"]
+    },
+    {
+      "path": "/tools/audit-trail/change-card-no-request",
+      "title": "Change Card Number Request",
+      "description": "Request and manage card number changes",
+      "keywords": ["card", "number", "change", "request"]
+    },
+    {
+      "path": "/tools/audit-trail/change-agent-info-request",
+      "title": "Change Agent Info Request",
+      "description": "Request and manage agent information changes",
+      "keywords": ["agent", "information", "change", "request"]
+    },
+    {
+      "path": "/accounting-transactions/exp-inc-booking",
+      "title": "Expense/Income Booking",
+      "description": "Record expense and income transactions",
+      "keywords": ["expense", "income", "booking", "transaction"]
+    },
+    {
+      "path": "/accounting-transactions/counter-fund-out",
+      "title": "Counter Fund Transfer Out",
+      "description": "Process outgoing counter fund transfers",
+      "keywords": ["counter", "fund", "transfer", "out"]
+    },
+    {
+      "path": "/accounting-transactions/counter-fund-in",
+      "title": "Counter Fund Transfer IN",
+      "description": "Process incoming counter fund transfers",
+      "keywords": ["counter", "fund", "transfer", "in"]
+    },
+    {
+      "path": "/accounting-transactions/stock-revaluation",
+      "title": "Stock Revaluation",
+      "description": "Process stock value adjustments",
+      "keywords": ["stock", "revaluation", "value", "adjustment"]
+    },
+    {
+      "path": "/accounting-transactions/deposit-withdrawals",
+      "title": "Deposit / Withdrawals",
+      "description": "Process deposit and withdrawal transactions",
+      "keywords": ["deposit", "withdrawal", "cash", "transaction"]
+    },
+    {
+      "path": "/accounting-transactions/journal-vouchers",
+      "title": "Journal Vouchers",
+      "description": "Create and manage journal entries",
+      "keywords": ["journal", "voucher", "entry", "accounting"]
+    },
+    {
+      "path": "/accounting-transactions/fund-transfer-direct",
+      "title": "Fund Transfer Direct",
+      "description": "Process direct fund transfers",
+      "keywords": ["fund", "transfer", "direct", "transaction"]
+    },
+    {
+      "path": "/accounting-transactions/advice-debit-credit",
+      "title": "Advice of Debit/Credit",
+      "description": "Process debit and credit advices",
+      "keywords": ["advice", "debit", "credit", "notification"]
+    },
+    {
+      "path": "/accounting-transactions/advance-refund",
+      "title": "Advance Refund",
+      "description": "Process advance payment refunds",
+      "keywords": ["advance", "refund", "payment", "return"]
+    },
+    {
+      "path": "/accounting-transactions/advance-adjustment",
+      "title": "Advance Adjustment",
+      "description": "Process advance payment adjustments",
+      "keywords": ["advance", "adjustment", "payment", "reconciliation"]
+    },
+    {
+      "path": "/accounting-transactions/bank-reconciliation",
+      "title": "Bank Reconciliation",
+      "description": "Reconcile bank statements and transactions",
+      "keywords": ["bank", "reconciliation", "statement", "matching"]
+    },
+    {
+      "path": "/accounting-transactions/credit-fund-req",
+      "title": "Credit Fund Request",
+      "description": "Process credit fund requests",
+      "keywords": ["credit", "fund", "request", "finance"]
+    }
+  ]
+}

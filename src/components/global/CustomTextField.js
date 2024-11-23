@@ -315,6 +315,13 @@ const CustomTextField = ({
       sx={{
         // Autofill styling
         ...getAutofillStyles(),
+
+        "& .MuiFormHelperText-root" : {
+      color: Colortheme.text,
+      },
+      "& .MuiFormHelperText-root.Mui-error" :{
+      color: "red",
+    },
         // Existing styles
         "& .MuiInputBase-root.Mui-disabled": {
           color: "gray",

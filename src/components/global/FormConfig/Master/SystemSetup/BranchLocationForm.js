@@ -23,7 +23,6 @@ import dayjs from "dayjs";
 import CustomTextField from "../../../CustomTextField";
 import CustomDatePicker from "../../../CustomDatePicker";
 import CustomCheckbox from "../../../CustomCheckbox";
-import axios from "axios";
 import ThemeContext from "../../../../../contexts/ThemeContext";
 import styled from "styled-components";
 import StyledButton from "../../../StyledButton";
@@ -32,6 +31,7 @@ import { useBaseUrl } from "../../../../../contexts/BaseUrl";
 import CustomAutocomplete from "../../../CustomAutocomplete";
 import { DataGrid } from "@mui/x-data-grid";
 import { AuthContext } from "../../../../../contexts/AuthContext";
+import { apiClient } from "../../../../../services/apiClient";
 
 const BoxButton = styled.div`
   width: ${(props) =>
@@ -93,6 +93,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   const [bcRows, setBCRows] = useState([]);
   const [pendingBCChanges, setPendingBCChanges] = useState([]);
   const [pendingBpChanges, setPendingBpChanges] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [bpRows, setBPRows] = useState([]);
   const { token } = useContext(AuthContext);
 
@@ -104,13 +105,8 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/CompanyRecordOptions`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+    apiClient
+      .get(`/pages/Master/SystemSetup/CompanyRecordOptions`)
       .then((response) => {
         setCompanyRecordOption(response.data);
         setLoading(false);
@@ -123,13 +119,9 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/LocationOptions`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+
+    apiClient
+      .get(`/pages/Master/SystemSetup/LocationOptions`)
       .then((response) => {
         setLocationOptions(response.data);
         setLoading(false);
@@ -141,13 +133,8 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/CityOptions`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+    apiClient
+      .get(`/pages/Master/SystemSetup/CityOptions`)
       .then((response) => {
         setCityOptions(response.data);
 
@@ -161,13 +148,9 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/LocationTypeOptions`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+
+    apiClient
+      .get(`/pages/Master/SystemSetup/LocationTypeOptions`)
       .then((response) => {
         setLocationTypeOptions(response.data);
         setLoading(false);
@@ -180,15 +163,10 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/UserOptions`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+    apiClient
+      .get(`/pages/Master/SystemSetup/LocationTypeOptions`)
       .then((response) => {
-        setUserOptions(response.data);
+        setLocationTypeOptions(response.data);
         setLoading(false);
       })
       .catch((error) => {
@@ -199,13 +177,8 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/BranchOptions`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+    apiClient
+      .get(`/pages/Master/SystemSetup/BranchOptions`)
       .then((response) => {
         setBranchOptions(response.data);
         setLoading(false);
@@ -219,7 +192,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     nCompID: 1,
     vBranchCode: "",
-    // nBranchID: "",
+    nBranchID: "",
     vAddress1: "",
     vAddress2: "",
     vAddress3: "",
@@ -537,14 +510,9 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
     if (openSectionDialog === "Counter Link") {
       const fetchBC = async () => {
         try {
-          const response = await axios.post(
-            `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
-            { nBranchID: initialData.nBranchID },
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
+          const response = await apiClient.post(
+            `/pages/Master/SystemSetup/BranchCounterLink`,
+            { nBranchID: initialData.nBranchID }
           );
           const data = response.data.map((row, index) => ({
             id: row.nCounterID, // use nCounterID as unique identifier
@@ -559,31 +527,70 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
     }
   }, [openSectionDialog]);
 
+  // useEffect(() => {
+  //   if (openSectionDialog === "Product Link") {
+  //     const fetchBP = async () => {
+  //       try {
+  //         const response = await apiClient.post(
+  //           `/pages/Master/SystemSetup/BranchProductLink`,
+  //           { nBranchID: initialData.nBranchID }
+
+  //         );
+  //         const data = response.data.map((row, index) => ({
+  //           id: index, // unique identifier for the row
+  //           ...row,
+  //         }));
+  //         setBPRows(data);
+  //       } catch (error) {
+  //         console.error("Error fetching data", error);
+  //       }
+  //     };
+  //     fetchBP();
+  //   }
+  // }, [openSectionDialog]);
+
   useEffect(() => {
     if (openSectionDialog === "Product Link") {
-      const fetchBP = async () => {
+      const fetchProducts = async () => {
         try {
-          const response = await axios.post(
-            `${baseUrl}/pages/Master/SystemSetup/BranchProductLink`,
-            { nBranchID: initialData.nBranchID },
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
+          // Get all products
+          const productsResponse = await apiClient.get(
+            "/pages/Master/SystemSetup/BranchProducts"
           );
-          const data = response.data.map((row, index) => ({
-            id: index, // unique identifier for the row
-            ...row,
+          const branchResponse = await apiClient.post(
+            "/pages/Master/SystemSetup/BranchProductLink",
+            { nBranchID: initialData.nBranchID }
+          );
+
+          const products = productsResponse.data.map((product) => ({
+            ...product,
+            id: product.nProductID,
+            bActive: false,
+            bRevEffect: false,
           }));
-          setBPRows(data);
+
+          // Mark products that are linked to the branch
+          branchResponse.data.forEach((branchProduct) => {
+            const product = products.find(
+              (p) => p.PRODUCTCODE === branchProduct.vProductCode
+            );
+            if (product) {
+              product.bActive = branchProduct.bActive;
+              product.bRevEffect = branchProduct.bRevEffect;
+              product.nBranchProductLinkID = branchProduct.nBranchProductLinkID;
+            }
+          });
+
+          setAllProducts(products);
+          setBPRows(branchResponse.data);
         } catch (error) {
-          console.error("Error fetching data", error);
+          console.error("Error fetching data:", error);
         }
       };
-      fetchBP();
+
+      fetchProducts();
     }
-  }, [openSectionDialog]);
+  }, [openSectionDialog, initialData]);
 
   const renderSectionFields = () => {
     switch (openSectionDialog) {
@@ -596,7 +603,6 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vAddress1}
               onChange={handleChange}
               fullWidth
-              style={{ width: isMobile ? 250 : 280 }}
             />
             <CustomTextField
               name="vAddress2"
@@ -604,7 +610,6 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vAddress2}
               onChange={handleChange}
               fullWidth
-              style={{ width: isMobile ? 250 : 280 }}
             />
             <CustomTextField
               name="vAddress3"
@@ -612,7 +617,6 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vAddress3}
               onChange={handleChange}
               fullWidth
-              style={{ width: isMobile ? 250 : 280 }}
             />
             <CustomTextField
               select={true}
@@ -1029,7 +1033,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               </p>
             </Box>
             <DataGrid
-              rows={bpRows}
+              rows={allProducts}
               columns={bpColumns}
               pageSize={5}
               disableRowSelectionOnClick
@@ -1037,7 +1041,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
               getRowId={(row) => row.id}
               sortModel={[
                 {
-                  field: "id",
+                  field: "PRODUCTCODE",
                   sort: "asc",
                 },
               ]}
@@ -1181,15 +1185,45 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
     },
   ];
 
+  // const bpColumns = [
+  //   { field: "vProductCode", headerName: "Product", width: 150 },
+  //   {
+  //     field: "bActive",
+  //     headerName: "Active",
+  //     width: 120,
+  //     renderCell: (params) => (
+  //       <CustomCheckbox
+  //         checked={params.value}
+  //         onChange={(event) => handleBpCheckboxChange(params, event)}
+  //       />
+  //     ),
+  //   },
+  //   {
+  //     field: "bRevEffect",
+  //     headerName: "Reversal Effect",
+  //     width: 120,
+  //     renderCell: (params) => (
+  //       <CustomCheckbox
+  //         checked={params.value}
+  //         onChange={(event) => handleBpRevCheckboxChange(params, event)}
+  //       />
+  //     ),
+  //   },
+  // ];
+
   const bpColumns = [
-    { field: "vProductCode", headerName: "Product", width: 150 },
+    {
+      field: "PRODUCTCODE", // Changed from vProductCode to match the new data structure
+      headerName: "Product",
+      width: 150,
+    },
     {
       field: "bActive",
       headerName: "Active",
       width: 120,
       renderCell: (params) => (
         <CustomCheckbox
-          checked={params.value}
+          checked={params.value || false}
           onChange={(event) => handleBpCheckboxChange(params, event)}
         />
       ),
@@ -1200,7 +1234,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
       width: 120,
       renderCell: (params) => (
         <CustomCheckbox
-          checked={params.value}
+          checked={params.value || false}
           onChange={(event) => handleBpRevCheckboxChange(params, event)}
         />
       ),
@@ -1218,7 +1252,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   //     );
 
   //     // Send update request to the backend
-  //     await axios.put(
+  //     await apiClient.put(
   //       `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
   //       {
   //         nCounterID: params.row.nCounterID,
@@ -1247,7 +1281,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   //     );
 
   //     // Send update request to the backend
-  //     await axios.put(
+  //     await apiClient.put(
   //       `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
   //       {
   //         nCounterID: params.row.nCounterID,
@@ -1292,15 +1326,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
     try {
       await Promise.all(
         pendingBCChanges.map((change) =>
-          axios.put(
-            `${baseUrl}/pages/Master/SystemSetup/BranchCounterLink`,
-            change,
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
-          )
+          apiClient.put(`/pages/Master/SystemSetup/BranchCounterLink`, change)
         )
       );
 
@@ -1321,92 +1347,141 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
   };
 
   const handleBpCheckboxChange = (params, event) => {
-    const newIsActive = !params.row.bActive;
+    const newIsActive = event.target.checked;
 
-    // Update the state
-    setBPRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === params.id ? { ...row, bActive: newIsActive } : row
+    // Update allProducts state
+    setAllProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product.id === params.row.id
+          ? { ...product, bActive: newIsActive }
+          : product
       )
     );
 
     // Add or update the change in the pending changes list
     setPendingBpChanges((prevChanges) => {
       const existingChangeIndex = prevChanges.findIndex(
-        (change) =>
-          change.nBranchProductLinkID === params.row.nBranchProductLinkID
+        (change) => change.PRODUCTCODE === params.row.PRODUCTCODE
       );
 
+      const changeData = {
+        nBranchProductLinkID: params.row.nBranchProductLinkID || null,
+        PRODUCTCODE: params.row.PRODUCTCODE,
+        bActive: newIsActive,
+        bRevEffect: params.row.bRevEffect || false,
+        vBranchCode: initialData.vBranchCode,
+        nBranchID: initialData.nBranchID,
+      };
+
       if (existingChangeIndex !== -1) {
-        // Update the existing change
+        // Update existing change
         const updatedChanges = [...prevChanges];
-        updatedChanges[existingChangeIndex].bActive = newIsActive;
+        updatedChanges[existingChangeIndex] = {
+          ...updatedChanges[existingChangeIndex],
+          ...changeData,
+        };
         return updatedChanges;
       }
 
-      return [
-        ...prevChanges,
-        {
-          nBranchProductLinkID: params.row.nBranchProductLinkID,
-          bActive: newIsActive,
-          bRevEffect: params.row.bRevEffect,
-        },
-      ];
+      // Add new change
+      return [...prevChanges, changeData];
     });
   };
 
-  // Function to handle checkbox state change for bRevEffect
   const handleBpRevCheckboxChange = (params, event) => {
-    const newRevEffect = !params.row.bRevEffect;
+    const newRevEffect = event.target.checked;
 
-    // Update the state
-    setBPRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === params.id ? { ...row, bRevEffect: newRevEffect } : row
+    // Update allProducts state
+    setAllProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product.id === params.row.id
+          ? { ...product, bRevEffect: newRevEffect }
+          : product
       )
     );
 
     // Add or update the change in the pending changes list
     setPendingBpChanges((prevChanges) => {
       const existingChangeIndex = prevChanges.findIndex(
-        (change) =>
-          change.nBranchProductLinkID === params.row.nBranchProductLinkID
+        (change) => change.PRODUCTCODE === params.row.PRODUCTCODE
       );
 
+      const changeData = {
+        nBranchProductLinkID: params.row.nBranchProductLinkID || null,
+        PRODUCTCODE: params.row.PRODUCTCODE,
+        bActive: params.row.bActive || false,
+        bRevEffect: newRevEffect,
+        vBranchCode: initialData.vBranchCode,
+        nBranchID: initialData.nBranchID,
+      };
+
       if (existingChangeIndex !== -1) {
-        // Update the existing change
+        // Update existing change
         const updatedChanges = [...prevChanges];
-        updatedChanges[existingChangeIndex].bRevEffect = newRevEffect;
+        updatedChanges[existingChangeIndex] = {
+          ...updatedChanges[existingChangeIndex],
+          ...changeData,
+        };
         return updatedChanges;
       }
 
-      return [
-        ...prevChanges,
-        {
-          nBranchProductLinkID: params.row.nBranchProductLinkID,
-          bActive: params.row.bActive,
-          bRevEffect: newRevEffect,
-        },
-      ];
+      // Add new change
+      return [...prevChanges, changeData];
     });
   };
 
-  // Function to save the changes to the database for BranchProductLink
   const saveBpChanges = async () => {
     try {
       await Promise.all(
-        pendingBpChanges.map((change) =>
-          axios.put(
-            `${baseUrl}/pages/Master/SystemSetup/BranchProductLink`,
-            change,
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
-          )
-        )
+        pendingBpChanges.map(async (change) => {
+          if (change.nBranchProductLinkID) {
+            // Update existing record
+            return apiClient.put(
+              `/pages/Master/SystemSetup/BranchProductLink`,
+              change
+            );
+          } else {
+            // Insert new record
+            return apiClient.post(
+              `/pages/Master/SystemSetup/BranchProductLink/new`,
+              change
+            );
+          }
+        })
       );
+
+      // Refresh the data after saving
+      if (openSectionDialog === "Product Link") {
+        const productsResponse = await apiClient.get(
+          "/pages/Master/SystemSetup/BranchProducts"
+        );
+        const branchResponse = await apiClient.post(
+          "/pages/Master/SystemSetup/BranchProductLink",
+          { nBranchID: initialData.nBranchID }
+        );
+
+        const products = productsResponse.data.map((product) => ({
+          ...product,
+          id: product.nProductID,
+          bActive: false,
+          bRevEffect: false,
+        }));
+
+        // Update active status based on branch response
+        branchResponse.data.forEach((branchProduct) => {
+          const product = products.find(
+            (p) => p.PRODUCTCODE === branchProduct.vProductCode
+          );
+          if (product) {
+            product.bActive = branchProduct.bActive;
+            product.bRevEffect = branchProduct.bRevEffect;
+            product.nBranchProductLinkID = branchProduct.nBranchProductLinkID;
+          }
+        });
+
+        setAllProducts(products);
+        setBPRows(branchResponse.data);
+      }
 
       // Clear the pending changes after successful save
       setPendingBpChanges([]);
@@ -1439,143 +1514,122 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
         rowGap={"40px"}
         p={2}
       >
-        <Box>
-          <CustomTextField
-            select={true}
-            name="nCompID"
-            label="Company Name"
-            value={formData.nCompID}
-            onChange={handleChange}
-            fullWidth
-            disabled
-          >
-            <MenuItem value="" key="companyRecordOption">
-              Select
-            </MenuItem>
-            {companyRecordOption &&
-              companyRecordOption.map((item) => (
-                <MenuItem value={item.value} key={item.value}>
-                  {item.label}
-                </MenuItem>
-              ))}
-          </CustomTextField>
-        </Box>
-        <Box>
-          <CustomTextField
-            name="vBranchCode"
-            label="Branch Code"
-            value={formData.vBranchCode}
-            onChange={handleChange}
-            fullWidth
-            style={isMobile ? { width: "100%" } : {}}
-          />
-        </Box>
+        <CustomTextField
+          select={true}
+          name="nCompID"
+          label="Company Name"
+          value={formData.nCompID}
+          onChange={handleChange}
+          fullWidth
+          disabled
+        >
+          <MenuItem value="" key="companyRecordOption">
+            Select
+          </MenuItem>
+          {companyRecordOption &&
+            companyRecordOption.map((item) => (
+              <MenuItem value={item.value} key={item.value}>
+                {item.label}
+              </MenuItem>
+            ))}
+        </CustomTextField>
+
+        <CustomTextField
+          name="vBranchCode"
+          label="Branch Code"
+          value={formData.vBranchCode}
+          onChange={handleChange}
+          fullWidth
+          // style={isMobile ? { width: "100%" } : {}}
+        />
+
         {initialData && (
-          <Box>
-            <CustomTextField
-              disabled
-              name="nBranchID"
-              label="Branch Number"
-              value={formData.nBranchID}
-              onChange={handleChange}
-              fullWidth
-              style={isMobile ? { width: "100%" } : {}}
-            />
-          </Box>
+          <CustomTextField
+            disabled
+            name="nBranchID"
+            label="Branch Number"
+            value={formData.nBranchID}
+            onChange={handleChange}
+            fullWidth
+            // style={isMobile ? { width: "100%" } : {}}
+          />
         )}
 
-        <Box>
-          <BoxButton
-            isMobile={isMobile}
-            onClick={() => handleSectionEdit("Location / Contact Details")}
-            style={{ width: isMobile ? "100%" : 200 }}
-          >
-            Location / Contact Details
-          </BoxButton>
-        </Box>
+        <BoxButton
+          isMobile={isMobile}
+          onClick={() => handleSectionEdit("Location / Contact Details")}
+          // style={{ width: isMobile ? "100%" : 200 }}
+        >
+          Location / Contact Details
+        </BoxButton>
 
-        <Box>
-          <BoxButton
-            isMobile={isMobile}
-            onClick={() => handleSectionEdit("Settings")}
-            style={{ width: isMobile ? "100%" : 200 }}
-          >
-            Settings
-          </BoxButton>
-        </Box>
+        <BoxButton
+          isMobile={isMobile}
+          onClick={() => handleSectionEdit("Settings")}
+          // style={{ width: isMobile ? "100%" : 200 }}
+        >
+          Settings
+        </BoxButton>
 
-        <Box>
-          <BoxButton
-            isMobile={isMobile}
-            onClick={() => handleSectionEdit("IBM Details")}
-            style={{ width: isMobile ? "100%" : 200 }}
-          >
-            IBM Details
-          </BoxButton>
-        </Box>
+        <BoxButton
+          isMobile={isMobile}
+          onClick={() => handleSectionEdit("IBM Details")}
+          // style={{ width: isMobile ? "100%" : 200 }}
+        >
+          IBM Details
+        </BoxButton>
 
-        <Box>
-          <CustomTextField
-            name="vRBILicenseNo"
-            label="RBI License Number"
-            value={formData.vRBILicenseNo}
-            onChange={handleChange}
-            fullWidth
-            style={isMobile ? { width: "100%" } : {}}
-          />
-        </Box>
-        <Box>
-          <CustomDatePicker
-            name="dRBIRegDate"
-            label="RBI Reg Date"
-            value={formData.dRBIRegDate}
-            onChange={handleRBIRegDateChange}
-          />
-        </Box>
+        <CustomTextField
+          name="vRBILicenseNo"
+          label="RBI License Number"
+          value={formData.vRBILicenseNo}
+          onChange={handleChange}
+          fullWidth
+          // style={isMobile ? { width: "100%" } : {}}
+        />
 
-        <Box>
-          <CustomTextField
-            name="nLastTCSettRefNo"
-            label="Last Settlement Ref"
-            value={formData.nLastTCSettRefNo}
-            onChange={handleChange}
-            fullWidth
-            style={isMobile ? { width: "100%" } : {}}
-          />
-        </Box>
+        <CustomDatePicker
+          name="dRBIRegDate"
+          label="RBI Reg Date"
+          value={formData.dRBIRegDate}
+          onChange={handleRBIRegDateChange}
+        />
 
-        <Box>
-          <CustomTextField
-            name="vAuthorizedSignatory"
-            label="Authorized Signatory"
-            value={formData.vAuthorizedSignatory}
-            onChange={handleChange}
-            fullWidth
-            style={isMobile ? { width: "100%" } : {}}
-          />
-        </Box>
+        <CustomTextField
+          name="nLastTCSettRefNo"
+          label="Last Settlement Ref"
+          value={formData.nLastTCSettRefNo}
+          onChange={handleChange}
+          fullWidth
+          // style={isMobile ? { width: "100%" } : {}}
+        />
+
+        <CustomTextField
+          name="vAuthorizedSignatory"
+          label="Authorized Signatory"
+          value={formData.vAuthorizedSignatory}
+          onChange={handleChange}
+          fullWidth
+          // style={isMobile ? { width: "100%" } : {}}
+        />
 
         {initialData && (
           <>
-            <Box>
-              <BoxButtonLink
-                isMobile={isMobile}
-                onClick={() => handleSectionEdit("Counter Link")}
-                style={{ width: isMobile ? "100%" : 200 }}
-              >
-                Counter Link
-              </BoxButtonLink>
-            </Box>
+            <BoxButtonLink
+              isMobile={isMobile}
+              onClick={() => handleSectionEdit("Counter Link")}
+              // style={{ width: isMobile ? "100%" : 200 }}
+            >
+              Counter Link
+            </BoxButtonLink>
 
-            <Box>
-              <BoxButtonLink
-                isMobile={isMobile}
-                onClick={() => handleSectionEdit("Product Link")}
-                style={{ width: isMobile ? "100%" : 200 }}
-              >
-                Product Link
-              </BoxButtonLink>
-            </Box>
+            <BoxButtonLink
+              isMobile={isMobile}
+              onClick={() => handleSectionEdit("Product Link")}
+              // style={{ width: isMobile ? "100%" : 200 }}
+            >
+              Product Link
+            </BoxButtonLink>
 
             {/* <Box>
               <BoxButtonLink
@@ -1588,14 +1642,13 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
             </Box> */}
           </>
         )}
-        <Box>
-          <CustomCheckbox
-            name="bActive"
-            checked={formData.bActive}
-            onChange={handleChange}
-            label="Active"
-          />
-        </Box>
+
+        <CustomCheckbox
+          name="bActive"
+          checked={formData.bActive}
+          onChange={handleChange}
+          label="Active"
+        />
       </Box>
       <Box display={"flex"} justifyContent={"center"} marginTop={5}>
         <Box
@@ -1645,7 +1698,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
         <DialogContent>
           <Box
             sx={{
-              height: 500,
+              // height: '60vh',
               marginTop: 2,
               border: isMobile ? "none" : `1px solid ${Colortheme.text}`,
               borderRadius: "10px",
@@ -1665,12 +1718,7 @@ const BranchLocationForm = ({ initialData, onSubmit, onCancel }) => {
                   : isMobile
                   ? "repeat(1, 1fr)"
                   : "repeat(4, 1fr)",
-              gridTemplateRows:
-                openSectionDialog === "Counter Link" ||
-                openSectionDialog === "Product Link"
-                  ? "none"
-                  : "repeat(3, 1fr)",
-              rowGap: "25px",
+              rowGap: 3,
             }}
           >
             {renderSectionFields()}

@@ -34,6 +34,7 @@ import { useToast } from "../../../../../contexts/ToastContext";
 import { useBaseUrl } from "../../../../../contexts/BaseUrl";
 import { DataGrid } from "@mui/x-data-grid";
 import CircularProgress from "@mui/material/CircularProgress";
+import { apiClient } from "../../../../../services/apiClient";
 
 const BoxButton = styled.div`
   ${(props) => {
@@ -155,6 +156,30 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   });
   const [selectedGroup, setSelectedGroup] = useState(initialData?.nUserID);
 
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
+  const [isCheckingName, setIsCheckingName] = useState(false);
+  const [codeExists, setCodeExists] = useState(false);
+  const [nameExists, setNameExists] = useState(false);
+  // Add these state variables at the top with other useState declarations
+  const [codeBlurred, setCodeBlurred] = useState(false);
+  const [nameBlurred, setNameBlurred] = useState(false);
+
+  const checkAvailability = async (type, value) => {
+    if (!value) return;
+    try {
+      const endpoint = type === "code" ? "/checkCode" : "/checkName";
+      const body = type === "code" ? { vUID: value } : { vName: value };
+      const response = await apiClient.post(
+        `/pages/Master/SystemSetup/${endpoint}`,
+        body
+      );
+      return response.data.exists;
+    } catch (error) {
+      console.error(`Error checking ${type}:`, error);
+      return false;
+    }
+  };
+
   const getGridTemplateColumns = () => {
     if (isMobile) return "repeat(1, 1fr)";
     if (isTablet) return "repeat(2, 1fr)";
@@ -165,16 +190,10 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
 
   // Fetch Navigation Items
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const fetchNavigationItems = async () => {
       try {
-        const response = await axios.get(
-          `${baseUrl}/pages/Master/SystemSetup/all-navigation`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
+        const response = await apiClient.get(
+          `/pages/Master/SystemSetup/all-navigation`
         );
         setNavigationItems(response.data);
       } catch (error) {
@@ -187,17 +206,11 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   // User Counter Link
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     // Fetch the data from the backend
     if (!isGroupBool) {
-      axios
+      apiClient
         .get(
-          `${baseUrl}/pages/Master/SystemSetup/UserProfile/counters?userId=${selectedGroup}`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
+          `/pages/Master/SystemSetup/UserProfile/counters?userId=${selectedGroup}`
         )
         .then((response) => {
           setCounterLink(response.data);
@@ -208,62 +221,15 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     }
   }, [isGroupBool, selectedGroup]);
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   // Fetch all branches
-  //   if (!isGroupBool) {
-  //     axios
-  //       .get(`${baseUrl}/pages/Master/SystemSetup/UserProfile/branchesOnUser`, {
-  //         headers: {
-  //           Authorization: "Bearer " + token,
-  //         },
-  //       })
-  //       .then((response) => {
-  //         setBranches(response.data);
-  //       })
-  //       .catch((error) => {
-  //         console.error("Error fetching branches", error);
-  //       });
-
-  //     // Fetch user branch links
-  //     axios
-  //       .get(
-  //         `${baseUrl}/pages/Master/SystemSetup/UserProfile/userBranchLinks?userId=${selectedGroup}`,
-  //         {
-  //           headers: {
-  //             Authorization: "Bearer " + token,
-  //           },
-  //         }
-  //       )
-  //       .then((response) => {
-  //         setBranchLinks(response.data);
-  //       })
-  //       .catch((error) => {
-  //         console.error("Error fetching user branch links", error);
-  //       });
-  //   }
-  // }, [isGroupBool, selectedGroup]);
-
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (!isGroupBool) {
       // Fetch all branches
-      const fetchBranches = axios.get(
-        `${baseUrl}/pages/Master/SystemSetup/UserProfile/branchesOnUser`,
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
+      const fetchBranches = apiClient.get(
+        `/pages/Master/SystemSetup/UserProfile/branchesOnUser`
       );
       // Fetch user branch links
-      const fetchUserBranchLinks = axios.get(
-        `${baseUrl}/pages/Master/SystemSetup/UserProfile/userBranchLinks?userId=${selectedGroup}`,
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
+      const fetchUserBranchLinks = apiClient.get(
+        `/pages/Master/SystemSetup/UserProfile/userBranchLinks?userId=${selectedGroup}`
       );
 
       Promise.all([fetchBranches, fetchUserBranchLinks])
@@ -334,17 +300,12 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     console.log("Unsaved Changes:", unsavedBranchLinksChanges); // Log unsaved changes for debugging
     Promise.all(
       unsavedBranchLinksChanges.map((change) =>
-        axios.post(
-          `${baseUrl}/pages/Master/SystemSetup/UserProfile/updateUserBranchLink`,
+        apiClient.post(
+          `/pages/Master/SystemSetup/UserProfile/updateUserBranchLink`,
           {
             userId: selectedGroup,
             branchId: change.branchId,
             isActive: change.isActive,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
           }
         )
       )
@@ -374,21 +335,15 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
 
   const SaveUserCounterLink = () => {
     setLoading(true);
-    const token = localStorage.getItem("token");
     Promise.all(
       unsavedChanges.map((change) =>
-        axios.post(
-          `${baseUrl}/pages/Master/SystemSetup/UserProfile/updateCounterAccess`,
+        apiClient.post(
+          `/pages/Master/SystemSetup/UserProfile/updateCounterAccess`,
           {
             userId: selectedGroup,
             branchId: change.branchId,
             counterId: change.counterId,
             isActive: change.isActive,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
           }
         )
       )
@@ -419,20 +374,15 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   // User Counter Link END
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const fetchRights = async () => {
       if (!selectedGroup) return;
 
       try {
         const endpoint = isGroupBool
-          ? `${baseUrl}/pages/Master/SystemSetup/UserProfile/group-rights?groupId=${selectedGroup}`
-          : `${baseUrl}/pages/Master/SystemSetup/UserProfile/user-rights?userId=${selectedGroup}`;
+          ? `/pages/Master/SystemSetup/UserProfile/group-rights?groupId=${selectedGroup}`
+          : `/pages/Master/SystemSetup/UserProfile/user-rights?userId=${selectedGroup}`;
 
-        const response = await axios.get(endpoint, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
+        const response = await apiClient.get(endpoint, {});
 
         const rightsData = response.data.reduce((acc, item) => {
           acc[item.id] = {
@@ -501,14 +451,10 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
 
     try {
       const endpoint = isGroupBool
-        ? `${baseUrl}/pages/Master/SystemSetup/UserProfile/group-rights?parentId=${parent.id}&groupId=${selectedGroup}`
-        : `${baseUrl}/pages/Master/SystemSetup/UserProfile/user-rights?parentId=${parent.id}&userID=${selectedGroup}`;
+        ? `/pages/Master/SystemSetup/UserProfile/group-rights?parentId=${parent.id}&groupId=${selectedGroup}`
+        : `/pages/Master/SystemSetup/UserProfile/user-rights?parentId=${parent.id}&userID=${selectedGroup}`;
 
-      const response = await axios.get(endpoint, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
+      const response = await apiClient.get(endpoint, {});
 
       const rightsData = response.data.reduce((acc, item) => {
         acc[item.id] = {
@@ -642,13 +588,12 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   };
 
   const handleSaveRights = async () => {
-    const token = localStorage.getItem("token");
     if (!selectedParent || !selectedGroup) return;
 
     try {
       const endpoint = isGroupBool
-        ? `${baseUrl}/pages/Master/SystemSetup/UserProfile/update-group-rights`
-        : `${baseUrl}/pages/Master/SystemSetup/UserProfile/update-user-rights`;
+        ? `/pages/Master/SystemSetup/UserProfile/update-group-rights`
+        : `/pages/Master/SystemSetup/UserProfile/update-user-rights`;
 
       const rightsData = isGroupBool ? groupRights : userRights;
 
@@ -664,11 +609,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
             rights: rightsData,
           };
 
-      await axios.post(endpoint, requestBody, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
+      await apiClient.post(endpoint, requestBody);
       showToast("Rights updated successfully!", "success");
       setTimeout(() => {
         hideToast();
@@ -681,219 +622,6 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
       }, 2000);
     }
   };
-
-  // const renderRightsTable = () => {
-  //   if (!selectedParent) {
-  //     return (
-  //       <CustomScrollbarBox
-  //         display={"flex"}
-  //         width={"100%"}
-  //         height={"100%"}
-  //         textAlign={"center"}
-  //         borderRadius={"20px"}
-  //         sx={{ color: Colortheme.text, fontSize: "20px", fontWeight: "bold" }}
-  //         justifyContent={"center"}
-  //         alignItems={"center"}
-  //       >
-  //         Select a parent item to configure rights
-  //       </CustomScrollbarBox>
-  //     );
-  //   }
-
-  //   const rightsData = isGroupBool ? groupRights : userRights;
-
-  //   const rows = selectedParent.subItems.map((child) => ({
-  //     id: child.id,
-  //     name: child.name,
-  //     add: rightsData[child.id]?.add ?? false,
-  //     modify: rightsData[child.id]?.modify ?? false,
-  //     delete: rightsData[child.id]?.delete ?? false,
-  //     view: rightsData[child.id]?.view ?? false,
-  //     export: rightsData[child.id]?.export ?? false,
-  //   }));
-
-  //   const columns = [
-  //     { field: "name", headerName: "Menu Item", width: 200, sortable: false },
-  //     {
-  //       field: "add",
-  //       headerName: (
-  //         <CustomCheckbox
-  //           name="add"
-  //           label="Add"
-  //           checked={selectAll.add}
-  //           onChange={handleSelectAllChange}
-  //         />
-  //       ),
-  //       width: 150,
-  //       sortable: false,
-  //       renderCell: (params) => (
-  //         <CustomCheckbox
-  //           name={`${params.row.id}_add`}
-  //           checked={params.value || false}
-  //           onChange={handleRightsChange}
-  //         />
-  //       ),
-  //     },
-  //     {
-  //       field: "modify",
-  //       headerName: (
-  //         <CustomCheckbox
-  //           name="modify"
-  //           label="Modify"
-  //           checked={selectAll.modify}
-  //           onChange={handleSelectAllChange}
-  //         />
-  //       ),
-  //       width: 150,
-  //       sortable: false,
-  //       renderCell: (params) => (
-  //         <CustomCheckbox
-  //           name={`${params.row.id}_modify`}
-  //           checked={params.value || false}
-  //           onChange={handleRightsChange}
-  //         />
-  //       ),
-  //     },
-  //     {
-  //       field: "delete",
-  //       headerName: (
-  //         <CustomCheckbox
-  //           name="delete"
-  //           label="Delete"
-  //           checked={selectAll.delete}
-  //           onChange={handleSelectAllChange}
-  //         />
-  //       ),
-  //       width: 150,
-  //       sortable: false,
-  //       renderCell: (params) => (
-  //         <CustomCheckbox
-  //           name={`${params.row.id}_delete`}
-  //           checked={params.value || false}
-  //           onChange={handleRightsChange}
-  //         />
-  //       ),
-  //     },
-  //     {
-  //       field: "view",
-  //       headerName: (
-  //         <CustomCheckbox
-  //           name="view"
-  //           label="View"
-  //           checked={selectAll.view}
-  //           onChange={handleSelectAllChange}
-  //         />
-  //       ),
-  //       width: 150,
-  //       sortable: false,
-  //       renderCell: (params) => (
-  //         <CustomCheckbox
-  //           name={`${params.row.id}_view`}
-  //           checked={params.value || false}
-  //           onChange={handleRightsChange}
-  //         />
-  //       ),
-  //     },
-  //     {
-  //       field: "export",
-  //       headerName: (
-  //         <CustomCheckbox
-  //           name="export"
-  //           label="Export"
-  //           checked={selectAll.export}
-  //           onChange={handleSelectAllChange}
-  //         />
-  //       ),
-  //       width: 150,
-  //       sortable: false,
-  //       renderCell: (params) => (
-  //         <CustomCheckbox
-  //           name={`${params.row.id}_export`}
-  //           checked={params.value || false}
-  //           onChange={handleRightsChange}
-  //         />
-  //       ),
-  //     },
-  //   ];
-
-  //   return (
-  //     <CustomScrollbarBox style={{ flex: 2, padding: "0 20px" }}>
-  //       <h3 style={{ color: Colortheme.text, textAlign: "center" }}>
-  //         Rights for {selectedParent.name}
-  //       </h3>
-  //       <CustomScrollbarBox style={{ height: 400, width: "100%" }}>
-  //         {loading ? (
-  //           <Box
-  //             sx={{
-  //               display: "flex",
-  //               height: "90%",
-  //               alignItems: "center",
-  //               justifyContent: "center",
-  //             }}
-  //           >
-  //             <CircularProgress
-  //               size="50px"
-  //               style={{ color: Colortheme.text }}
-  //             />
-  //           </Box>
-  //         ) : (
-  //           <DataGrid
-  //             rows={rows}
-  //             columns={columns}
-  //             pageSize={5}
-  //             disableSelectionOnClick
-  //             sx={{
-  //               backgroundColor: Colortheme.background,
-  //               p: isMobile ? "10px" : "20px",
-  //               maxHeight: "50vh",
-  //               width: isMobile ? "95vw" : "auto",
-  //               maxWidth: isMobile ? "75vw" : "100%",
-  //               border: "2px solid",
-  //               borderColor: Colortheme.background,
-  //               "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-  //                 {
-  //                   display: "none",
-  //                 },
-  //               "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-  //                 backgroundColor: Colortheme.background,
-  //                 color: Colortheme.text,
-  //               },
-  //               "& .MuiDataGrid-root": {
-  //                 color: Colortheme.text,
-  //               },
-  //               "& .MuiTablePagination-root": {
-  //                 color: Colortheme.text,
-  //               },
-  //               "& .MuiSvgIcon-root": {
-  //                 color: Colortheme.text,
-  //               },
-  //               "& .MuiDataGrid-toolbarContainer": {
-  //                 color: Colortheme.text,
-  //               },
-  //               "& .MuiDataGrid-footerContainer": {
-  //                 backgroundColor: Colortheme.background,
-  //               },
-  //               "& .MuiButtonBase-root": {
-  //                 color: Colortheme.text,
-  //               },
-  //             }}
-  //           />
-  //         )}
-  //       </CustomScrollbarBox>
-  //       <CustomScrollbarBox
-  //         width={"100%"}
-  //         display={"flex"}
-  //         justifyContent={"center"}
-  //         // marginTop={"20px"}
-  //         marginBottom={"20px"}
-  //       >
-  //         <StyledButton color="primary" onClick={handleSaveRights}>
-  //           Save
-  //         </StyledButton>
-  //       </CustomScrollbarBox>
-  //     </CustomScrollbarBox>
-  //   );
-  // };
 
   const renderRightsTable = () => {
     if (!selectedParent) {
@@ -1133,77 +861,6 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     );
   };
 
-  // const renderNavigationTree = (items) => {
-  //   return items.map((item) => {
-  //     if (
-  //       item.parent_id === null &&
-  //       item.subItems &&
-  //       item.subItems.length > 0
-  //     ) {
-  //       return (
-  //         <CustomScrollbarBox key={item.id}>
-  //           <CustomScrollbarBox
-  //             onClick={() => handleSuperParentClick(item)}
-  //             sx={{
-  //               color: Colortheme.text,
-  //               cursor: "pointer",
-  //               fontSize: "16px",
-  //               marginTop: "10px",
-  //               marginBottom: "10px",
-  //               border: `1px solid ${Colortheme.text}`,
-  //               padding: "10px",
-  //               borderRadius: "10px",
-  //               display: "flex",
-  //               alignItems: "center",
-  //               justifyContent: "space-between",
-  //             }}
-  //           >
-  //             {item.name}
-  //             {expandedSuperParent === item ? <ExpandLess /> : <ExpandMore />}
-  //           </CustomScrollbarBox>
-
-  //           <Collapse
-  //             in={expandedSuperParent === item}
-  //             timeout="auto"
-  //             unmountOnExit
-  //           >
-  //             <CustomScrollbarBox
-  //               display={"flex"}
-  //               flexDirection={"column"}
-  //               width={"100%"}
-  //               alignItems={"center"}
-  //               sx={{
-  //                 transition: "all 0.3s ease",
-  //               }}
-  //             >
-  //               {item.subItems.map((subItem) => (
-  //                 <CustomScrollbarBox
-  //                   key={subItem.id}
-  //                   onClick={() => handleParentClick(subItem)}
-  //                   sx={{
-  //                     color: Colortheme.text,
-  //                     width: "70%",
-  //                     cursor: "pointer",
-  //                     fontSize: "15px",
-  //                     marginTop: "5px",
-  //                     marginBottom: "5px",
-  //                     border: `1px solid ${Colortheme.text}`,
-  //                     padding: "10px",
-  //                     borderRadius: "10px",
-  //                   }}
-  //                 >
-  //                   {subItem.name}
-  //                 </CustomScrollbarBox>
-  //               ))}
-  //             </CustomScrollbarBox>
-  //           </Collapse>
-  //         </CustomScrollbarBox>
-  //       );
-  //     }
-  //     return null;
-  //   });
-  // };
-
   const renderNavigationTree = (items) => {
     return items.map((item) => {
       if (
@@ -1283,16 +940,10 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const fetchBranchList = async () => {
       try {
-        const response = await axios.get(
-          `${baseUrl}/pages/Master/SystemSetup/userProfile/BranchOptions`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
+        const response = await apiClient.get(
+          `/pages/Master/SystemSetup/userProfile/BranchOptions`
         );
         setBranchList(response.data);
       } catch (error) {
@@ -1302,13 +953,8 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
 
     const fetchGroupList = async () => {
       try {
-        const response = await axios.get(
-          `${baseUrl}/pages/Master/SystemSetup/userProfile/GroupOptions`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
+        const response = await apiClient.get(
+          `/pages/Master/SystemSetup/userProfile/GroupOptions`
         );
         setGroupList(response.data);
       } catch (error) {
@@ -1329,7 +975,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     vMailID: "",
     bActive: false,
     dValidTill: null,
-    bIsGroup: false,
+    bIsGroup: isGroupBool ? true : false,
     nGroupPriority: "",
     nBranchID: "",
     bIsAdministrator: false,
@@ -1549,8 +1195,139 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     }
   }, [formData.bIsAdministrator]);
 
+  // const handleChange = (e) => {
+  //   const { name, value, type, checked } = e.target;
+
+  //   setFormData((prevData) => {
+  //     const updatedData = {
+  //       ...prevData,
+  //       [name]: type === "checkbox" ? checked : value,
+  //     };
+
+  //     if (name === "bIsAdministrator") {
+  //       const checkboxes = [
+  //         "bMiscLimitAuthorization",
+  //         "bCanClearCounter",
+  //         "bComplianceAuthorization",
+  //         "bDataEntryAuthorization",
+  //         "bCreditLimitAuthorization",
+  //         "bCanOptCentralM",
+  //         "BDATAENTRYPRIVILEGE",
+  //         "bSpecialRights",
+  //         "bIsOrderCreation",
+  //         "bIsOrderAllotment",
+  //       ];
+
+  //       checkboxes.forEach((checkbox) => {
+  //         updatedData[checkbox] = checked;
+  //       });
+  //     }
+
+  //     return updatedData;
+  //   });
+
+  //   setFieldErrors((prevErrors) => ({
+  //     ...prevErrors,
+  //     [name]: false,
+  //   }));
+  // };
+
+  // const handleChange = async (e) => {
+  //   const { name, value, type, checked } = e.target;
+
+  //   setFormData((prevData) => {
+  //     const updatedData = {
+  //       ...prevData,
+  //       [name]: type === "checkbox" ? checked : value,
+  //     };
+
+  //     if (name === "bIsAdministrator") {
+  //       const checkboxes = [
+  //         "bMiscLimitAuthorization",
+  //         "bCanClearCounter",
+  //         "bComplianceAuthorization",
+  //         "bDataEntryAuthorization",
+  //         "bCreditLimitAuthorization",
+  //         "bCanOptCentralM",
+  //         "BDATAENTRYPRIVILEGE",
+  //         "bSpecialRights",
+  //         "bIsOrderCreation",
+  //         "bIsOrderAllotment",
+  //       ];
+
+  //       checkboxes.forEach((checkbox) => {
+  //         updatedData[checkbox] = checked;
+  //       });
+  //     }
+
+  //     return updatedData;
+  //   });
+
+  //   setFieldErrors((prevErrors) => ({
+  //     ...prevErrors,
+  //     [name]: false,
+  //   }));
+
+  //   // Add availability checks for code and name
+  //   if (name === "vUID" && value) {
+  //     setIsCheckingCode(true);
+  //     const exists = await checkAvailability("code", value);
+  //     setCodeExists(exists);
+  //     setFieldErrors((prev) => ({
+  //       ...prev,
+  //       vUID: exists ? "This code is already in use" : false,
+  //     }));
+  //     setIsCheckingCode(false);
+  //   } else if (name === "vName" && value) {
+  //     setIsCheckingName(true);
+  //     const exists = await checkAvailability("name", value);
+  //     setNameExists(exists);
+  //     setFieldErrors((prev) => ({
+  //       ...prev,
+  //       vName: exists ? "This name is already in use" : false,
+  //     }));
+  //     setIsCheckingName(false);
+  //   }
+  // };
+
+  // Add these handlers for blur events
+  const handleBlur = async (e) => {
+    const { name, value } = e.target;
+
+    if (!value) return;
+
+    if (name === "vUID") {
+      setCodeBlurred(true);
+      setIsCheckingCode(true);
+      const exists = await checkAvailability("code", value);
+      setCodeExists(exists);
+      setFieldErrors((prev) => ({
+        ...prev,
+        vUID: exists ? "This code is already in use" : false,
+      }));
+      setIsCheckingCode(false);
+    } else if (name === "vName") {
+      setNameBlurred(true);
+      setIsCheckingName(true);
+      const exists = await checkAvailability("name", value);
+      setNameExists(exists);
+      setFieldErrors((prev) => ({
+        ...prev,
+        vName: exists ? "This name is already in use" : false,
+      }));
+      setIsCheckingName(false);
+    }
+  };
+
+  // Modify handleChange to remove the availability checks
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    if (name === "vUID") {
+      setCodeBlurred(false);
+    } else if (name === "vName") {
+      setNameBlurred(false);
+    }
 
     setFormData((prevData) => {
       const updatedData = {
@@ -1601,15 +1378,33 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
     setOpenSectionDialog(null);
   };
 
-  //   Create a function to validate all fields in the form
+  // //   Create a function to validate all fields in the form
+  // const validateAllFields = () => {
+  //   const requiredKeys = ["vUID", "vName"];
+  //   let allFieldsValid = true;
+  //   requiredKeys.forEach((key) => {
+  //     if (formData[key] === "" || formData[key] === null) {
+  //       allFieldsValid = false;
+  //     }
+  //   });
+  //   return allFieldsValid;
+  // };
+
   const validateAllFields = () => {
-    const requiredKeys = ["vUID", "vName", "nBranchID"];
+    const requiredKeys = ["vUID", "vName"];
     let allFieldsValid = true;
+
     requiredKeys.forEach((key) => {
       if (formData[key] === "" || formData[key] === null) {
         allFieldsValid = false;
       }
     });
+
+    // Check if code or name exists
+    if (codeExists || nameExists) {
+      allFieldsValid = false;
+    }
+
     return allFieldsValid;
   };
 
@@ -2036,27 +1831,34 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
         sx={{
           overflowX: "hidden",
           backgroundColor: Colortheme.background,
+         
         }}
         gridTemplateColumns={isMobile ? "repeat(1, 1fr)" : "repeat(4, 1fr)"}
         gridTemplateRows={"repeat(3, 1fr)"}
         columnGap={"60px"}
-        rowGap={"40px"}
-        p={2}
+        rowGap={"20px"}
+        p={1}
       >
         {/* // If isGroup is true then render fields for vCode(Textfield),
         vName(Textfield), bActive(Checkbox), SanctionLimit(textfield) else
         render fields for isGroup = false */}
         {isGroupBool ? (
           <>
-            <CustomTextField
+            {/* <CustomTextField
               name="vUID"
               label="Code"
               value={formData.vUID}
               onChange={handleChange}
               fullWidth
-              error={fieldErrors.vUID}
-              helperText={fieldErrors.vUID ? "Enter Valid Code!" : ""}
+              error={codeExists}
+              helperText={
+                fieldErrors.vUID ||
+                (isCheckingCode ? "Checking availability..." : "")
+              }
               required
+              InputProps={{
+                endAdornment: isCheckingCode && <CircularProgress size={20} sx={{color: Colortheme.text}}/>,
+              }}
             />
 
             <CustomTextField
@@ -2065,9 +1867,61 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
               value={formData.vName}
               onChange={handleChange}
               fullWidth
-              error={fieldErrors.vName}
-              helperText={fieldErrors.vName ? "Enter Valid Name!" : ""}
+              error={!!fieldErrors.vName || nameExists}
+              helperText={
+                fieldErrors.vName ||
+                (isCheckingName ? "Checking availability..." : "")
+              }
               required
+              InputProps={{
+                endAdornment: isCheckingName && <CircularProgress size={20} />,
+              }}
+            /> */}
+
+            <CustomTextField
+              name="vUID"
+              label="Code"
+              value={formData.vUID}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              fullWidth
+              error={!!fieldErrors.vUID || codeExists}
+              helperText={
+                fieldErrors.vUID ||
+                (isCheckingCode
+                  ? "Checking availability..."
+                  : formData.vUID && !codeExists && codeBlurred
+                  ? "Code Available"
+                  : "")
+              }
+              required
+              InputProps={{
+                endAdornment: isCheckingCode && (
+                  <CircularProgress size={20} sx={{ color: Colortheme.text }} />
+                ),
+              }}
+            />
+
+            <CustomTextField
+              name="vName"
+              label="Name"
+              value={formData.vName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              fullWidth
+              error={!!fieldErrors.vName || nameExists}
+              helperText={
+                fieldErrors.vName ||
+                (isCheckingName
+                  ? "Checking availability..."
+                  : formData.vName && !nameExists && nameBlurred
+                  ? "Name Available"
+                  : "")
+              }
+              required
+              InputProps={{
+                endAdornment: isCheckingName && <CircularProgress size={20} />,
+              }}
             />
 
             <CustomCheckbox
@@ -2078,7 +1932,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
             />
 
             <CustomTextField
-              name="SanctionLimit"
+              name="nSanctionLimit"
               label="Sanction Limit"
               value={formData.nSanctionLimit}
               onChange={handleChange}
@@ -2109,10 +1963,23 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
               label="Code"
               value={formData.vUID}
               onChange={handleChange}
+              onBlur={handleBlur}
               fullWidth
-              error={fieldErrors.vUID}
-              helperText={fieldErrors.vUID ? "Enter Valid Code!" : ""}
+              error={!!fieldErrors.vUID || codeExists}
+              helperText={
+                fieldErrors.vUID ||
+                (isCheckingCode
+                  ? "Checking availability..."
+                  : formData.vUID && !codeExists && codeBlurred
+                  ? "Code Available"
+                  : "")
+              }
               required
+              InputProps={{
+                endAdornment: isCheckingCode && (
+                  <CircularProgress size={20} sx={{ color: Colortheme.text }} />
+                ),
+              }}
             />
 
             <CustomTextField
@@ -2120,10 +1987,21 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
               label="Name"
               value={formData.vName}
               onChange={handleChange}
+              onBlur={handleBlur}
               fullWidth
-              error={fieldErrors.vName}
-              helperText={fieldErrors.vName ? "Enter Valid Name!" : ""}
+              error={!!fieldErrors.vName || nameExists}
+              helperText={
+                fieldErrors.vName ||
+                (isCheckingName
+                  ? "Checking availability..."
+                  : formData.vName && !nameExists && nameBlurred
+                  ? "Name Available"
+                  : "")
+              }
               required
+              InputProps={{
+                endAdornment: isCheckingName && <CircularProgress size={20} />,
+              }}
             />
 
             {/* Add Cellno, emailId, branch(select), ValidtillDate(date), GroupId(select), active (checkbox), Control Setup Checkboxes */}

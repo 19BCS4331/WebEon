@@ -15,41 +15,6 @@
 // import renderRoutes from "./routes";
 // import LazyFallBack from "./pages/LazyFallBack";
 
-// const App = () => {
-//   return (
-//     <AuthProvider>
-//       <BaseUrlProvider>
-//         <LocalizationProvider>
-//           <ThemeProvider>
-//             <FormDataProvider>
-//               <BrowserRouter>
-//                 <ModalProvider>
-//                   <ToastProvider>
-//                     <Toast />
-//                     <AuthBasedSidebar />
-//                     <AxiosInterceptorProvider>
-//                       <Suspense fallback={<LazyFallBack />}>
-//                         <Routes>{renderRoutes()}</Routes>
-//                       </Suspense>
-//                     </AxiosInterceptorProvider>
-//                   </ToastProvider>
-//                 </ModalProvider>
-//               </BrowserRouter>
-//             </FormDataProvider>
-//           </ThemeProvider>
-//         </LocalizationProvider>
-//       </BaseUrlProvider>
-//     </AuthProvider>
-//   );
-// };
-
-// const AuthBasedSidebar = () => {
-//   const { isAuthenticated } = useAuthHook();
-//   return isAuthenticated ? <NewSidebar /> : null;
-// };
-
-// export default App;
-
 import { Suspense, useEffect } from "react";
 import { BrowserRouter, Routes } from "react-router-dom";
 import { ToastProvider } from "./contexts/ToastContext";
@@ -70,8 +35,10 @@ import useAuthHook from "./hooks/useAuthHook";
 // import AxiosInterceptorProvider from "./hooks/interceptorAxios";
 import renderRoutes from "./routes";
 import LazyFallBack from "./pages/LazyFallBack";
+import ChatWidget from './components/global/ChatWidget';
+import { AppActionsProvider } from './contexts/AppActionsContext';
 
-const App = () => {
+function App() {
   return (
     <AuthProvider>
       <BaseUrlProvider>
@@ -84,13 +51,14 @@ const App = () => {
                     <BrowserRouter>
                       <ModalProvider>
                         <ToastProvider>
-                          <Toast />
-                          <AuthBasedSidebar />
-                          {/* <AxiosInterceptorProvider> */}
-                          <Suspense fallback={<LazyFallBack />}>
-                            <Routes>{renderRoutes()}</Routes>
-                          </Suspense>
-                          {/* </AxiosInterceptorProvider> */}
+                          <AppActionsProvider>
+                            <Toast />
+                            <AuthBasedSidebar />
+                            <ChatWidget />
+                            <Suspense fallback={<LazyFallBack />}>
+                              <Routes>{renderRoutes()}</Routes>
+                            </Suspense>
+                          </AppActionsProvider>
                         </ToastProvider>
                       </ModalProvider>
                     </BrowserRouter>

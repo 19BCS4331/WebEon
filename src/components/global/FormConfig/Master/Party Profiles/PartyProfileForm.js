@@ -16,12 +16,13 @@ import CustomTextField from "../../../CustomTextField";
 import CustomDatePicker from "../../../CustomDatePicker";
 import CustomCheckbox from "../../../CustomCheckbox";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import ThemeContext from "../../../../../contexts/ThemeContext";
 import styled from "styled-components";
 import StyledButton from "../../../StyledButton";
 import { useToast } from "../../../../../contexts/ToastContext";
 import { useBaseUrl } from "../../../../../contexts/BaseUrl";
+import { apiClient } from "../../../../../services/apiClient";
+import { AuthContext } from "../../../../../contexts/AuthContext";
 
 const BoxButton = styled.div`
   width: ${(props) =>
@@ -45,6 +46,7 @@ const BoxButton = styled.div`
 
 const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
   const { vType } = useParams();
+  const { branch } = useContext(AuthContext);
   const [groupOptions, setGroupOptions] = useState([]);
   const [entityOptions, setEntityOptions] = useState([]);
   const [bnOptions, setBNOptions] = useState([]);
@@ -58,16 +60,10 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
   const { baseUrl } = useBaseUrl();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (vType) {
-      axios
+      apiClient
         .get(
-          `${baseUrl}/pages/Master/PartyProfiles/GroupOptions?vType=${vType}`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
+          `/pages/Master/PartyProfiles/GroupOptions?vType=${vType}`
         )
         .then((response) => {
           setGroupOptions(response.data);
@@ -81,14 +77,9 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
   }, [vType]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (vType === "AD") {
-      axios
-        .get(`${baseUrl}/pages/Master/PartyProfiles/EntityOptions/AD`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .get(`/pages/Master/PartyProfiles/EntityOptions/AD`)
         .then((response) => {
           setEntityOptions(response.data);
           // setLoading(false);
@@ -98,12 +89,8 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
           // setLoading(false);
         });
     } else {
-      axios
-        .get(`${baseUrl}/pages/Master/PartyProfiles/EntityOptions`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .get(`/pages/Master/PartyProfiles/EntityOptions`)
         .then((response) => {
           setEntityOptions(response.data);
           // setLoading(false);
@@ -116,14 +103,9 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
   }, [vType]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (vType) {
-      axios
-        .get(`${baseUrl}/pages/Master/PartyProfiles/BankNatureOptions`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .get(`/pages/Master/PartyProfiles/BankNatureOptions`)
         .then((response) => {
           setBNOptions(response.data);
           // setLoading(false);
@@ -136,14 +118,9 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
   }, [vType]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (vType) {
-      axios
-        .get(`${baseUrl}/pages/Master/PartyProfiles/StateOptions`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .get(`/pages/Master/PartyProfiles/StateOptions`)
         .then((response) => {
           setStateOptions(response.data);
           // setLoading(false);
@@ -156,14 +133,9 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
   }, [vType]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (vType) {
-      axios
-        .get(`${baseUrl}/pages/Master/PartyProfiles/MrktExecOptions`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .get(`/pages/Master/PartyProfiles/MrktExecOptions`)
         .then((response) => {
           setMrktExecOptions(response.data);
           // setLoading(false);
@@ -175,31 +147,26 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
     }
   }, [vType]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (vType) {
-      axios
-        .get(`${baseUrl}/pages/Master/PartyProfiles/BranchOptions`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
-        .then((response) => {
-          setBranchOptions(response.data);
-          // setLoading(false);
-        })
-        .catch((error) => {
-          console.log(error);
-          // setLoading(false);
-        });
-    }
-  }, [vType]);
+  // useEffect(() => {
+  //   if (vType) {
+  //     apiClient
+  //       .get(`/pages/Master/PartyProfiles/BranchOptions`)
+  //       .then((response) => {
+  //         setBranchOptions(response.data);
+  //         // setLoading(false);
+  //       })
+  //       .catch((error) => {
+  //         console.log(error);
+  //         // setLoading(false);
+  //       });
+  //   }
+  // }, [vType]);
 
   const [formData, setFormData] = useState({
     nCodesID: "",
     vCode: "",
     vName: "",
-    vBranchCode: "",
+    vBranchCode: branch.vBranchCode,
     dIntdate: null,
     bActive: false,
     bIND: false,
@@ -250,7 +217,7 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
     dPanDOB: null,
     vPan: "",
     nMrktExecutive: "",
-    nBranchID: "",
+    nBranchID: branch.nBranchID,
     bEnableBlockDate: false,
     dBlockDate: null,
     dEstblishDate: null,
@@ -1172,7 +1139,7 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
             ))}
         </CustomTextField>
 
-        <CustomTextField
+        {/* <CustomTextField
           select={true}
           name="nBranchID"
           label="Origin Branch"
@@ -1187,7 +1154,7 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
                 {item.label}
               </MenuItem>
             ))}
-        </CustomTextField>
+        </CustomTextField> */}
 
         <CustomCheckbox
           name="bEnableBlockDate"
@@ -1263,7 +1230,7 @@ const PartyProfileForm = ({ initialData, onSubmit, onCancel }) => {
       <Box
         display={"flex"}
         justifyContent={"center"}
-        marginTop={vType === "FF" || vType === "BR" ? 3 : 15}
+        marginTop={vType === "FF" || vType === "BR" ? 3 : 5}
       >
         <Box
           display={"flex"}

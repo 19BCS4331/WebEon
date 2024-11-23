@@ -1,10 +1,10 @@
 // controllers/authController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const userModel = require("../models/userModel");
-const branchModel = require("../models/branchModel");
-const counterModel = require("../models/counterModel");
-const finYearModel = require("../models/finYearModel");
+const {UserModel} = require("../models/pages/Authentication/UserModel"); 
+const {BranchModel} = require("../models/pages/Authentication/BranchModel"); 
+const { CounterModel } = require("../models/pages/Authentication/CounterModel");
+const { FinYearModel } = require("../models/pages/Authentication/FinYearModel");
 const secretKey = process.env.SECRET_KEY;
 
 const register = async (req, res) => {
@@ -13,7 +13,7 @@ const register = async (req, res) => {
   const upperCaseUsername = username.toUpperCase();
 
   try {
-    const user = await userModel.createUser(
+    const user = await UserModel.createUser(
       upperCaseUsername,
       hashedPassword,
       IsAdmin,
@@ -31,7 +31,7 @@ const login = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await userModel.findUserByUsername(username);
+    const user = await UserModel.findUserByUsername(username);
 
     if (!user) {
       return res.status(400).json({ error: "User does not exist !" });
@@ -51,7 +51,7 @@ const login = async (req, res) => {
       expiresIn: "1h",
     });
 
-    await userModel.updateUserToken(user.nUserID, newToken);
+    await UserModel.updateUserToken(user.nUserID, newToken);
 
     res.json({ user: user, token: newToken });
   } catch (err) {
@@ -62,7 +62,7 @@ const login = async (req, res) => {
 const getBranches = async (req, res) => {
   const { username } = req.body;
   try {
-    const Branches = await branchModel.findBranchByUsername(username);
+    const Branches = await BranchModel.findBranchByUsername(username);
     res.status(201).json(Branches);
   } catch (error) {
     console.error(error);
@@ -72,7 +72,7 @@ const getBranches = async (req, res) => {
 const getCounters = async (req, res) => {
   const { vBranchCode, vUID, nBranchID, nUserID } = req.body;
   try {
-    const Counters = await counterModel.findCounterByBranchAndUser(
+    const Counters = await CounterModel.findCounterByBranchAndUser(
       vBranchCode,
       vUID,
       nBranchID,
@@ -87,7 +87,7 @@ const getCounters = async (req, res) => {
 
 const getFinYear = async (req, res) => {
   try {
-    const FinYears = await finYearModel.finYearFetch();
+    const FinYears = await FinYearModel.finYearFetch();
     res.status(201).json(FinYears);
   } catch (error) {
     console.error(error);

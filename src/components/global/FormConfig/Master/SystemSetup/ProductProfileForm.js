@@ -9,31 +9,19 @@ import {
   Button,
   useTheme,
   useMediaQuery,
-  Tooltip,
-  Collapse,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
+
 } from "@mui/material";
 import dayjs from "dayjs";
 import CustomTextField from "../../../CustomTextField";
-import { ExpandMore, ExpandLess } from "@mui/icons-material";
-import CustomDatePicker from "../../../CustomDatePicker";
 import CustomCheckbox from "../../../CustomCheckbox";
-import { useParams } from "react-router-dom";
-import axios from "axios";
 import ThemeContext from "../../../../../contexts/ThemeContext";
 import styled from "styled-components";
 import StyledButton from "../../../StyledButton";
 import { useToast } from "../../../../../contexts/ToastContext";
 import { useBaseUrl } from "../../../../../contexts/BaseUrl";
-import { DataGrid } from "@mui/x-data-grid";
-import CircularProgress from "@mui/material/CircularProgress";
 import { AuthContext } from "../../../../../contexts/AuthContext";
+import { apiClient } from "../../../../../services/apiClient";
+import CustomDataGrid from "../../../CustomDataGrid";
 
 const BoxButton = styled.div`
   ${(props) => {
@@ -113,14 +101,10 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
   useEffect(() => {
     const fetchPI = async () => {
       try {
-        const response = await axios.post(
-          `${baseUrl}/pages/Master/SystemSetup/ProductIssuerLink`,
+        const response = await apiClient.post(
+          `/pages/Master/SystemSetup/ProductIssuerLink`,
           { PRODUCTCODE: initialData.PRODUCTCODE },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
+       
         );
         const data = response.data.map((row, index) => ({
           id: row.nCodesID, // use nCounterID as unique identifier
@@ -180,14 +164,9 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
     try {
       await Promise.all(
         pendingPIChanges.map((change) =>
-          axios.put(
-            `${baseUrl}/pages/Master/SystemSetup/ProductIssuerLink`,
-            change,
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
+          apiClient.put(
+            `/pages/Master/SystemSetup/ProductIssuerLink`,
+            change
           )
         )
       );
@@ -1029,7 +1008,7 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
 
       case "Issuer Link":
         return (
-          <Box width={"100%"}>
+          <Box>
             <Box display={"flex"} flexDirection={"column"}>
               <p style={{ color: Colortheme.text }}>
                 Product : {initialData.DESCRIPTION}
@@ -1038,61 +1017,22 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
                 (Check the box to link the respective Issuer)
               </p>
             </Box>
-            <DataGrid
+            <CustomDataGrid
               rows={piRows}
               columns={piColumns}
-              pageSize={5}
-              disableRowSelectionOnClick
-              disableColumnFilter
+            
               getRowId={(row) => row.id}
+              loading={loading}
               sortModel={[
                 {
                   field: "nCodesID",
                   sort: "asc",
                 },
               ]}
-              loading={loading}
-              columnVisibilityModel={isMobile ? { nCodesID: false } : {}}
-              sx={{
-                backgroundColor: Colortheme.background,
-                width: isMobile ? "100%" : "100%",
-                height: "auto",
-                border: "2px solid",
-                borderColor: Colortheme.background,
-                "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                  {
-                    display: "none",
-                  },
-                "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiTablePagination-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiSvgIcon-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-toolbarContainer": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  backgroundColor: Colortheme.background,
-                },
-                "& .MuiButtonBase-root": {
-                  color: Colortheme.text,
-                },
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 5 },
-                },
-              }}
-              pageSizeOptions={[5, 10]}
+              
+              Colortheme={Colortheme}
             />
+            
           </Box>
         );
       default:
@@ -1148,6 +1088,18 @@ const ProductProfileForm = ({ initialData, onSubmit, onCancel }) => {
           border: `1px solid ${Colortheme.text}`,
           borderRadius: "10px",
           marginTop: 2,
+        };
+
+        case "Issuer Link":
+        return {
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          padding: 5,
+          border: `1px solid ${Colortheme.text}`,
+          borderRadius: "10px",
+          marginTop: 2,
+          minHeight: "60vh",
         };
       // Add more cases as needed
       default:

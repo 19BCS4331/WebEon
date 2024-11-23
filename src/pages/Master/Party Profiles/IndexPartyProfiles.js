@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import { Box, Tooltip, useMediaQuery, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
@@ -15,6 +14,8 @@ import PartyProfileForm from "../../../components/global/FormConfig/Master/Party
 import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModal from "../../../components/CustomAlertModal";
 import { useBaseUrl } from "../../../contexts/BaseUrl";
+import { apiClient } from "../../../services/apiClient";
+import CustomDataGrid from "../../../components/global/CustomDataGrid";
 
 const IndexPartyProfiles = () => {
   const { vType } = useParams();
@@ -54,17 +55,10 @@ const IndexPartyProfiles = () => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
     if (vType) {
-      axios
+      apiClient
         .get(
-          `${baseUrl}/pages/Master/PartyProfiles/PartyProfilesIndex?vType=${vType}`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
-        )
+          `/pages/Master/PartyProfiles/PartyProfilesIndex?vType=${vType}`)
         .then((response) => {
           setRows(response.data.filter((row) => row.nCodesID));
           setLoading(false);
@@ -108,17 +102,10 @@ const IndexPartyProfiles = () => {
 
   const DeleteFunc = async (nCodesID) => {
     setLoading(true);
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `${baseUrl}/pages/Master/PartyProfiles/PartyProfileDelete`,
-        { nCodesID: nCodesID },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.post(
+        `/pages/Master/PartyProfiles/PartyProfileDelete`,
+        { nCodesID: nCodesID });
       console.log(response.data);
       setRows((prev) => prev.filter((row) => row.nCodesID !== nCodesID));
       setLoading(false);
@@ -140,15 +127,11 @@ const IndexPartyProfiles = () => {
   };
 
   const handleFormSubmit = (formData) => {
-    const token = localStorage.getItem("token");
+
     setLoading(true);
     if (editData) {
-      axios
-        .put(`${baseUrl}/pages/Master/PartyProfiles/PartyProfiles`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .put(`/pages/Master/PartyProfiles/PartyProfiles`, formData)
         .then((response) => {
           setRows((prev) =>
             prev.map((row) =>
@@ -172,12 +155,8 @@ const IndexPartyProfiles = () => {
           }, 2000);
         });
     } else {
-      axios
-        .post(`${baseUrl}/pages/Master/PartyProfiles/PartyProfiles`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .post(`/pages/Master/PartyProfiles/PartyProfiles`, formData)
         .then((response) => {
           setRows((prev) => [...prev, response.data]);
           setShowForm(false);
@@ -343,7 +322,36 @@ const IndexPartyProfiles = () => {
               Add New Profile
             </StyledButton>
 
-            <DataGrid
+            <CustomDataGrid
+                rows={filteredRows}
+                columns={columns}
+                selectionModel={selectionModel}
+                getRowId={(row) => row.nCodesID}
+                columnVisibilityModel={
+                  isMobile
+                    ? {
+                        dIntdate: false,
+                        vName: false,
+                        vBranchCode: false,
+                        bActive: false,
+                        nCREDITLIM: false,
+                        nCREDITDAYS: false,
+                      }
+                    : { id: false }
+                }
+                sortModel={[
+                  {
+                    field: "nCodesID",
+                    sort: "asc",
+                  },
+                ]}
+                onSelectionModelChange={handleSelectionModelChange}
+                searchKeyword={searchKeyword}
+                setSearchKeyword={setSearchKeyword}
+                Colortheme={Colortheme}
+              />
+
+            {/* <DataGrid
               rows={filteredRows}
               columns={columns}
               pageSize={5}
@@ -418,7 +426,7 @@ const IndexPartyProfiles = () => {
                 },
               }}
               pageSizeOptions={[5, 10]}
-            />
+            /> */}
           </Box>
         </AnimatePresence>
       ) : (

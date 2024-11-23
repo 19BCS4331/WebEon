@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import { Box, Tooltip, useMediaQuery, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,12 +9,12 @@ import CustomTextField from "../../../components/global/CustomTextField";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import { DataGrid } from "@mui/x-data-grid";
 import LazyFallBack from "../../LazyFallBack";
-import dayjs from "dayjs";
-import PartyProfileForm from "../../../components/global/FormConfig/Master/Party Profiles/PartyProfileForm";
 import { useToast } from "../../../contexts/ToastContext";
 import CustomAlertModal from "../../../components/CustomAlertModal";
 import { useBaseUrl } from "../../../contexts/BaseUrl";
 import BranchLocationForm from "../../../components/global/FormConfig/Master/SystemSetup/BranchLocationForm";
+import { apiClient } from "../../../services/apiClient";
+import CustomDataGrid from "../../../components/global/CustomDataGrid";
 
 const BranchLocationProfile = () => {
   const [loading, setLoading] = useState(true);
@@ -37,13 +36,8 @@ const BranchLocationProfile = () => {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${baseUrl}/pages/Master/SystemSetup/branchProfile`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      })
+    apiClient
+      .get(`/pages/Master/SystemSetup/branchProfile`)
       .then((response) => {
         setRows(response.data.filter((row) => row.nBranchID));
         setLoading(false);
@@ -86,16 +80,10 @@ const BranchLocationProfile = () => {
 
   const DeleteFunc = async (nBranchID) => {
     setLoading(true);
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `${baseUrl}/pages/Master/SystemSetup/branchProfileDelete`,
-        { nBranchID: nBranchID },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await apiClient.post(
+        `/pages/Master/SystemSetup/branchProfileDelete`,
+        { nBranchID: nBranchID }
       );
       console.log(response.data);
       setRows((prev) => prev.filter((row) => row.nBranchID !== nBranchID));
@@ -121,12 +109,8 @@ const BranchLocationProfile = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     if (editData) {
-      axios
-        .put(`${baseUrl}/pages/Master/SystemSetup/branchProfile`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .put(`/pages/Master/SystemSetup/branchProfile`, formData)
         .then((response) => {
           setRows((prev) =>
             prev.map((row) =>
@@ -150,12 +134,8 @@ const BranchLocationProfile = () => {
           }, 2000);
         });
     } else {
-      axios
-        .post(`${baseUrl}/pages/Master/SystemSetup/branchProfile`, formData, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        })
+      apiClient
+        .post(`/pages/Master/SystemSetup/branchProfile`, formData)
         .then((response) => {
           setRows((prev) => [...prev, response.data]);
           setShowForm(false);
@@ -309,15 +289,11 @@ const BranchLocationProfile = () => {
               Add New Profile
             </StyledButton>
 
-            <DataGrid
+            <CustomDataGrid
               rows={filteredRows}
               columns={columns}
-              pageSize={5}
-              disableRowSelectionOnClick
-              disableColumnFilter
+              selectionModel={selectionModel}
               getRowId={(row) => row.nBranchID}
-              rowSelectionModel={selectionModel}
-              onRowSelectionModelChange={handleSelectionModelChange}
               sortModel={[
                 {
                   field: "nBranchID",
@@ -336,54 +312,10 @@ const BranchLocationProfile = () => {
                     }
                   : { id: false }
               }
-              onModelChange={(model) => {
-                if (model.filterModel && model.filterModel.items.length > 0) {
-                  setSearchKeyword(model.filterModel.items[0].value);
-                } else {
-                  setSearchKeyword("");
-                }
-              }}
-              sx={{
-                backgroundColor: Colortheme.background,
-                p: isMobile ? "10px" : "20px",
-                maxHeight: "50vh",
-                width: isMobile ? "95vw" : "auto",
-                maxWidth: isMobile ? "75vw" : "100%",
-                border: "2px solid",
-                borderColor: Colortheme.background,
-                "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                  {
-                    display: "none",
-                  },
-                "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiTablePagination-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiSvgIcon-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-toolbarContainer": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  backgroundColor: Colortheme.background,
-                },
-                "& .MuiButtonBase-root": {
-                  color: Colortheme.text,
-                },
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 5 },
-                },
-              }}
-              pageSizeOptions={[5, 10]}
+              onSelectionModelChange={handleSelectionModelChange}
+              searchKeyword={searchKeyword}
+              setSearchKeyword={setSearchKeyword}
+              Colortheme={Colortheme}
             />
           </Box>
         </AnimatePresence>
@@ -395,8 +327,8 @@ const BranchLocationProfile = () => {
           animate={{ y: 0 }}
           exit={{ y: -50 }}
           sx={{
-            width: "85%",
-            height: "85%",
+            // width: "85%",
+            // height: "85%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -404,26 +336,35 @@ const BranchLocationProfile = () => {
             p: 5,
             borderRadius: 10,
             overflowX: "hidden",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+              height: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: Colortheme.text,
+              borderRadius: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: Colortheme.secondaryBG,
+            },
           }}
           maxWidth={isMobile ? "60vw" : "90%"}
         >
-          {!isMobile && (
-            <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
-              <StyledButton
-                onClick={() => setShowForm(false)}
-                style={{
-                  width: 100,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
-              </StyledButton>
-            </Box>
-          )}
+          <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
+            <StyledButton
+              onClick={() => setShowForm(false)}
+              style={{
+                width: isMobile ? 80 : 100,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <KeyboardBackspaceIcon style={{ fontSize: "30px" }} />
+            </StyledButton>
+          </Box>
 
-          <Box marginTop={isMobile ? 0 : -10}>
+          <Box marginTop={isMobile ? -5 : -10}>
             {editData ? (
               <h2 style={{ color: Colortheme.text }}>EDIT</h2>
             ) : (

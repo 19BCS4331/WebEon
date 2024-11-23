@@ -1,19 +1,56 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const cookieParser = require('cookie-parser');
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const navRoutes = require("./routes/navRoutes");
 const MasterProfileRoutes = require("./routes/pages/Master/MasterProfiles/indexRoutesMP");
 const PartyProfileRoutes = require("./routes/pages/Master/PartyProfiles/indexRoutesPartyProfiles");
 const SystemSetupRoutes = require("./routes/pages/Master/SystemSetup/indexRoutesSystemSetup");
+const aiRoutes = require('./routes/aiRoutes');
+const { csrfMiddleware, getCsrfToken, getCsrfMetrics } = require('./middleware/csrfMiddleware');
+const rateLimitMiddleware = require('./middleware/rateLimitMiddleware');
 
 const app = express();
 const port = process.env.PORT || 5002;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+
+// Configure CORS with more specific options
+app.use(cors({
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://192.168.1.107:3000',
+            'http://127.0.0.1:3000'
+        ];
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+    exposedHeaders: ['X-CSRF-Token']
+}));
+
+// Parse cookies before CSRF middleware
+app.use(cookieParser());
+
+// Add security headers
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
+
+app.use(csrfMiddleware);
 
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
@@ -22,9 +59,17 @@ app.use("/pages/Master/MasterProfiles", MasterProfileRoutes);
 app.use("/pages/Master/PartyProfiles", PartyProfileRoutes);
 app.use("/pages/Master/SystemSetup", SystemSetupRoutes);
 
+app.use(rateLimitMiddleware);
+
+app.use('/api/ai', aiRoutes);
+
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
+
+// CSRF endpoints
+app.get('/api/csrf-token', getCsrfToken);
+app.get('/api/csrf-metrics', getCsrfMetrics);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

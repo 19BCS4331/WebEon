@@ -1,6 +1,6 @@
 // controllers/userController.js
 const bcrypt = require("bcryptjs");
-const userModel = require("../models/userModel");
+const {UserModel} = require("../models/pages/Authentication/UserModel"); 
 
 const resetUserPassword = async (req, res) => {
   const { userId, newPassword } = req.body;
@@ -13,7 +13,7 @@ const resetUserPassword = async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const user = await userModel.updateUserPassword(userId, hashedPassword);
+    const user = await UserModel.updateUserPassword(userId, hashedPassword);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });

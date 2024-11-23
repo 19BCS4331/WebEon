@@ -93,7 +93,7 @@ const CustomScrollbarDialogContent = styled(DialogContent)`
   }
 `;
 
-const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
+const TaxMasterForm = ({ initialData, onSubmit, onCancel,setTaxSlabs,taxSlabs }) => {
   const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -103,10 +103,166 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
   const { showToast, hideToast } = useToast();
   const { baseUrl } = useBaseUrl();
   const { token } = useContext(AuthContext);
-  const [piRows, setPIRows] = useState([]);
-  const [pendingPIChanges, setPendingPIChanges] = useState([]);
+  const [postingAcOptions ,setPostingAcOptions] = useState([]);
 
-  const [postingAcOptions, setPostingAcOptions] = useState([]);
+  // const [taxSlabs, setTaxSlabs] = useState([]);
+  const [editingSlab, setEditingSlab] = useState(null);
+  // Add this near your other state declarations
+const [newSlabForm, setNewSlabForm] = useState({
+  FROMAMT: '',
+  TOAMT: '',
+  VALUE: '',
+  BASEVALUE: ''
+});
+  const [slabForm, setSlabForm] = useState({
+    SRNO: '',
+    FROMAMT: '',
+    TOAMT: '',
+    VALUE: '',
+    BASEVALUE: ''
+  });
+  // Add a counter for temporary IDs
+  const [tempSlabId, setTempSlabId] = useState(-1);
+
+
+// ================== SLAB =======================
+
+const fetchTaxSlabs = async () => {
+  try {
+    if (initialData?.nTaxID) {
+      const response = await apiClient.get(`/pages/Master/SystemSetup/taxMaster/taxSlabs?nTaxID=${initialData.nTaxID}`);
+      setTaxSlabs(response.data);
+    } else {
+      // If no tax ID (new form), start with empty slabs
+      setTaxSlabs([]);
+    }
+  } catch (error) {
+    console.error('Error fetching tax slabs:', error);
+    showToast('Error fetching tax slabs', 'error');
+  }
+};
+
+useEffect(() => {
+  if (initialData?.nTaxID) {
+    fetchTaxSlabs();
+  } else {
+    setTaxSlabs([]); // Clear slabs for new form
+  }
+}, [initialData]);
+
+// Remove fetchTaxSlabs since we're managing state locally
+const handleEditSlab = (slab) => {
+  setEditingSlab(slab);
+  setSlabForm({
+    ...slab
+  });
+};
+
+const handleDeleteSlab = (nTaxIdD) => {
+  setTaxSlabs(prev => prev.filter(slab => slab.nTaxIdD !== nTaxIdD));
+};
+
+const handleSlabFormChange = (e) => {
+  const { name, value } = e.target;
+  setSlabForm(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+const handleNewSlabFormChange = (e) => {
+  const { name, value } = e.target;
+  setNewSlabForm(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+// const handleSaveSlabForm = () => {
+//   if (editingSlab) {
+//     // Update existing slab
+//     setTaxSlabs(prev => prev.map(slab => 
+//       slab.nTaxIdD === editingSlab.nTaxIdD 
+//         ? { ...slabForm, nTaxIdD: editingSlab.nTaxIdD }
+//         : slab
+//     ));
+//   } else {
+//     // Add new slab
+//     const nextSrNo = taxSlabs.length > 0 
+//       ? Math.max(...taxSlabs.map(slab => Number(slab.SRNO))) + 1 
+//       : 1;
+    
+//     setTaxSlabs(prev => [...prev, {
+//       ...slabForm,
+//       SRNO: nextSrNo,
+//       nTaxIdD: tempSlabId // Use temporary ID for new slabs
+//     }]);
+//     setTempSlabId(prev => prev - 1); // Decrement temp ID counter
+//   }
+  
+//   // Reset form and editing state
+//   setEditingSlab(null);
+//   setSlabForm({
+//     SRNO: '',
+//     FROMAMT: '',
+//     TOAMT: '',
+//     VALUE: '',
+//     BASEVALUE: ''
+//   });
+// };
+
+const handleSaveSlabForm = () => {
+  if (editingSlab) {
+    // Update existing slab
+    setTaxSlabs(prev => prev.map(slab => 
+      slab.nTaxIdD === editingSlab.nTaxIdD 
+        ? { ...slabForm, nTaxIdD: editingSlab.nTaxIdD }
+        : slab
+    ));
+    setEditingSlab(null);
+    setSlabForm({
+      SRNO: '',
+      FROMAMT: '',
+      TOAMT: '',
+      VALUE: '',
+      BASEVALUE: ''
+    });
+  }
+};
+
+const handleAddNewSlab = () => {
+  // Validate all required fields
+  if (!newSlabForm.FROMAMT || !newSlabForm.TOAMT || !newSlabForm.VALUE) {
+    showToast("Please fill in all required fields", "error");
+    setTimeout(() => {
+      hideToast();
+    }, 3000);
+    return;
+  }
+
+  // Add new slab
+  const nextSrNo = taxSlabs.length > 0 
+    ? Math.max(...taxSlabs.map(slab => Number(slab.SRNO))) + 1 
+    : 1;
+  
+  setTaxSlabs(prev => [...prev, {
+    ...newSlabForm,
+    SRNO: nextSrNo,
+    nTaxIdD: tempSlabId // Use temporary ID for new slabs
+  }]);
+  setTempSlabId(prev => prev - 1); // Decrement temp ID counter
+  
+  // Reset new slab form
+  setNewSlabForm({
+    FROMAMT: '',
+    TOAMT: '',
+    VALUE: '',
+    BASEVALUE: ''
+  });
+};
+
+
+// ================== SLAB =======================
 
   const [loading, setLoading] = useState(false);
 
@@ -148,79 +304,7 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
     fetchACOptions();
   }, [initialData]);
 
-  const piColumns = [
-    {
-      field: "nCodesID",
-      headerName: "Issuer ID",
-      width: 150,
-    },
-    { field: "vCode", headerName: "Issuer Name", width: isMobile ? 150 : 200 },
-    {
-      field: "bIsActive",
-      headerName: "Active",
-      width: 120,
-      renderCell: (params) => (
-        <CustomCheckbox
-          checked={params.value}
-          onChange={(event) => handlePiCheckboxChange(params, event)}
-        />
-      ),
-    },
-  ];
 
-  const handlePiCheckboxChange = (params, event) => {
-    const newIsActive = !params.row.bIsActive;
-
-    // Update the state
-    setPIRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === params.id ? { ...row, bIsActive: newIsActive } : row
-      )
-    );
-
-    // Add the change to the pending changes list
-    setPendingPIChanges((prevChanges) => [
-      ...prevChanges,
-      {
-        PRODUCTCODE: initialData.PRODUCTCODE,
-        nIssuerID: params.row.id,
-        bIsActive: newIsActive,
-      },
-    ]);
-  };
-
-  // Function to save the changes to the database
-  const savePIChanges = async () => {
-    try {
-      await Promise.all(
-        pendingPIChanges.map((change) =>
-          axios.put(
-            `${baseUrl}/pages/Master/SystemSetup/ProductIssuerLink`,
-            change,
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
-          )
-        )
-      );
-
-      // Clear the pending changes after successful save
-      setPendingPIChanges([]);
-      console.log("Changes saved successfully");
-      showToast("Changes saved successfully", "success");
-      setTimeout(() => {
-        hideToast();
-      }, 2000);
-    } catch (error) {
-      console.error("Error saving changes", error);
-      showToast("Error saving changes", "error");
-      setTimeout(() => {
-        hideToast();
-      }, 2000);
-    }
-  };
 
   const getGridTemplateColumns = () => {
     if (isMobile) return "repeat(1, 1fr)";
@@ -468,6 +552,7 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
     const isValid = validateAllFields();
     if (isValid) {
       onSubmit(formData);
+      // onSubmitSlabs(taxSlabs);
     } else {
       console.log("ERROR IN FORM DETAILS");
       showToast("Enter All Required Details!", "fail");
@@ -476,6 +561,12 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
       }, 2000);
     }
   };
+
+  useEffect(() => {
+    if (formData.nTaxID) {
+      fetchTaxSlabs();
+    }
+  }, [formData.nTaxID]);
 
   const renderSectionFields = () => {
     switch (openSectionDialog) {
@@ -749,164 +840,155 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
           </>
         );
 
-      case "Product Details":
-        return (
-          <>
-            <CustomCheckbox
-              name="saleAvgSett"
-              label="Sale Average Sett"
-              checked={formData.saleAvgSett}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="stockSplit"
-              label="Stock Split"
-              checked={formData.stockSplit}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="AUTOSTOCK"
-              label="Auto Stock"
-              checked={formData.AUTOSTOCK}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="stockDenoChange"
-              label="Stock Denomination Change"
-              checked={formData.stockDenoChange}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="allowFractions"
-              label="Allow Fractions"
-              checked={formData.allowFractions}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="bReload"
-              label="Reload"
-              checked={formData.bReload}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="AUTOSETTRATE"
-              label="Auto Settle Rate"
-              checked={formData.AUTOSETTRATE}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="isSettlement"
-              label="Settlement"
-              checked={formData.isSettlement}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="reverseProfit"
-              label="Reverse Profit"
-              checked={formData.reverseProfit}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="AllowMultiCard"
-              label="Allow Multi Card"
-              checked={formData.AllowMultiCard}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="passSeparateSett"
-              label="Pass Separate Settlement"
-              checked={formData.passSeparateSett}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="isActive"
-              label="Active"
-              checked={formData.isActive}
-              onChange={handleChange}
-            />
-            <CustomTextField
-              label="Priority"
-              name="Priority"
-              value={formData.Priority}
-              onChange={handleChange}
-            />
-            <CustomCheckbox
-              name="bAskReference"
-              label="Ask Reference"
-              checked={formData.bAskReference}
-              onChange={handleChange}
-            />
-          </>
-        );
-
-      case "Issuer Link":
-        return (
-          <Box width={"100%"}>
-            <Box display={"flex"} flexDirection={"column"}>
-              <p style={{ color: Colortheme.text }}>
-                Product : {initialData.DESCRIPTION}
-              </p>
-              <p style={{ color: Colortheme.text }}>
-                (Check the box to link the respective Issuer)
-              </p>
+        case "Slab Config":
+  return (
+    <>
+      <Box>
+      <TableContainer>
+  <Table>
+    <TableHead>
+      <TableRow>
+        <TableCell sx={{ backgroundColor: Colortheme.text, color: Colortheme.background }}>Sr.No</TableCell>
+        <TableCell sx={{ backgroundColor: Colortheme.text, color: Colortheme.background }}>From</TableCell>
+        <TableCell sx={{ backgroundColor: Colortheme.text, color: Colortheme.background }}>To</TableCell>
+        <TableCell sx={{ backgroundColor: Colortheme.text, color: Colortheme.background }}>Value</TableCell>
+        <TableCell sx={{ backgroundColor: Colortheme.text, color: Colortheme.background }}>Actions</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {taxSlabs?.map((slab) => (
+        <TableRow key={slab.nTaxIdD} sx={{ '&:hover': { backgroundColor: Colortheme.background } }}>
+          <TableCell sx={{ color: Colortheme.text }}>{slab.SRNO}</TableCell>
+          <TableCell sx={{ color: Colortheme.text }}>
+            {editingSlab?.nTaxIdD === slab.nTaxIdD ? (
+              <CustomTextField
+                name="FROMAMT"
+                value={slabForm.FROMAMT}
+                onChange={handleSlabFormChange}
+                type="number"
+                size="small"
+                fullWidth
+              />
+            ) : (
+              slab.FROMAMT
+            )}
+          </TableCell>
+          <TableCell sx={{ color: Colortheme.text }}>
+            {editingSlab?.nTaxIdD === slab.nTaxIdD ? (
+              <CustomTextField
+                name="TOAMT"
+                value={slabForm.TOAMT}
+                onChange={handleSlabFormChange}
+                type="number"
+                size="small"
+                fullWidth
+              />
+            ) : (
+              slab.TOAMT
+            )}
+          </TableCell>
+          <TableCell sx={{ color: Colortheme.text }}>
+            {editingSlab?.nTaxIdD === slab.nTaxIdD ? (
+              <CustomTextField
+                name="VALUE"
+                value={slabForm.VALUE}
+                onChange={handleSlabFormChange}
+                type="number"
+                size="small"
+                fullWidth
+              />
+            ) : (
+              slab.VALUE
+            )}
+          </TableCell>
+          <TableCell>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {editingSlab?.nTaxIdD === slab.nTaxIdD ? (
+                <>
+                  <StyledButton
+                    onClick={handleSaveSlabForm}
+                    style={{ minWidth: 'auto', padding: '8px' }}
+                  >
+                    Save
+                  </StyledButton>
+                  <StyledButton
+                    onClick={() => setEditingSlab(null)}
+                     style={{ minWidth: '80px', padding: '8px' }}
+                  >
+                    Cancel
+                  </StyledButton>
+                </>
+              ) : (
+                <>
+                  <StyledButton
+                    onClick={() => handleEditSlab(slab)}
+                     style={{ minWidth: '80px', padding: '8px' }}
+                  >
+                    Edit
+                  </StyledButton>
+                  <StyledButton
+                    onClick={() => handleDeleteSlab(slab.nTaxIdD)}
+                     style={{ minWidth: '80px', padding: '8px' }}
+                    color="error"
+                  >
+                    Delete
+                  </StyledButton>
+                </>
+              )}
             </Box>
-            <DataGrid
-              rows={piRows}
-              columns={piColumns}
-              pageSize={5}
-              disableRowSelectionOnClick
-              disableColumnFilter
-              getRowId={(row) => row.id}
-              sortModel={[
-                {
-                  field: "nCodesID",
-                  sort: "asc",
-                },
-              ]}
-              loading={loading}
-              columnVisibilityModel={isMobile ? { nCodesID: false } : {}}
-              sx={{
-                backgroundColor: Colortheme.background,
-                width: isMobile ? "100%" : "100%",
-                height: "auto",
-                border: "2px solid",
-                borderColor: Colortheme.background,
-                "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                  {
-                    display: "none",
-                  },
-                "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiTablePagination-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiSvgIcon-root": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-toolbarContainer": {
-                  color: Colortheme.text,
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  backgroundColor: Colortheme.background,
-                },
-                "& .MuiButtonBase-root": {
-                  color: Colortheme.text,
-                },
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 5 },
-                },
-              }}
-              pageSizeOptions={[5, 10]}
-            />
-          </Box>
-        );
+          </TableCell>
+        </TableRow>
+      ))}
+      {/* New Slab Row */}
+<TableRow sx={{ '&:hover': { backgroundColor: Colortheme.background } }}>
+  <TableCell sx={{ color: Colortheme.text }}>
+    {taxSlabs.length > 0 ? Math.max(...taxSlabs.map(slab => Number(slab.SRNO))) + 1 : 1}
+  </TableCell>
+  <TableCell>
+    <CustomTextField
+      name="FROMAMT"
+      value={newSlabForm.FROMAMT}
+      onChange={handleNewSlabFormChange}
+      type="number"
+      size="small"
+      fullWidth
+    />
+  </TableCell>
+  <TableCell>
+    <CustomTextField
+      name="TOAMT"
+      value={newSlabForm.TOAMT}
+      onChange={handleNewSlabFormChange}
+      type="number"
+      size="small"
+      fullWidth
+    />
+  </TableCell>
+  <TableCell>
+    <CustomTextField
+      name="VALUE"
+      value={newSlabForm.VALUE}
+      onChange={handleNewSlabFormChange}
+      type="number"
+      size="small"
+      fullWidth
+    />
+  </TableCell>
+  <TableCell>
+    <StyledButton
+      onClick={handleAddNewSlab}
+      style={{ minWidth: '80px', padding: '8px' }}
+    >
+      Add
+    </StyledButton>
+  </TableCell>
+</TableRow>
+    </TableBody>
+  </Table>
+</TableContainer>
+      </Box>
+    </>
+  );
       default:
         return null;
     }
@@ -1142,14 +1224,7 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
             </BoxButton>
           </CustomScrollbarBox>
 
-          <CustomScrollbarBox>
-            <BoxButton
-              isMobile={isMobile}
-              onClick={() => handleSectionEdit("Product Details")}
-            >
-              Product Details
-            </BoxButton>
-          </CustomScrollbarBox>
+          
 
           <CustomCheckbox
             name="SLABWISETAX"
@@ -1172,7 +1247,7 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
       <CustomScrollbarBox
         display={"flex"}
         justifyContent={"center"}
-        marginTop={15}
+        marginTop={5}
       >
         <CustomScrollbarBox
           display={"flex"}
@@ -1248,15 +1323,7 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel }) => {
               : "Cancel"}
           </StyledButton>
 
-          {openSectionDialog === "Issuer Link" && (
-            <StyledButton
-              onClick={savePIChanges}
-              variant="contained"
-              color="primary"
-            >
-              Save
-            </StyledButton>
-          )}
+         
         </DialogActions>
       </Dialog>
     </form>

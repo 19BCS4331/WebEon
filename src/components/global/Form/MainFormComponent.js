@@ -15,9 +15,10 @@ import { Home } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import CustomDatePicker from "../CustomDatePicker";
 import { apiClient } from "../../../services/apiClient";
+import CustomDataGrid from "../CustomDataGrid";
 
 const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
-  const { token } = useContext(AuthContext);
+  const { token, branch } = useContext(AuthContext);
   const theme = useTheme();
   const { Colortheme } = useContext(ThemeContext);
   const { showToast, hideToast } = useToast();
@@ -492,6 +493,11 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       return obj;
     }, {});
 
+    // Add branch code and ID from auth context
+    if (branch?.vBranchCode) {
+      enabledFormData.vBranchCode = branch.vBranchCode;
+    }
+
     try {
       const response = await apiClient({
         url: endpoint,
@@ -777,9 +783,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                           marginLeft: isMobile ? "10%" : "35%",
                         }}
                       >
-                        {isMobile
-                          ? "Edit"
-                          : `Edit : ${formData[editFieldTitle]}`}
+                        Edit
                       </h1>
                     )}
                     {!formData[formDataID] && isFormVisible && (
@@ -958,14 +962,19 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
               initial={{ x: -50 }}
               animate={{ x: 0 }}
               sx={{
-                width: isMobile ? "auto" : "100%",
+                width: "100%",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 backgroundColor: Colortheme.background,
-                p: 5,
+                p: isMobile ? 2 : 5,
                 borderRadius: 10,
+                overflow: "hidden",
+                maxWidth: "80vw",
               }}
+              maxHeight={
+                isMobile ? "calc(100vh - 200px)" : "calc(100vh - 200px)"
+              }
             >
               <Box sx={{ alignSelf: "flex-start", mb: 2 }}>
                 <StyledButton
@@ -992,69 +1001,22 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                   width: isMobile ? "80%" : "50%",
                 }}
               />
-              <DataGrid
+              <CustomDataGrid
                 rows={filteredRows}
                 columns={columns}
-                pageSize={5}
-                disableRowSelectionOnClick
-                disableColumnFilter
+                selectionModel={selectionModel}
                 getRowId={(row) => row[formDataID]}
-                rowSelectionModel={selectionModel}
-                onRowSelectionModelChange={handleSelectionModelChange}
+                columnVisibilityModel={isMobile ? { id: false } : { id: false }}
                 sortModel={[
                   {
                     field: formDataID,
                     sort: "asc",
                   },
                 ]}
-                columnVisibilityModel={isMobile ? { id: false } : { id: false }}
-                onModelChange={(model) => {
-                  if (model.filterModel && model.filterModel.items.length > 0) {
-                    setSearchKeyword(model.filterModel.items[0].value);
-                  } else {
-                    setSearchKeyword("");
-                  }
-                }}
-                sx={{
-                  backgroundColor: Colortheme.background,
-                  p: isMobile ? "10px" : "20px",
-                  maxHeight: "60vh",
-                  width: isMobile ? "70vw" : "50vw",
-                  border: "2px solid",
-                  borderColor: Colortheme.background,
-                  "& .MuiDataGrid-columnHeaderCheckbox .MuiDataGrid-columnHeaderTitleContainer":
-                    {
-                      display: "none",
-                    },
-                  "& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell": {
-                    backgroundColor: Colortheme.background,
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiTablePagination-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-toolbarContainer": {
-                    color: Colortheme.text,
-                  },
-                  "& .MuiDataGrid-footerContainer": {
-                    backgroundColor: Colortheme.background,
-                  },
-                  "& .MuiButtonBase-root": {
-                    color: Colortheme.text,
-                  },
-                }}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 5 },
-                  },
-                }}
-                pageSizeOptions={[5, 10]}
+                onSelectionModelChange={handleSelectionModelChange}
+                searchKeyword={searchKeyword}
+                setSearchKeyword={setSearchKeyword}
+                Colortheme={Colortheme}
               />
             </Box>
           )}
