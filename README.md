@@ -42,5 +42,7 @@ Before setting up the project, ensure you have the following installed:
 
 https://web-eon.vercel.app/
 
+## Currently In Local Development, Deployed Development Version Is On Hold!!
+
 
 
