@@ -132,7 +132,7 @@ const AdvSettings = () => {
   useEffect(() => {
     if (settingsData.length > 0) {
       const initialFormData = settingsData.reduce((acc, setting) => {
-        acc[setting.DATACODE] = setting.DATAVALUE;
+        acc[setting.ID] = setting.DATAVALUE;
         return acc;
       }, {});
       setFormData(initialFormData);
@@ -205,11 +205,11 @@ const AdvSettings = () => {
   const handleSubmit = () => {
     // Get changes only
     const updatedData = filteredSettings.reduce((acc, setting) => {
-      const currentValue = formData[setting.DATACODE];
-      const initialValue = initialFormData[setting.DATACODE];
+      const currentValue = formData[setting.ID];
+      const initialValue = initialFormData[setting.ID];
       if (currentValue !== initialValue) {
         acc.push({
-          DATACODE: setting.DATACODE,
+          ID: setting.ID,
           DATAVALUE: currentValue,
         });
       }
@@ -260,13 +260,13 @@ const AdvSettings = () => {
         const setting = params.row;
 
         // Determine checkbox state based on DATAVALUE
-        const isChecked = formData[setting.DATACODE] === "Yes";
+        const isChecked = formData[setting.ID] === "Yes";
 
         return (
           <>
             {setting.DATATYPE === "B" && (
               <CustomCheckbox
-                name={setting.DATACODE}
+                name={setting.ID}
                 checked={isChecked}
                 onChange={(e) => handleInputChange(e, setting)}
                 label={isChecked ? "Yes" : "No"}
@@ -274,32 +274,32 @@ const AdvSettings = () => {
             )}
             {setting.DATATYPE === "V" && (
               <CustomTextField
-                name={setting.DATACODE}
+                name={setting.ID}
                 variant="outlined"
                 fullWidth
-                value={formData[setting.DATACODE] || ""}
+                value={formData[setting.ID] || ""}
                 onChange={(e) => handleInputChange(e, setting)}
               />
             )}
             {setting.DATATYPE === "N" && (
               <CustomTextField
-                name={setting.DATACODE}
+                name={setting.ID}
                 variant="outlined"
                 fullWidth
-                value={formData[setting.DATACODE] || ""}
+                value={formData[setting.ID] || ""}
                 onChange={(e) => handleInputChange(e, setting)}
                 type="number"
               />
             )}
             {setting.DATATYPE === "D" && (
               <CustomDatePicker
-                name={setting.DATACODE}
-                label={setting.DATACODE}
-                value={formData[setting.DATACODE] || null}
+                name={setting.ID}
+                label={setting.ID}
+                value={formData[setting.ID] || null}
                 onChange={(date) =>
                   setFormData((prevState) => ({
                     ...prevState,
-                    [setting.DATACODE]: date,
+                    [setting.ID]: date,
                   }))
                 }
               />

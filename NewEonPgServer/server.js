@@ -8,6 +8,8 @@ const navRoutes = require("./routes/navRoutes");
 const MasterProfileRoutes = require("./routes/pages/Master/MasterProfiles/indexRoutesMP");
 const PartyProfileRoutes = require("./routes/pages/Master/PartyProfiles/indexRoutesPartyProfiles");
 const SystemSetupRoutes = require("./routes/pages/Master/SystemSetup/indexRoutesSystemSetup");
+const MasterMiscellaneousRoutes = require("./routes/pages/Master/Miscellaneous/index");
+const TransactionsRoutes = require("./routes/pages/Transactions/index");
 const aiRoutes = require('./routes/aiRoutes');
 const { csrfMiddleware, getCsrfToken, getCsrfMetrics } = require('./middleware/csrfMiddleware');
 const rateLimitMiddleware = require('./middleware/rateLimitMiddleware');
@@ -58,6 +60,8 @@ app.use("/nav", navRoutes);
 app.use("/pages/Master/MasterProfiles", MasterProfileRoutes);
 app.use("/pages/Master/PartyProfiles", PartyProfileRoutes);
 app.use("/pages/Master/SystemSetup", SystemSetupRoutes);
+app.use("/pages/Master/Miscellaneous", MasterMiscellaneousRoutes);
+app.use("/pages/Transactions", TransactionsRoutes);
 
 app.use(rateLimitMiddleware);
 

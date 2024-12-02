@@ -21,7 +21,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const { token, branch } = useContext(AuthContext);
   const theme = useTheme();
   const { Colortheme } = useContext(ThemeContext);
-  const { showToast, hideToast } = useToast();
+  const { showAlertDialog, hideAlertDialog, showToast, hideToast } = useToast();
 
   const [formData, setFormData] = useState({});
   const [disabledFields, setDisabledFields] = useState({});
@@ -597,7 +597,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
               Edit
             </StyledButton>
             <StyledButton
-              onClick={() => handleDelete(params.row[formDataID])}
+              onClick={() => handleDeleteClick(params.row[formDataID])}
               bgColor={Colortheme.buttonBg}
               bgColorHover="red"
               textColOnHover="white"
@@ -617,6 +617,14 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     setSearchKeyword("");
   };
 
+  const handleDeleteClick = (row) => {
+    console.log("Delete button clicked for ID:", row);
+    showAlertDialog(`Delete the record`, "", () =>
+      handleDelete(row)
+    );
+  };
+
+
   const handleDelete = async (idToDelete) => {
     setIsLoading(true);
     try {
@@ -633,6 +641,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
         setIsLoading(false);
 
         showToast("Data Deleted Successfully!", "success");
+        hideAlertDialog();
         setTimeout(() => {
           hideToast();
         }, 2000);
@@ -640,6 +649,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
         console.error(result.error);
         setIsLoading(false);
         showToast("Error Occurred!", "fail");
+        hideAlertDialog();
         setTimeout(() => {
           hideToast();
         }, 2000);
@@ -648,6 +658,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       console.error("Error:", error);
       setIsLoading(false);
       showToast("Error Occurred!", "fail");
+      hideAlertDialog();
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -962,7 +973,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
               initial={{ x: -50 }}
               animate={{ x: 0 }}
               sx={{
-                width: "100%",
+             
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -973,7 +984,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                 maxWidth: "80vw",
               }}
               maxHeight={
-                isMobile ? "calc(100vh - 200px)" : "calc(100vh - 200px)"
+                isMobile ? "calc(100vh - 200px)" : "calc(100vh - 250px)"
               }
             >
               <Box sx={{ alignSelf: "flex-start", mb: 2 }}>

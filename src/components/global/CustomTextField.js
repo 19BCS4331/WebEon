@@ -377,7 +377,7 @@ const CustomTextField = ({
             borderColor: "gray",
           },
         },
-        width: isMobile ? "auto" : "12vw",
+        width: isMobile ? "100%" : "12vw",
         "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
           {
             display: "none",

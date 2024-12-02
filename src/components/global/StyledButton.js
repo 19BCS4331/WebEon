@@ -2,6 +2,8 @@
 import React, { useContext } from "react";
 import styled from "styled-components";
 import ThemeContext from "../../contexts/ThemeContext";
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
 
 const Button = styled.button`
   border: none;
@@ -13,6 +15,7 @@ const Button = styled.button`
   cursor: pointer;
   transition: 0.3s;
   display: flex;
+  gap: ${(props)=> props.searchIcon ? "5px" : "0px"};
   align-items: center;
   justify-content: center;
 
@@ -37,6 +40,10 @@ const StyledButton = ({
   textColor,
   bgColorHover,
   textColOnHover,
+  SearchIconColorOnHover,
+  AddIconColorOnHover,
+  searchIcon=false,
+  addIcon = false,
   ...props
 }) => {
   const { Colortheme } = useContext(ThemeContext);
@@ -48,8 +55,14 @@ const StyledButton = ({
       textColOnHover={textColOnHover}
       bgColor={bgColor}
       bgColorHover={bgColorHover}
+      SearchIconColorOnHover={SearchIconColorOnHover}
+      AddIconColorOnHover={AddIconColorOnHover}
+      searchIcon={searchIcon}
+      addIcon={addIcon}
       {...props}
     >
+      {searchIcon && <SearchIcon sx={{color: SearchIconColorOnHover}}/>}
+      {addIcon && <AddIcon sx={{color: AddIconColorOnHover}}/>}
       {children}
     </Button>
   );

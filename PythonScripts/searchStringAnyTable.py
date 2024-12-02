@@ -6,7 +6,7 @@ server = '101.53.148.243,9137'
 database = 'wsgfmastUAT'
 username = 'mil'
 password = 'mil@1234#'
-search_string = 'ICICITM'
+search_string = 'INVOICE DELETION'
 
 # Establish connection
 conn = pyodbc.connect(

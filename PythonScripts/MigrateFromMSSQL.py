@@ -27,7 +27,7 @@ mssql_engine = create_engine(URL.create(**mssql_params))
 postgres_engine = create_engine(URL.create(**postgres_params))
 
 # List of tables to migrate
-tables = ['mstGroup']
+tables = ['SubPurpose']
 
 for table in tables:
     # Read data from MSSQL

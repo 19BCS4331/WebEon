@@ -41,11 +41,19 @@ const CustomDatePicker = (props) => {
               "&.Mui-error fieldset": {
                 borderColor: "red",
               },
-              "&.Mui-disabled fieldset": {
-                borderColor: "gray",
+              "&.Mui-disabled": {
+                "& fieldset": {
+                  borderColor: "gray !important",
+                },
+                "& input": {
+                  WebkitTextFillColor: "gray !important",
+                  color: "gray !important",
+                },
+                "& .MuiSvgIcon-root": {
+                  color: "gray !important",
+                },
               },
               "& .MuiSvgIcon-root": {
-                // This targets the calendar icon
                 color: Colortheme.text,
               },
             },
@@ -59,7 +67,7 @@ const CustomDatePicker = (props) => {
               color: "red",
             },
             "& .MuiInputLabel-root.Mui-disabled": {
-              color: "gray",
+              color: "gray !important",
             },
             "& .MuiOutlinedInput-input": {
               color: Colortheme.text,
@@ -67,14 +75,9 @@ const CustomDatePicker = (props) => {
             "& .MuiOutlinedInput-input.Mui-error": {
               color: "red",
             },
-            "& .Mui-disabled": {
-              ":hover fieldset": {
-                borderColor: "gray",
-              },
-              "& .MuiSvgIcon-root": {
-                // This targets the calendar icon
-                color: "gray",
-              },
+            "& .MuiOutlinedInput-input.Mui-disabled": {
+              WebkitTextFillColor: "gray !important",
+              color: "gray !important",
             },
             width: isMobile ? "100%" : "12vw",
           },

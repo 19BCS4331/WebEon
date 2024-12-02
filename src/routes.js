@@ -268,6 +268,10 @@ const StockRevaluation = lazy(() =>
 
 // Buying/Selling Transactions ---------------------------------------------
 
+const BuySellTransactionsComp = lazy(() =>
+  import("./pages/Transactions/BuySellTransactions/index")
+);
+
 const BuyFromIndiviOrCorp = lazy(() =>
   import("./pages/Transactions/BuySellTransactions/BuyFromIndiviOrCorp")
 );
@@ -971,6 +975,13 @@ const routes = [
   //  ---------------------Accounting Transactions End-------------------------
 
   //  ---------------------Buying/Selling Transactions-------------------------
+
+  {
+    path: "/transactions/buying-selling/:With/:Type",
+    element: <BuySellTransactionsComp />,
+    protected: true,
+},
+
   {
     path: "/transactions/buying-selling/buy-from-individuals",
     element: <BuyFromIndiviOrCorp />,
