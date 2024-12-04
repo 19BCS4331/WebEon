@@ -15,6 +15,8 @@ class TransactionModel extends BaseModel {
         LEFT JOIN "SubPurpose" sp ON NULLIF(t."SubPurpose", '')::INTEGER = sp."SubPurposeID"
         WHERE t."vTrnwith" = $1
         AND t."vTrntype" = $2
+        AND t."vNo" <> ''
+        AND t."vNo" IS NOT NULL
         AND (t."bIsDeleted" = false OR t."bIsDeleted" IS NULL)
         AND t."date" BETWEEN $3 AND $4
         ORDER BY t."date" DESC, t."vNo" DESC
@@ -327,7 +329,7 @@ class TransactionModel extends BaseModel {
         SELECT COUNT(*) as count
         FROM "mstpax"
         WHERE LOWER("vPaxname") = LOWER($1)
-        AND "bIsDeleted" = false
+        AND "bIsdeleted" = false
       `;
       const params = [paxName];
 
@@ -380,11 +382,15 @@ class TransactionModel extends BaseModel {
             "vIDREF1" = $27,
             "vIDREF1NO" = $28,
             "dIDREF1EXPDT" = $29,
-            "dModifiedOn" = CURRENT_TIMESTAMP,
-            "nModifiedBy" = $30
-          WHERE "nPaxcode" = $31
-          AND "bIsDeleted" = false
-          RETURNING "nPaxcode"
+            "dUpdateDate" = CURRENT_TIMESTAMP,
+            "nUpdateBy" = $30,
+            "vCodeID" = $31,
+            "dBdate" = $33,
+            "vCellno" = $6,
+            "vAddress" = $34
+          WHERE "nPaxcode" = $32
+          AND "bIsdeleted" = false
+          RETURNING "nPaxcode","vPaxname"
         `;
 
         const result = await this.executeQuery(updateQuery, [
@@ -418,36 +424,50 @@ class TransactionModel extends BaseModel {
           paxDetails.vIDREF1NO,
           paxDetails.dIDREF1EXPDT,
           userId,
-          paxDetails.nPaxcode
+          paxDetails.vCodeID,
+          paxDetails.nPaxcode,
+          paxDetails.dBdate,
+          paxDetails.vAddress
         ]);
 
         return result[0];
       } else {
-        // Generate new PAX code
-        const newPaxCode = await this.generateCode('PAX', 'mstpax', 'nPaxcode');
+        // Get the next PAX ID and code
+        const getLastIdsQuery = `
+          SELECT 
+            COALESCE(MAX("NPAXID"), 0) + 1 as next_id,
+            COALESCE(MAX("nPaxcode"), 0) + 1 as next_code
+          FROM "mstpax"
+        `;
+        const idsResult = await this.executeQuery(getLastIdsQuery);
+        const newPaxId = idsResult[0].next_id;
+        const newPaxCode = idsResult[0].next_code;
 
         // Insert new PAX
         const insertQuery = `
           INSERT INTO "mstpax" (
-            "nPaxcode", "vPaxname", "vEmail", "vPan", "vPanHolderName",
+            "NPAXID", "nPaxcode", "vPaxname", "vEmail", "vPan", "vPanHolderName",
             "dDOB", "vPhoneno", "vNation", "vDesig", "vPost",
             "vBldgFlat", "vStreetName", "vLocation", "vCity", "vState",
             "vCountry", "vRelationWithPanHolder", "UIN", "vPaidByPan", "vPaidByName",
             "bTourOperator", "bIsroprietorShip", "GSTIN", "vGSTSTATE",
             "vPassport", "dIssuedon", "dExpdt",
             "vIDREF1", "vIDREF1NO", "dIDREF1EXPDT",
-            "dCreatedOn", "nCreatedBy", "bIsDeleted"
+            "dCreationDate", "nCreatedBy", "bIsdeleted", "vCodeID", "dBdate", "vCellno",
+            "vAddress"
           )
           VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
             $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-            CURRENT_TIMESTAMP, $31, false
+            $31, CURRENT_TIMESTAMP, $32, false, $33, $34, $8,
+            $35
           )
-          RETURNING "nPaxcode"
+          RETURNING "nPaxcode","vPaxname"
         `;
 
         const result = await this.executeQuery(insertQuery, [
+          newPaxId,
           newPaxCode,
           paxDetails.vPaxname,
           paxDetails.vEmail,
@@ -478,7 +498,10 @@ class TransactionModel extends BaseModel {
           paxDetails.vIDREF1,
           paxDetails.vIDREF1NO,
           paxDetails.dIDREF1EXPDT,
-          userId
+          userId,
+          paxDetails.vCodeID,
+          paxDetails.dBdate,
+          paxDetails.vAddress
         ]);
 
         return result[0];

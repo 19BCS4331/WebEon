@@ -18,6 +18,8 @@ const Button = styled.button`
   gap: ${(props)=> props.searchIcon ? "5px" : "0px"};
   align-items: center;
   justify-content: center;
+  text-align: center;
+ 
 
   &:hover {
     // opacity: 0.7;

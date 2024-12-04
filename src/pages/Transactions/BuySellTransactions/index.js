@@ -50,11 +50,18 @@ const BuySellTransactionsContent = () => {
   const [paxDetails, setPaxDetails] = useState(null);
 
   useEffect(() => {
+    // Reset form and show list when transaction parameters change
+    resetForm();
+    setShowList(true);
+    setEditMode(false);
+    setActiveStep(0);
+    
+    // Update form with new transaction parameters
     updateFormData({
       vTrnwith,
       vTrntype
     });
-  }, [vTrnwith, vTrntype, updateFormData]);
+  }, [vTrnwith, vTrntype]);
 
   useEffect(() => {
     if (isEditMode && formData.PaxCode) {
@@ -66,7 +73,13 @@ const BuySellTransactionsContent = () => {
     try {
       const response = await apiClient.get(`/pages/Transactions/pax-details/${paxCode}`);
       if (response.data.data) {
-        setPaxDetails(response.data.data);
+        const paxData = response.data.data;
+        setPaxDetails(paxData);
+        updateFormData({
+          PaxCode: paxData.nPaxcode,
+          PaxName: paxData.vPaxname
+        });
+        console.log("Pax Details:", paxData);
       }
     } catch (error) {
       console.error('Error fetching pax details:', error);
@@ -199,6 +212,7 @@ const BuySellTransactionsContent = () => {
               p: 3,
               backgroundColor: Colortheme.background,
               color: Colortheme.text,
+              borderRadius: "20px",
             }}
           >
             <Box
@@ -263,7 +277,7 @@ const BuySellTransactionsContent = () => {
                       setEditMode(false);
                       handleNewTransaction();
                     }} 
-                    style={{ width: 150 }}
+                    style={{ width: 200 }}
                     addIcon={true}
                   >
                     New Transaction

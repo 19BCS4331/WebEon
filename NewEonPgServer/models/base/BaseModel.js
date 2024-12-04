@@ -47,6 +47,28 @@ class BaseModel {
         }
     }
 
+    static async generateCode(prefix, tableName, columnName) {
+        try {
+            // Get the current maximum code
+            const query = `
+                SELECT MAX(CAST(SUBSTRING(${columnName} FROM ${prefix.length + 1}) AS INTEGER)) as max_num 
+                FROM "${tableName}"
+                WHERE ${columnName} LIKE '${prefix}%'
+            `;
+            const result = await this.executeQuery(query);
+            
+            // Get the next number
+            const maxNum = result[0]?.max_num || 0;
+            const nextNum = maxNum + 1;
+            
+            // Format the new code with leading zeros (e.g., PAX0001)
+            const paddedNum = nextNum.toString().padStart(4, '0');
+            return `${prefix}${paddedNum}`;
+        } catch (error) {
+            throw new DatabaseError(`Failed to generate code for ${prefix}`, error);
+        }
+    }
+
     static buildWhereClause(conditions = {}) {
         const params = [];
         const clauses = [];

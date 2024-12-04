@@ -67,7 +67,7 @@ router.get('/getCategoryOptions', authMiddleware, async (req, res) => {
 });
 
 // Get Party Type Options
-router.get('/party-type-options', async (req, res) => {
+router.get('/party-type-options',authMiddleware,async (req, res) => {
   try {
     const options = await TransactionModel.getPartyTypeOptions();
     res.json(options);
@@ -77,7 +77,7 @@ router.get('/party-type-options', async (req, res) => {
   }
 });
 
-router.get('/party-type-options/:entityType', async (req, res) => {
+router.get('/party-type-options/:entityType', authMiddleware,async (req, res) => {
   try {
     const { entityType } = req.params;
     const options = await TransactionModel.getPartyTypeOptions(entityType);
@@ -89,7 +89,7 @@ router.get('/party-type-options/:entityType', async (req, res) => {
 });
 
 // Get Nationality Options
-router.get('/nationality-options', async (req, res) => {
+router.get('/nationality-options', authMiddleware,async (req, res) => {
   try {
     const options = await TransactionModel.getNationalityOptions();
     res.json(options);
@@ -100,7 +100,7 @@ router.get('/nationality-options', async (req, res) => {
 });
 
 // Get City Options
-router.get('/city-options', async (req, res) => {
+router.get('/city-options', authMiddleware,async (req, res) => {
   try {
     const options = await TransactionModel.getCityOptions();
     res.json(options);
@@ -111,7 +111,7 @@ router.get('/city-options', async (req, res) => {
 });
 
 // Get State Options
-router.get('/state-options', async (req, res) => {
+router.get('/state-options', authMiddleware,async (req, res) => {
   try {
     const options = await TransactionModel.getStateOptions();
     res.json(options);
@@ -122,7 +122,7 @@ router.get('/state-options', async (req, res) => {
 });
 
 // Get Country Options
-router.get('/country-options', async (req, res) => {
+router.get('/country-options', authMiddleware,async (req, res) => {
   try {
     const options = await TransactionModel.getCountryOptions();
     res.json(options);
@@ -133,7 +133,7 @@ router.get('/country-options', async (req, res) => {
 });
 
 // Get ID Type Options
-router.get('/id-type-options', async (req, res) => {
+router.get('/id-type-options', authMiddleware,async (req, res) => {
   try {
     const options = await TransactionModel.getIDTypeOptions();
     res.json(options);
@@ -144,7 +144,7 @@ router.get('/id-type-options', async (req, res) => {
 });
 
 // Get Transaction Details
-router.get('/transaction/:id', async (req, res) => {
+router.get('/transaction/:id', authMiddleware,async (req, res) => {
   try {
     const { id } = req.params;
     const transaction = await TransactionModel.getTransactionById(id);
@@ -161,7 +161,7 @@ router.get('/transaction/:id', async (req, res) => {
 });
 
 // PAX Management Routes
-router.get('/pax-list', async (req, res) => {
+router.get('/pax-list', authMiddleware,async (req, res) => {
   try {
     const { partyType } = req.query;
     const paxList = await TransactionModel.getPaxList(partyType);
@@ -172,7 +172,7 @@ router.get('/pax-list', async (req, res) => {
   }
 });
 
-router.get('/pax-details/:paxCode', async (req, res) => {
+router.get('/pax-details/:paxCode', authMiddleware,async (req, res) => {
   try {
     const { paxCode } = req.params;
     const paxDetails = await TransactionModel.getPaxDetails(paxCode);
@@ -188,7 +188,7 @@ router.get('/pax-details/:paxCode', async (req, res) => {
   }
 });
 
-router.post('/check-pax-name', async (req, res) => {
+router.post('/check-pax-name',authMiddleware, async (req, res) => {
   try {
     const { paxName, excludePaxCode } = req.body;
     
