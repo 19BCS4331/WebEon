@@ -2,7 +2,7 @@ const { BaseModel, DatabaseError } = require("../../base/BaseModel");
 
 class TransactionModel extends BaseModel {
   // Get transactions based on type and filters
-  static async getTransactions({ vTrnwith, vTrntype, fromDate, toDate, ...filters }) {
+  static async getTransactions({ vTrnwith, vTrntype, fromDate, toDate, branchId, ...filters }) {
     try {
       const query = `
         SELECT t.*, 
@@ -19,10 +19,11 @@ class TransactionModel extends BaseModel {
         AND t."vNo" IS NOT NULL
         AND (t."bIsDeleted" = false OR t."bIsDeleted" IS NULL)
         AND t."date" BETWEEN $3 AND $4
+        AND t."nBranchID" = $5
         ORDER BY t."date" DESC, t."vNo" DESC
       `;
       
-      const values = [vTrnwith, vTrntype, fromDate, toDate];
+      const values = [vTrnwith, vTrntype, fromDate, toDate, branchId];
       return await this.executeQuery(query, values);
     } catch (error) {
       throw new DatabaseError("Failed to fetch transactions", error);
@@ -387,7 +388,8 @@ class TransactionModel extends BaseModel {
             "vCodeID" = $31,
             "dBdate" = $33,
             "vCellno" = $6,
-            "vAddress" = $34
+            "vAddress" = $34,
+            "vIssuedat" = $35
           WHERE "nPaxcode" = $32
           AND "bIsdeleted" = false
           RETURNING "nPaxcode","vPaxname"
@@ -427,7 +429,8 @@ class TransactionModel extends BaseModel {
           paxDetails.vCodeID,
           paxDetails.nPaxcode,
           paxDetails.dBdate,
-          paxDetails.vAddress
+          paxDetails.vAddress,
+          paxDetails.vIssuedat
         ]);
 
         return result[0];
@@ -454,14 +457,14 @@ class TransactionModel extends BaseModel {
             "vPassport", "dIssuedon", "dExpdt",
             "vIDREF1", "vIDREF1NO", "dIDREF1EXPDT",
             "dCreationDate", "nCreatedBy", "bIsdeleted", "vCodeID", "dBdate", "vCellno",
-            "vAddress"
+            "vAddress","vIssuedat"
           )
           VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
             $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
             $31, CURRENT_TIMESTAMP, $32, false, $33, $34, $8,
-            $35
+            $35, $36
           )
           RETURNING "nPaxcode","vPaxname"
         `;
@@ -501,7 +504,8 @@ class TransactionModel extends BaseModel {
           userId,
           paxDetails.vCodeID,
           paxDetails.dBdate,
-          paxDetails.vAddress
+          paxDetails.vAddress,
+          paxDetails.vIssuedat
         ]);
 
         return result[0];
@@ -529,6 +533,72 @@ class TransactionModel extends BaseModel {
       return result[0] || null;
     } catch (error) {
       throw error;
+    }
+  }
+
+  // Get agents for the branch
+  static async getAgents(branchId) {
+    try {
+      const query = `
+        SELECT * FROM "mstCODES" 
+        WHERE "bIsForexagent" = true 
+        AND "nBranchID" = $1 
+        AND "bIsDeleted" = false 
+        AND "bActive" = true 
+        ORDER BY "vName"
+      `;
+      const result = await this.executeQuery(query, [branchId]);
+      return result.map(item => ({
+        ...item,
+        label: `${item.vCode}-${item.vName}`,
+        value: item.nCodesID
+      }));
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch agents", error);
+    }
+  }
+
+  // Get marketing references for the branch
+  static async getMarketingRefs(branchId) {
+    try {
+      const query = `
+        SELECT * FROM "mstCODES" 
+        WHERE "bIsMrktExecutive" = true 
+        AND "nBranchID" = $1 
+        AND "bIsDeleted" = false 
+        AND "bActive" = true 
+        ORDER BY "vName"
+      `;
+      const result = await this.executeQuery(query, [branchId]);
+      return result.map(item => ({
+        ...item,
+        label: item.vName,
+        value: item.nCodesID
+      }));
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch marketing references", error);
+    }
+  }
+
+  // Get delivery persons for the branch
+  static async getDeliveryPersons(branchId) {
+    try {
+      const query = `
+        SELECT * FROM "mstCODES" 
+        WHERE "bIsDeliveryPerson" = true 
+        AND "nBranchID" = $1 
+        AND "bIsDeleted" = false 
+        AND "bActive" = true 
+        ORDER BY "vName"
+      `;
+      const result = await this.executeQuery(query, [branchId]);
+      return result.map(item => ({
+        ...item,
+        label: `${item.vCode}-${item.vName}`,
+        value: item.nCodesID
+      }));
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch delivery persons", error);
     }
   }
 }

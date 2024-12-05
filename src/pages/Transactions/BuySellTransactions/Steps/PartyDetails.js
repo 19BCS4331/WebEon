@@ -10,6 +10,7 @@ import {
   Box,
   InputAdornment,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
@@ -89,6 +90,7 @@ const PartyDetails = ({
     GSTIN: "",
     vGSTSTATE: "",
     vPassport: "",
+    vIssuedat: "",
     dIssuedon: null,
     dExpdt: null,
     vIDREF1: "",
@@ -116,6 +118,7 @@ const PartyDetails = ({
     isEditMode ? propPaxDetails : defaultPaxDetails
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     if (isEditMode && propPaxDetails) {
@@ -221,6 +224,7 @@ const PartyDetails = ({
       PaxCode: "",
       PaxName: "",
       PartyID: newCodeID,
+      OnBehalfClient: newValue ? newValue.label : "",
     });
 
     // Reset local PAX details
@@ -407,65 +411,54 @@ const PartyDetails = ({
       errors.vPaxname = "PAX Name is required";
     }
 
-    if (!details.vEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.vEmail)) {
-      errors.vEmail = "Invalid email format";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.vEmail)) {
+      errors.vEmail = "Enter A Valid Email!";
     }
 
-    if (!details.vPhoneno && !/^\d{10}$/.test(details.vPhoneno)) {
-      errors.vPhoneno = "Phone number must be 10 digits";
-    }
-
+    // setFormErrors(errors);
     return errors;
   };
 
   const handleDialogSave = async () => {
+    const errors = validateForm(localPaxDetails);
+    if (Object.keys(errors).length > 0) {
+      Object.keys(errors).forEach((field) => {
+        showToast(errors[field], "error");
+      });
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      setIsSaving(false);
+      return;
+    }
+
+    setIsSaving(true);
+    // Send the request to save-pax endpoint
     try {
-      setIsSaving(true);
-      const errors = validateForm(localPaxDetails);
-      if (Object.keys(errors).length > 0) {
-        Object.values(errors).forEach((error) => {
-          showToast(error, "error");
-          setTimeout(() => {
-            hideToast();
-          }, 2000);
-        });
-        return;
-      }
+      const response = await apiClient.post("/pages/Transactions/save-pax", {
+        ...localPaxDetails,
+        vPaxCode: localPaxDetails.nPaxcode, // Include the PAX code for duplicate check if editing
+      });
 
-      // Send the request to save-pax endpoint
-      try {
-        const response = await apiClient.post("/pages/Transactions/save-pax", {
-          ...localPaxDetails,
-          vPaxCode: localPaxDetails.nPaxcode, // Include the PAX code for duplicate check if editing
+      if (response.data.success) {
+        const { nPaxcode, vPaxname } = response.data.data;
+        onUpdate({
+          PaxCode: nPaxcode,
+          PaxName: vPaxname,
         });
-
-        if (response.data.success) {
-          const { nPaxcode, vPaxname } = response.data.data;
-          onUpdate({
-            PaxCode: nPaxcode,
-            PaxName: vPaxname,
-          });
-          showToast(response.data.message, "success");
-          setOpenDialog(false);
-        } else {
-          showToast(
-            response.data.message,
-            "error" || "Failed to save PAX details",
-            "error"
-          );
-        }
-      } catch (error) {
-        console.error("Error saving PAX details:", error);
-        showToast("Failed to save PAX details", "error");
-      } finally {
-        setIsSaving(false);
-        setTimeout(() => {
-          hideToast();
-        }, 2000);
+        showToast(response.data.message, "success");
+        setOpenDialog(false);
+      } else {
+        showToast(response.data.message, "error");
       }
     } catch (error) {
       console.error("Error saving PAX details:", error);
-      showToast("Failed to save PAX details", "error");
+      showToast(error.response.data.message, "error");
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
     }
   };
 
@@ -483,26 +476,35 @@ const PartyDetails = ({
               ) || null
             }
             onChange={handlePartyTypeChange}
+            getOptionLabel={(option) => option.label || ""}
+            isOptionEqualToValue={(option, value) =>
+              option.value === value.value
+            }
             label="Party Type"
             required
             styleTF={{ width: "100%" }}
+            disabled={isEditMode}
           />
         </Grid>
         <Grid item xs={12} md={3}>
-          <CustomBoxButton
-            onClick={() => setOpenDialog(true)}
-            label={data?.PaxName ? "Pax Name" : "Select PAX"}
-          >
-            {data?.PaxName ||
-              (isEditMode ? "View PAX Details" : "Add PAX Details")}
-          </CustomBoxButton>
+          <Tooltip title={isEditMode ? "View PAX Details" : "Select PAX"}>
+            <Box height={"100%"}>
+              <CustomBoxButton
+                onClick={() => setOpenDialog(true)}
+                label={data?.PaxName ? "Pax Name" : "Select PAX"}
+              >
+                {data?.PaxName ||
+                  (isEditMode ? "View PAX Details" : "Add PAX Details")}
+              </CustomBoxButton>
+            </Box>
+          </Tooltip>
         </Grid>
 
         <Grid item xs={12} md={3}>
           <CustomTextField
             label={"On Behalf of"}
-            value={data?.PersonRef}
-            onChange={(e) => onUpdate({ PersonRef: e.target.value })}
+            value={data?.OnBehalfClient}
+            onChange={(e) => onUpdate({ OnBehalfClient: e.target.value })}
             style={{ width: "100%" }}
           />
         </Grid>
@@ -601,6 +603,7 @@ const PartyDetails = ({
                         vGSTSTATE: "",
                         // Passport Details
                         vPassport: "",
+                        vIssuedat: "",
                         dIssuedon: null,
                         dExpdt: null,
                         // Other IDs
@@ -691,6 +694,7 @@ const PartyDetails = ({
                         value={localPaxDetails.vPaxname}
                         onChange={(e) => handlePaxNameChange(e.target.value)}
                         required
+                        
                       />
                     </Grid>
 
@@ -702,6 +706,10 @@ const PartyDetails = ({
                           handlePaxDetailsChange("vEmail", e.target.value)
                         }
                         required
+                        error={localPaxDetails.vEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localPaxDetails.vEmail)}
+                        helperText={localPaxDetails.vEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localPaxDetails.vEmail) && 
+                        "Invalid Email Format"
+                        }
                       />
                     </Grid>
 
@@ -745,6 +753,8 @@ const PartyDetails = ({
                         onChange={(e) =>
                           handlePaxDetailsChange("vPhoneno", e.target.value)
                         }
+                        error={!!formErrors.vPhoneno}
+                        helperText={formErrors.vPhoneno}
                       />
                     </Grid>
 
@@ -776,6 +786,28 @@ const PartyDetails = ({
                         value={localPaxDetails.vDesig}
                         onChange={(e) =>
                           handlePaxDetailsChange("vDesig", e.target.value)
+                        }
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={3}>
+                      <CustomAutoComplete
+                        label="Residential Status"
+                        options={residentialStatusOptions}
+                        value={
+                          residentialStatusOptions.find(
+                            (opt) => opt.value === localPaxDetails.vPost
+                          ) || null
+                        }
+                        onChange={(e, newValue) =>
+                          handlePaxDetailsChange(
+                            "vPost",
+                            newValue ? newValue.value : ""
+                          )
+                        }
+                        getOptionLabel={(option) => option.label || ""}
+                        isOptionEqualToValue={(option, value) =>
+                          option.value === value.value
                         }
                       />
                     </Grid>
@@ -1007,6 +1039,19 @@ const PartyDetails = ({
                               onChange={(e) =>
                                 handlePaxDetailsChange(
                                   "vPassport",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} md={3}>
+                            <CustomTextField
+                              label="Issued At"
+                              value={localPaxDetails.vIssuedat}
+                              onChange={(e) =>
+                                handlePaxDetailsChange(
+                                  "vIssuedat",
                                   e.target.value
                                 )
                               }

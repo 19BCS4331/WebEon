@@ -14,25 +14,45 @@ import MainContainerCompilation from "../../../components/global/MainContainerCo
 import ThemeContext from "../../../contexts/ThemeContext";
 import BasicDetails from "./Steps/BasicDetails";
 import PartyDetails from "./Steps/PartyDetails";
+import AgentRefDetails from "./Steps/AgentRefDetails";
 import TransactionDetails from "./Steps/TransactionDetails";
 import TransactionList from "./Steps/TransactionList";
 import { apiClient } from "../../../services/apiClient";
 import StyledButton from "../../../components/global/StyledButton";
-import SearchIcon from '@mui/icons-material/Search';
-import { TransactionProvider, useTransaction } from "../../../contexts/TransactionContext";
+import {
+  TransactionProvider,
+  useTransaction,
+} from "../../../contexts/TransactionContext";
 
 const steps = [
-  "Basic Details",
-  "Party Details",
-  "Transaction Details",
-  "Party Information",
-  "Purpose & Amount",
-  "Payment Details",
-  "Review & Submit",
+  {
+    label: "Basic Details",
+    component: BasicDetails,
+  },
+  {
+    label: "Party Details",
+    component: PartyDetails,
+  },
+  {
+    label: "Agent/Ref Selection",
+    component: AgentRefDetails,
+  },
+  {
+    label: "Transaction Details",
+    component: TransactionDetails,
+  },
+  {
+    label: "Purpose & Amount",
+    component: null,
+  },
+  {
+    label: "Review & Submit",
+    component: null,
+  },
 ];
 
 const BuySellTransactionsContent = () => {
-  const { 
+  const {
     formData,
     activeStep,
     showList,
@@ -42,7 +62,7 @@ const BuySellTransactionsContent = () => {
     setShowList,
     setEditMode,
     initializeTransaction,
-    resetForm
+    resetForm,
   } = useTransaction();
 
   const { With: vTrnwith, Type: vTrntype } = useParams();
@@ -55,11 +75,11 @@ const BuySellTransactionsContent = () => {
     setShowList(true);
     setEditMode(false);
     setActiveStep(0);
-    
+
     // Update form with new transaction parameters
     updateFormData({
       vTrnwith,
-      vTrntype
+      vTrntype,
     });
   }, [vTrnwith, vTrntype]);
 
@@ -71,18 +91,20 @@ const BuySellTransactionsContent = () => {
 
   const fetchPaxDetails = async (paxCode) => {
     try {
-      const response = await apiClient.get(`/pages/Transactions/pax-details/${paxCode}`);
+      const response = await apiClient.get(
+        `/pages/Transactions/pax-details/${paxCode}`
+      );
       if (response.data.data) {
         const paxData = response.data.data;
         setPaxDetails(paxData);
         updateFormData({
           PaxCode: paxData.nPaxcode,
-          PaxName: paxData.vPaxname
+          PaxName: paxData.vPaxname,
         });
         console.log("Pax Details:", paxData);
       }
     } catch (error) {
-      console.error('Error fetching pax details:', error);
+      console.error("Error fetching pax details:", error);
     }
   };
 
@@ -103,7 +125,7 @@ const BuySellTransactionsContent = () => {
         vTrntype,
         vNo: response.data || "",
         date: new Date().toISOString().split("T")[0],
-        Category: "L"
+        Category: "L",
       });
     } catch (error) {
       console.error("Error fetching next transaction number:", error);
@@ -111,7 +133,7 @@ const BuySellTransactionsContent = () => {
   };
 
   const handleUpdateData = (fieldOrObject, value) => {
-    if (typeof fieldOrObject === 'object') {
+    if (typeof fieldOrObject === "object") {
       updateFormData(fieldOrObject);
     } else {
       updateFormData({ [fieldOrObject]: value });
@@ -146,6 +168,8 @@ const BuySellTransactionsContent = () => {
       case 1:
         return true;
       case 2:
+        return true;
+      case 3:
         return formData.CounterID && formData.ShiftID;
       default:
         return true;
@@ -153,34 +177,30 @@ const BuySellTransactionsContent = () => {
   };
 
   const renderStepContent = () => {
+    const StepComponent = steps[activeStep].component;
+    if (!StepComponent) return null;
+
+    const commonProps = {
+      data: formData,
+      onUpdate: handleUpdateData,
+      isEditMode: isEditMode,
+    };
+
     switch (activeStep) {
       case 0:
-        return (
-          <BasicDetails
-            data={formData}
-            onUpdate={handleUpdateData}
-            isEditMode={isEditMode}
-          />
-        );
+        return <StepComponent {...commonProps} />;
       case 1:
         return (
-          <PartyDetails
-            data={formData}
-            onUpdate={handleUpdateData}
-            isEditMode={isEditMode}
+          <StepComponent
+            {...commonProps}
             paxDetails={paxDetails}
             setPaxDetails={setPaxDetails}
           />
         );
       case 2:
-        return (
-          <TransactionDetails
-            data={formData}
-            onUpdate={handleUpdateData}
-            isEditMode={isEditMode}
-          />
-        );
-      // Add other step components
+        return <StepComponent {...commonProps} />;
+      case 3:
+        return <StepComponent {...commonProps} />;
       default:
         return null;
     }
@@ -188,9 +208,7 @@ const BuySellTransactionsContent = () => {
 
   return (
     <MainContainerCompilation
-      title={`${
-        formData.vTrntype === "B" ? "Buy" : "Sell"
-      } Transaction - ${
+      title={`${formData.vTrntype === "B" ? "Buy" : "Sell"} Transaction - ${
         {
           B: "Bank",
           P: "Public",
@@ -271,19 +289,23 @@ const BuySellTransactionsContent = () => {
               </Typography>
               <Box display="flex" gap={2}>
                 {isEditMode && (
-                  <StyledButton 
+                  <StyledButton
                     onClick={() => {
                       resetForm();
                       setEditMode(false);
                       handleNewTransaction();
-                    }} 
+                    }}
                     style={{ width: 200 }}
                     addIcon={true}
                   >
                     New Transaction
                   </StyledButton>
                 )}
-                <StyledButton onClick={() => setShowList(true)} style={{ width: 150 }} searchIcon={true}>
+                <StyledButton
+                  onClick={() => setShowList(true)}
+                  style={{ width: 150 }}
+                  searchIcon={true}
+                >
                   Search
                 </StyledButton>
               </Box>
@@ -291,7 +313,7 @@ const BuySellTransactionsContent = () => {
 
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
               <CustomStepper
-                steps={steps}
+                steps={steps.map((step) => step.label)}
                 activeStep={activeStep}
                 onStepClick={handleStepClick}
                 onNext={handleNext}
@@ -337,7 +359,7 @@ const BuySellTransactionsContent = () => {
                 }}
               >
                 <Typography variant="h6" color={Colortheme.text} sx={{ mb: 3 }}>
-                  {steps[activeStep]}
+                  {steps[activeStep].label}
                 </Typography>
 
                 <Box sx={{ flex: 1 }}>{renderStepContent()}</Box>

@@ -6,12 +6,13 @@ const TransactionModel = require("../../../models/pages/Transactions/Transaction
 // Get transactions
 router.get("/transactions", authMiddleware, async (req, res) => {
   try {
-    const { vTrnwith, vTrntype, fromDate, toDate } = req.query;
+    const { vTrnwith, vTrntype, fromDate, toDate, branchId } = req.query;
     const result = await TransactionModel.getTransactions({
       vTrnwith,
       vTrntype,
       fromDate,
-      toDate
+      toDate,
+      branchId,
     });
     res.json(result);
   } catch (error) {
@@ -235,6 +236,42 @@ router.post('/save-pax', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error in /save-pax:', error);
     res.status(500).json({ success: false, message: 'Failed to save PAX details' });
+  }
+});
+
+// Get agents
+router.get("/agents", authMiddleware, async (req, res) => {
+  try {
+    const { branchId } = req.query;
+    const agents = await TransactionModel.getAgents(branchId);
+    res.json(agents);
+  } catch (error) {
+    console.error("Error fetching agents:", error);
+    res.status(500).json({ error: error.message || "Error fetching agents" });
+  }
+});
+
+// Get marketing references
+router.get("/marketing-refs", authMiddleware, async (req, res) => {
+  try {
+    const { branchId } = req.query;
+    const marketingRefs = await TransactionModel.getMarketingRefs(branchId);
+    res.json(marketingRefs);
+  } catch (error) {
+    console.error("Error fetching marketing refs:", error);
+    res.status(500).json({ error: error.message || "Error fetching marketing references" });
+  }
+});
+
+// Get delivery persons
+router.get("/delivery-persons", authMiddleware, async (req, res) => {
+  try {
+    const { branchId } = req.query;
+    const deliveryPersons = await TransactionModel.getDeliveryPersons(branchId);
+    res.json(deliveryPersons);
+  } catch (error) {
+    console.error("Error fetching delivery persons:", error);
+    res.status(500).json({ error: error.message || "Error fetching delivery persons" });
   }
 });
 

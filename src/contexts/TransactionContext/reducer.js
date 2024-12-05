@@ -50,7 +50,9 @@ export const initialState = {
     usdIBR: 0,
     RiskCateg: "",
     InvVendor: "",
-    PersonRef:"",
+    OnBehalfClient:"",
+    // Agent and Reference Details
+    nDeliveryPersonID: "",
   },
   // UI State
   activeStep: 0,

@@ -5,7 +5,7 @@ server = '101.53.148.243,9137'
 database = 'WAPR24AHMDUAT'
 username = 'mil'
 password = 'mil@1234#'
-search_string = 'vBankType'
+search_string = 'feamount'
 
 
 # Establish connection
