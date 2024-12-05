@@ -184,6 +184,7 @@ const BuySellTransactionsContent = () => {
       data: formData,
       onUpdate: handleUpdateData,
       isEditMode: isEditMode,
+      Colortheme: Colortheme,
     };
 
     switch (activeStep) {

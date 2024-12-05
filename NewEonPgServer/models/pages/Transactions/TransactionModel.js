@@ -601,6 +601,91 @@ class TransactionModel extends BaseModel {
       throw new DatabaseError("Failed to fetch delivery persons", error);
     }
   }
+
+  static async getCurrencies() {
+    try {
+      const query = `
+         SELECT DISTINCT 
+          "vCncode" as value,
+          CONCAT("vCncode", ' - ', "vCnName") as label
+        FROM "mCurrency" 
+        WHERE "bIsDeleted" = false
+		AND "bTradedCurrency" = false
+        ORDER BY "vCncode"
+      `;
+      const result = await this.executeQuery(query);
+      return result;
+    } catch (error) {
+      console.error('Error in getCurrencies:', error);
+      throw error;
+    }
+  }
+
+  static async getProductTypes(vTrnType) {
+    try {
+      const query = `
+        SELECT "PRODUCTCODE" AS value, CONCAT("PRODUCTCODE", ' - ', "DESCRIPTION") AS label
+FROM "mProductM"
+WHERE 
+  "bIsDeleted" = false
+  AND (
+        ($1 = 'B' AND "retailBuy" = true) OR
+        ($1 = 'S' AND "retailSell" = true)
+      )
+ORDER BY "PRODUCTCODE" ASC
+      `;
+      const result = await this.executeQuery(query,[vTrnType]);
+      return result;
+    } catch (error) {
+      console.error('Error in getProductTypes:', error);
+      throw error;
+    }
+  }
+
+  static async getIssuers(productType) {
+    try {
+      const query = `
+        SELECT DISTINCT 
+          nIssuerCode as value,
+          vIssuerName as label
+        FROM mIssuer 
+        WHERE iStatus = 1 
+        AND vProductType = $1
+        ORDER BY vIssuerName
+      `;
+      const result = await this.executeQuery(query, [productType]);
+      return result.rows;
+    } catch (error) {
+      console.error('Error in getIssuers:', error);
+      throw error;
+    }
+  }
+
+  static async getRate(currencyCode) {
+    try {
+      const query = `
+        SELECT 
+          nBuyRate as rate,
+          nMargin
+        FROM mCurrencyRate 
+        WHERE vCurrencyCode = $1 
+        AND dDate = CURRENT_DATE
+      `;
+      const result = await this.executeQuery(query, [currencyCode]);
+      
+      if (result.rows.length === 0) {
+        throw new Error('Rate not found for the selected currency');
+      }
+
+      const { rate, nMargin } = result.rows[0];
+      const finalRate = rate + (rate * (nMargin / 100));
+      
+      return { rate: finalRate };
+    } catch (error) {
+      console.error('Error in getRate:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = TransactionModel;

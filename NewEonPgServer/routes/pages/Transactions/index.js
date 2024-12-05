@@ -275,4 +275,51 @@ router.get("/delivery-persons", authMiddleware, async (req, res) => {
   }
 });
 
+// Get currency options
+router.get('/getCurrencies', authMiddleware, async (req, res) => {
+  try {
+    const currencies = await TransactionModel.getCurrencies();
+    res.json(currencies);
+  } catch (error) {
+    console.error('Error fetching currencies:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch currencies' });
+  }
+});
+
+// Get product types
+router.get('/getProductTypes', authMiddleware, async (req, res) => {
+  try {
+    const {vTrnType} = req.query;
+    const types = await TransactionModel.getProductTypes(vTrnType);
+    res.json(types);
+  } catch (error) {
+    console.error('Error fetching product types:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch product types' });
+  }
+});
+
+// Get issuers based on product type
+router.get('/getIssuers', authMiddleware, async (req, res) => {
+  try {
+    const { type } = req.query;
+    const issuers = await TransactionModel.getIssuers(type);
+    res.json(issuers);
+  } catch (error) {
+    console.error('Error fetching issuers:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch issuers' });
+  }
+});
+
+// Get rate for currency
+router.get('/getRate', authMiddleware, async (req, res) => {
+  try {
+    const { currencyCode } = req.query;
+    const rate = await TransactionModel.getRate(currencyCode);
+    res.json(rate);
+  } catch (error) {
+    console.error('Error fetching rate:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch rate' });
+  }
+});
+
 module.exports = router;
