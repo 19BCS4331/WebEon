@@ -34,7 +34,7 @@ const steps = [
     component: PartyDetails,
   },
   {
-    label: "Agent/Ref Selection",
+    label: "Agent/Ref Selection (Optional)",
     component: AgentRefDetails,
   },
   {
@@ -170,7 +170,7 @@ const BuySellTransactionsContent = () => {
       case 2:
         return true;
       case 3:
-        return formData.CounterID && formData.ShiftID;
+        return true;
       default:
         return true;
     }

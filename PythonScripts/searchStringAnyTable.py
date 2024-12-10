@@ -2,11 +2,11 @@ import pyodbc
 
 # Replace these with your actual database connection details
 server = '101.53.148.243,9137'
-# database = 'WAPR24AHMDUAT'
-database = 'wsgfmastUAT'
+database = 'WAPR24AHMDUAT'
+# database = 'wsgfmastUAT'
 username = 'mil'
 password = 'mil@1234#'
-search_string = 'INVOICE DELETION'
+search_string = '2100025'
 
 # Establish connection
 conn = pyodbc.connect(

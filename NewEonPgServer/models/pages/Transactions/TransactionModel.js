@@ -2,7 +2,14 @@ const { BaseModel, DatabaseError } = require("../../base/BaseModel");
 
 class TransactionModel extends BaseModel {
   // Get transactions based on type and filters
-  static async getTransactions({ vTrnwith, vTrntype, fromDate, toDate, branchId, ...filters }) {
+  static async getTransactions({
+    vTrnwith,
+    vTrntype,
+    fromDate,
+    toDate,
+    branchId,
+    ...filters
+  }) {
     try {
       const query = `
         SELECT t.*, 
@@ -22,7 +29,7 @@ class TransactionModel extends BaseModel {
         AND t."nBranchID" = $5
         ORDER BY t."date" DESC, t."vNo" DESC
       `;
-      
+
       const values = [vTrnwith, vTrntype, fromDate, toDate, branchId];
       return await this.executeQuery(query, values);
     } catch (error) {
@@ -69,7 +76,9 @@ class TransactionModel extends BaseModel {
           SELECT "nPurposeID" FROM "MstPurpose"
           WHERE "nPurposeID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
         `;
-        const purposeResult = await this.executeQuery(purposeQuery, [data.Purpose]);
+        const purposeResult = await this.executeQuery(purposeQuery, [
+          data.Purpose,
+        ]);
         if (!purposeResult.length) {
           validations.push("Invalid Purpose selected");
         }
@@ -80,7 +89,9 @@ class TransactionModel extends BaseModel {
           SELECT "SubPurposeID" FROM "SubPurpose"
           WHERE "SubPurposeID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
         `;
-        const subPurposeResult = await this.executeQuery(subPurposeQuery, [data.SubPurpose]);
+        const subPurposeResult = await this.executeQuery(subPurposeQuery, [
+          data.SubPurpose,
+        ]);
         if (!subPurposeResult.length) {
           validations.push("Invalid Sub Purpose selected");
         }
@@ -103,7 +114,7 @@ class TransactionModel extends BaseModel {
 
       return {
         isValid: validations.length === 0,
-        errors: validations
+        errors: validations,
       };
     } catch (error) {
       throw new DatabaseError("Failed to validate transaction", error);
@@ -120,8 +131,11 @@ class TransactionModel extends BaseModel {
       }
 
       // Get next transaction number
-      const nextNo = await this.getNextTransactionNumber(data.vTrnwith, data.vTrntype);
-      
+      const nextNo = await this.getNextTransactionNumber(
+        data.vTrnwith,
+        data.vTrntype
+      );
+
       const query = `
         INSERT INTO "Transact" (
           "vTrnwith", "vTrntype", "vNo", "date", "counterID", "ShiftID",
@@ -153,7 +167,7 @@ class TransactionModel extends BaseModel {
         data.byCard,
         data.byTransfer,
         data.byOth,
-        data.userID
+        data.userID,
       ];
 
       return await this.executeQuery(query, values);
@@ -173,7 +187,11 @@ class TransactionModel extends BaseModel {
           AND "isActive" = true 
         ORDER BY "Description"
       `;
-      const result = await this.executeQuery(query, [vTrnWith, vTrnType, TrnSubType]);
+      const result = await this.executeQuery(query, [
+        vTrnWith,
+        vTrnType,
+        TrnSubType,
+      ]);
       return result;
     } catch (error) {
       throw new DatabaseError("Failed to get purpose options", error);
@@ -220,7 +238,7 @@ class TransactionModel extends BaseModel {
         AND "bActive" = true
         ORDER BY "vName"
       `;
-      const result = await this.executeQuery(query, [entityType === 'I']);
+      const result = await this.executeQuery(query, [entityType === "I"]);
       return result;
     } catch (error) {
       throw error;
@@ -299,7 +317,7 @@ class TransactionModel extends BaseModel {
       }
 
       query += ` ORDER BY "vPaxname"`;
-      
+
       const result = await this.executeQuery(query, params);
       return result;
     } catch (error) {
@@ -430,7 +448,7 @@ class TransactionModel extends BaseModel {
           paxDetails.nPaxcode,
           paxDetails.dBdate,
           paxDetails.vAddress,
-          paxDetails.vIssuedat
+          paxDetails.vIssuedat,
         ]);
 
         return result[0];
@@ -505,7 +523,7 @@ class TransactionModel extends BaseModel {
           paxDetails.vCodeID,
           paxDetails.dBdate,
           paxDetails.vAddress,
-          paxDetails.vIssuedat
+          paxDetails.vIssuedat,
         ]);
 
         return result[0];
@@ -548,10 +566,10 @@ class TransactionModel extends BaseModel {
         ORDER BY "vName"
       `;
       const result = await this.executeQuery(query, [branchId]);
-      return result.map(item => ({
+      return result.map((item) => ({
         ...item,
         label: `${item.vCode}-${item.vName}`,
-        value: item.nCodesID
+        value: item.nCodesID,
       }));
     } catch (error) {
       throw new DatabaseError("Failed to fetch agents", error);
@@ -570,10 +588,10 @@ class TransactionModel extends BaseModel {
         ORDER BY "vName"
       `;
       const result = await this.executeQuery(query, [branchId]);
-      return result.map(item => ({
+      return result.map((item) => ({
         ...item,
         label: item.vName,
-        value: item.nCodesID
+        value: item.nCodesID,
       }));
     } catch (error) {
       throw new DatabaseError("Failed to fetch marketing references", error);
@@ -592,10 +610,10 @@ class TransactionModel extends BaseModel {
         ORDER BY "vName"
       `;
       const result = await this.executeQuery(query, [branchId]);
-      return result.map(item => ({
+      return result.map((item) => ({
         ...item,
         label: `${item.vCode}-${item.vName}`,
-        value: item.nCodesID
+        value: item.nCodesID,
       }));
     } catch (error) {
       throw new DatabaseError("Failed to fetch delivery persons", error);
@@ -616,7 +634,7 @@ class TransactionModel extends BaseModel {
       const result = await this.executeQuery(query);
       return result;
     } catch (error) {
-      console.error('Error in getCurrencies:', error);
+      console.error("Error in getCurrencies:", error);
       throw error;
     }
   }
@@ -634,10 +652,10 @@ WHERE
       )
 ORDER BY "PRODUCTCODE" ASC
       `;
-      const result = await this.executeQuery(query,[vTrnType]);
+      const result = await this.executeQuery(query, [vTrnType]);
       return result;
     } catch (error) {
-      console.error('Error in getProductTypes:', error);
+      console.error("Error in getProductTypes:", error);
       throw error;
     }
   }
@@ -645,18 +663,16 @@ ORDER BY "PRODUCTCODE" ASC
   static async getIssuers(productType) {
     try {
       const query = `
-        SELECT DISTINCT 
-          nIssuerCode as value,
-          vIssuerName as label
-        FROM mIssuer 
-        WHERE iStatus = 1 
-        AND vProductType = $1
-        ORDER BY vIssuerName
+        SELECT "vIssuerCode" AS value, "vIssuerCode" AS label 
+        FROM "mProductIssuerLink" 
+        WHERE "PRODUCTCODE" = $1 
+        AND "bIsActive" = true 
+        AND "vIssuerCode" NOTNULL
       `;
       const result = await this.executeQuery(query, [productType]);
-      return result.rows;
+      return result;
     } catch (error) {
-      console.error('Error in getIssuers:', error);
+      console.error("Error in getIssuers:", error);
       throw error;
     }
   }
@@ -672,18 +688,106 @@ ORDER BY "PRODUCTCODE" ASC
         AND dDate = CURRENT_DATE
       `;
       const result = await this.executeQuery(query, [currencyCode]);
-      
+
       if (result.rows.length === 0) {
-        throw new Error('Rate not found for the selected currency');
+        throw new Error("Rate not found for the selected currency");
       }
 
       const { rate, nMargin } = result.rows[0];
-      const finalRate = rate + (rate * (nMargin / 100));
-      
+      const finalRate = rate + rate * (nMargin / 100);
+
       return { rate: finalRate };
     } catch (error) {
-      console.error('Error in getRate:', error);
+      console.error("Error in getRate:", error);
       throw error;
+    }
+  }
+
+  static async getRateWithMargin(currencyCode, productType, branchId, issCode, trnType) {
+    try {
+      // Get base rate from APIrates
+      const rateResult = await this.executeQuery(
+        'SELECT "Rate" FROM "APIrates" WHERE "CnCode" = $1',
+        [currencyCode]
+      );
+
+      if (!rateResult || rateResult.length === 0) {
+        throw new Error(`No rate found for currency ${currencyCode}`);
+      }
+
+      const baseRate = Number(rateResult[0].Rate);
+
+      // Get margin from MarginMaster
+      const marginResult = await this.executeQuery(
+        'SELECT * FROM "MarginMaster" WHERE "CurrencyCode" = $1 AND "PRODUCT" = $2 AND "nBranchID" = $3 AND "isscode" = $4',
+        [currencyCode, productType, branchId, issCode || '']
+      );
+
+      if (!marginResult || marginResult.length === 0) {
+        throw new Error(`No margin configuration found for currency ${currencyCode}`);
+      }
+
+      const margin = marginResult[0];
+      
+      // Apply margin based on transaction type and ensure it's a number
+      const marginValue = Number(trnType === 'B' ? margin.BuyMargin : margin.SellMargin);
+      
+      // Calculate final rate by adding margin to base rate
+      const finalRate = baseRate + marginValue;
+
+      return {
+        baseRate,
+        marginValue,
+        finalRate: Number(finalRate.toFixed(4))
+      };
+
+    } catch (error) {
+      console.error('Error getting rate with margin:', error);
+      throw error;
+    }
+  }
+
+  static async updateExchangeRates() {
+    try {
+      const API_KEY = '29fb1e0ab32ce2068121d99f';
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/${API_KEY}/latest/INR`);
+      const data = await response.json();
+
+      if (data.result === 'success') {
+        const rates = data.conversion_rates;
+        const values = [];
+        
+        // Convert rates to have each currency as base currency
+        for (const [currencyCode, rateToINR] of Object.entries(rates)) {
+          if (currencyCode === 'INR') continue;
+          
+          // Calculate rate as: 1 foreign currency = X INR
+          const rateFromBase = 1 / rateToINR;
+          
+          values.push({
+            currencyCode,
+            rate: rateFromBase
+          });
+        }
+
+        // Update rates in database using transaction
+        await this.executeTransactionQuery(async (client) => {
+          // Clear existing rates
+          await client.query('DELETE FROM "APIrates"');
+          
+          // Insert new rates
+          for (const {currencyCode, rate} of values) {
+            await client.query(
+              'INSERT INTO "APIrates" ("CnCode", "Rate") VALUES ($1, $2)',
+              [currencyCode, rate]
+            );
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error updating exchange rates:', error);
+      throw error;
+    
     }
   }
 }

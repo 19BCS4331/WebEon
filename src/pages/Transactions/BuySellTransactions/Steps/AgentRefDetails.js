@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Grid } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import CustomTextField from "../../../../components/global/CustomTextField";
 import CustomAutocomplete from "../../../../components/global/CustomAutocomplete";
 import { apiClient } from "../../../../services/apiClient";
 import { AuthContext } from "../../../../contexts/AuthContext";
 
-const AgentRefDetails = ({ data, onUpdate }) => {
+const AgentRefDetails = ({ data, onUpdate,Colortheme }) => {
   const { branch } = useContext(AuthContext);
   const [agentOptions, setAgentOptions] = useState([]);
   const [marketingRefOptions, setMarketingRefOptions] = useState([]);
@@ -126,6 +126,8 @@ const AgentRefDetails = ({ data, onUpdate }) => {
           style={{ width: "100%" }}
         />
       </Grid>
+
+      <Typography color={Colortheme.text} fontSize={12} marginTop={2} marginLeft={2}>*Commission fields in the next step will only be enabled if an Agent is selected</Typography>
     </Grid>
   );
 };

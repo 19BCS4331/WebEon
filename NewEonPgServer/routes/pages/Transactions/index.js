@@ -322,4 +322,54 @@ router.get('/getRate', authMiddleware, async (req, res) => {
   }
 });
 
+// Get rate with margin
+router.get('/getRateWithMargin', async (req, res) => {
+  try {
+    const { currencyCode, productType, branchId, issCode, trnType } = req.query;
+    
+    if (!currencyCode || !productType || !branchId || !trnType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters'
+      });
+    }
+
+    const rateInfo = await TransactionModel.getRateWithMargin(
+      currencyCode,
+      productType,
+      parseInt(branchId),
+      issCode || '',
+      trnType
+    );
+
+    res.json({
+      success: true,
+      data: rateInfo
+    });
+
+  } catch (error) {
+    console.error('Error in getRateWithMargin:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Update rates every 15 minutes
+const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
+setInterval(async () => {
+  try {
+    await TransactionModel.updateExchangeRates();
+    console.log('Exchange rates updated successfully at:', new Date().toISOString());
+  } catch (error) {
+    console.error('Failed to update exchange rates:', error);
+  }
+}, updateRatesInterval);
+
+// Initial update when server starts
+TransactionModel.updateExchangeRates()
+  .then(() => console.log('Initial exchange rates update completed at:', new Date().toISOString()))
+  .catch(error => console.error('Failed initial exchange rates update:', error));
+
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Grid,
   Box,
@@ -20,9 +20,13 @@ import { useTransaction } from "../../../../contexts/TransactionContext";
 import { apiClient } from "../../../../services/apiClient";
 import { useParams } from "react-router-dom";
 import StyledButton from "../../../../components/global/StyledButton";
+import { AuthContext } from "../../../../contexts/AuthContext";
+import { useToast } from "../../../../contexts/ToastContext";
 
 const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   const { Type: vTrntype } = useParams();
+  const {showToast, hideToast} = useToast();
+  const { branch } = useContext(AuthContext);
   const { setError, clearError } = useTransaction();
   const [currencyOptions, setCurrencyOptions] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
@@ -93,18 +97,64 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     }
   };
 
-  const fetchRate = async (currencyCode) => {
-    if (!currencyCode) return;
+  const fetchRate = async (currencyCode, type, issuer) => {
     try {
-      const response = await apiClient.get("/pages/Transactions/getRate", {
-        params: { currencyCode },
-      });
-      handleInputChange("rate", response.data.rate);
+      if (!currencyCode || !type) return;
+
+      const response = await apiClient.get(
+        "/pages/Transactions/getRateWithMargin",
+        {
+          params: {
+            currencyCode: currencyCode.value,
+            productType: type,
+            branchId: branch.nBranchID, // You might want to get this from context or props
+            trnType: vTrntype, // This should be passed from parent component
+            issCode: issuer,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const { finalRate } = response.data.data;
+        setCurrentRow((prev) => ({
+          ...prev,
+          rate: finalRate,
+        }));
+      }
     } catch (error) {
       console.error("Error fetching rate:", error);
-      setError("rate", "Failed to load rate");
+      // You might want to show an error message to the user
     }
   };
+
+  useEffect(() => {
+    if (currentRow.currencyCode && currentRow.type) {
+      // For CN product type, fetch rate without waiting for issuer
+      if (currentRow.type === "CN") {
+        fetchRate(currentRow.currencyCode, currentRow.type, "");
+      }
+      // For other product types, wait for issuer
+      else if (currentRow.issuer) {
+        fetchRate(currentRow.currencyCode, currentRow.type, currentRow.issuer);
+      }
+    }
+  }, [currentRow.currencyCode, currentRow.type, currentRow.issuer]);
+
+  useEffect(() => {
+    if (currentRow.rate && currentRow.feAmount) {
+      setCurrentRow((prev) => ({
+        ...prev,
+        amount: calculateAmount(prev.feAmount, prev.rate),
+        roundOff: calculateRoundOff(prev.feAmount, prev.rate),
+        commissionAmount: calculateCommissionAmount(
+          prev.feAmount,
+          prev.rate,
+          prev.commissionType,
+          prev.commissionValue
+        ),
+      }));
+    }
+  }, [currentRow.rate]);
 
   const calculateCommissionAmount = (feAmount, rate, commType, commValue) => {
     if (!feAmount || !rate || !commType || !commValue) return "";
@@ -134,7 +184,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       const updated = { ...prev, [field]: value };
 
       if (field === "currencyCode") {
-        fetchRate(value);
+        // fetchRate(value);
       }
 
       if (field === "type") {
@@ -172,10 +222,51 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   };
 
   const handleAddRow = () => {
+    // Validate required fields
+    if (!currentRow.currencyCode?.value) {
+      showToast("Please select a currency","fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+      return;
+    }
+    if (!currentRow.type) {
+      showToast("Please select a type","fail" );
+       setTimeout(() => {
+        hideToast();
+      }, 2000);
+      return;
+    }
+    if (!currentRow.feAmount || isNaN(currentRow.feAmount) || parseFloat(currentRow.feAmount) <= 0) {
+      showToast("Please enter a valid FE amount", "fail");
+       setTimeout(() => {
+        hideToast();
+      }, 2000);
+      return;
+    }
+    if (!currentRow.rate || isNaN(currentRow.rate) || parseFloat(currentRow.rate) <= 0) {
+      showToast("Please enter a valid rate", "fail");
+       setTimeout(() => {
+        hideToast();
+      }, 2000);
+      return;
+    }
+    
+    // For non-CN types, validate issuer
+    if (currentRow.type !== "CN" && !currentRow.issuer) {
+      showToast("Please select an issuer", "fail");
+       setTimeout(() => {
+        hideToast();
+      }, 2000);
+      return;
+    }
+
+    clearError();
+    
     const newRow = {
-      id: Date.now(), // Add unique id for DataGrid
-      currencyCode: currentRow.currencyCode?.value || "", // Extract value from currency object
-      currencyLabel: currentRow.currencyCode?.label || "", // Store label separately
+      id: Date.now(),
+      currencyCode: currentRow.currencyCode?.value || "",
+      currencyLabel: currentRow.currencyCode?.label || "",
       type: currentRow.type,
       issuer: currentRow.issuer,
       feAmount: currentRow.feAmount,
@@ -197,6 +288,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       setRows((prev) => [...prev, newRow]);
     }
 
+    // Reset form
     setCurrentRow({
       currencyCode: "",
       type: "",
@@ -214,8 +306,11 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   const handleEdit = (index) => {
     const row = rows[index];
     setEditIndex(index);
+    setOpenModal(false);
+    // Remove the row being edited from the view
+    setRows(prevRows => prevRows.filter((_, i) => i !== index));
     setCurrentRow({
-      currencyCode: { value: row.currencyCode, label: row.currencyLabel }, // Reconstruct currency object
+      currencyCode: { value: row.currencyCode, label: row.currencyLabel },
       type: row.type,
       issuer: row.issuer,
       feAmount: row.feAmount,
@@ -241,8 +336,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       {
         field: "currencyCode",
         headerName: "Currency Code",
-        width: 180,
-        renderCell: (params) => params.row.currencyLabel || params.value,
+        width: 120,
+        renderCell: (params) => params.row.currencyCode || params.value,
       },
       { field: "type", headerName: "Type", width: 100 },
       {
@@ -254,22 +349,13 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       {
         field: "rate",
         headerName: "Rate",
-        width: 130,
+        width: 100,
         type: "number",
       },
-      { field: "commissionType", headerName: "Comm Type", width: 130 },
-      {
-        field: "commissionValue",
-        headerName: "Comm Value",
-        width: 130,
-        type: "number",
-      },
-      {
-        field: "commissionAmount",
-        headerName: "Comm Amount",
-        width: 130,
-        type: "number",
-      },
+
+    
+      
+
       {
         field: "amount",
         headerName: "Amount",
@@ -311,6 +397,29 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
         field: "issuer",
         headerName: "Issuer",
         width: 130,
+      });
+    }
+
+    // Only add issuer column if not all rows are type "CN"
+    if (data.agentCode !== "") {
+      baseColumns.splice(5, 0, {
+        field: "commissionType",
+        headerName: "Comm Type",
+        width: 120,
+      });
+
+      baseColumns.splice(6, 0, {
+        field: "commissionValue",
+        headerName: "Comm Value",
+        width: 120,
+        type: "number",
+      });
+
+      baseColumns.splice(7, 0, {
+        field: "commissionAmount",
+        headerName: "Comm Amount",
+        width: 130,
+        type: "number",
       });
     }
 
@@ -389,43 +498,48 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             required
           />
         </Grid>
-        <Grid item xs={12} md={2}>
-          <CustomTextField
-            select
-            label="Comm Type"
-            value={currentRow.commissionType}
-            onChange={(e) =>
-              handleInputChange("commissionType", e.target.value)
-            }
-            required
-          >
-            {commissionTypeOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </CustomTextField>
-        </Grid>
+        {data.agentCode !== "" && (
+          <>
+            <Grid item xs={12} md={2}>
+              <CustomTextField
+                select
+                label="Comm Type"
+                value={currentRow.commissionType}
+                onChange={(e) =>
+                  handleInputChange("commissionType", e.target.value)
+                }
+                required
+              >
+                {commissionTypeOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </CustomTextField>
+            </Grid>
 
-        {/* Second Row */}
-        <Grid item xs={12} md={2}>
-          <CustomTextField
-            label="Comm Value"
-            type="number"
-            value={currentRow.commissionValue}
-            onChange={(e) =>
-              handleInputChange("commissionValue", e.target.value)
-            }
-            required
-          />
-        </Grid>
-        <Grid item xs={12} md={2}>
-          <CustomTextField
-            label="Comm Amount"
-            value={currentRow.commissionAmount}
-            disabled
-          />
-        </Grid>
+            {/* Second Row */}
+            <Grid item xs={12} md={2}>
+              <CustomTextField
+                label="Comm Value"
+                type="number"
+                value={currentRow.commissionValue}
+                onChange={(e) =>
+                  handleInputChange("commissionValue", e.target.value)
+                }
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <CustomTextField
+                label="Comm Amount"
+                value={currentRow.commissionAmount}
+                disabled
+              />
+            </Grid>
+          </>
+        )}
+
         <Grid item xs={12} md={2}>
           <CustomTextField label="Amount" value={currentRow.amount} disabled />
         </Grid>
@@ -437,7 +551,11 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
           />
         </Grid>
         <Grid item xs={12} md={2}>
-          <StyledButton onClick={handleAddRow} addIcon={true} style={{ width: "90%",height:"56px",gap:"10px" }}>
+          <StyledButton
+            onClick={handleAddRow}
+            addIcon={true}
+            style={{ width: "90%", height: "56px", gap: "10px" }}
+          >
             Add Row
           </StyledButton>
         </Grid>
@@ -445,11 +563,10 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
           <StyledButton
             variant="contained"
             onClick={handleOpenModal}
-            style={{ width: "90%",height:"56px",gap:"10px" }}
-            bgColor={rows.length
-              ? "green"
-              : Colortheme.secondaryBG}
-              disabled={rows.length === 0}
+            style={{ width: "90%", height: "56px", gap: "10px" }}
+            bgColor={rows.length ? "green" : Colortheme.secondaryBG}
+            textColor={rows.length ? Colortheme.background : Colortheme.text}
+            disabled={rows.length === 0}
           >
             View Rows {rows.length > 0 && `(+${rows.length})`}
           </StyledButton>
@@ -464,6 +581,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
         PaperProps={{
           style: {
             backgroundColor: Colortheme.background,
+            borderRadius: "20px",
           },
         }}
       >
@@ -478,11 +596,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             justifyContent="space-between"
             alignItems="center"
           >
-            <Typography variant="h6">Transaction Details</Typography>
-            <StyledButton 
-              onClick={handleCloseModal} 
-              style={{ width: 150 }}
-            >
+            <Typography variant="h6" fontFamily={'Poppins'}>Transaction Details</Typography>
+            <StyledButton onClick={handleCloseModal} style={{ width: 150 }}>
               Close
             </StyledButton>
           </Box>
