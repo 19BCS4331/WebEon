@@ -37,6 +37,8 @@ import renderRoutes from "./routes";
 import LazyFallBack from "./pages/LazyFallBack";
 import ChatWidget from './components/global/ChatWidget';
 import { AppActionsProvider } from './contexts/AppActionsContext';
+import CustomInfoModal from './components/CustomInfoModal';
+import CustomAlertModal from './components/CustomAlertModal';
 
 function App() {
   return (
@@ -53,6 +55,8 @@ function App() {
                         <ToastProvider>
                           <AppActionsProvider>
                             <Toast />
+                            <CustomInfoModal />
+                            <CustomAlertModal />
                             <AuthBasedSidebar />
                             <ChatWidget />
                             <Suspense fallback={<LazyFallBack />}>

@@ -89,6 +89,12 @@ const BuySellTransactionsContent = () => {
     }
   }, [isEditMode, formData.PaxCode]);
 
+  useEffect(() => {
+    if (isEditMode && formData.vNo) {
+      fetchExchangeData(formData.vNo);
+    }
+  }, [isEditMode, formData.vNo]);
+
   const fetchPaxDetails = async (paxCode) => {
     try {
       const response = await apiClient.get(
@@ -105,6 +111,26 @@ const BuySellTransactionsContent = () => {
       }
     } catch (error) {
       console.error("Error fetching pax details:", error);
+    }
+  };
+
+  const fetchExchangeData = async (vNo) => {
+    try {
+      const response = await apiClient.get("/pages/Transactions/getExchangeData", {
+        params: {
+          vNo,
+          vTrnwith,
+          vTrntype,
+        },
+      });
+      if (response.data.success) {
+        const exchangeData = response.data.data;
+        updateFormData({
+          exchangeData: exchangeData,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching exchange data:", error);
     }
   };
 
@@ -164,7 +190,7 @@ const BuySellTransactionsContent = () => {
   const validateStep = (step) => {
     switch (step) {
       case 0:
-        return formData.TRNWITHIC && formData.Purpose && formData.vNo;
+        return formData.TRNWITHIC && formData.vNo;
       case 1:
         return true;
       case 2:
@@ -359,7 +385,7 @@ const BuySellTransactionsContent = () => {
                   },
                 }}
               >
-                <Typography variant="h6" color={Colortheme.text} sx={{ mb: 3 }}>
+                <Typography variant="h6" color={Colortheme.text} sx={{ mb: 3 }} fontFamily={"Poppins"}>
                   {steps[activeStep].label}
                 </Typography>
 

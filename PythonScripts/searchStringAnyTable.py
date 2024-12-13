@@ -4,9 +4,10 @@ import pyodbc
 server = '101.53.148.243,9137'
 database = 'WAPR24AHMDUAT'
 # database = 'wsgfmastUAT'
+# database = 'WTRNTREASURYUAT'
 username = 'mil'
 password = 'mil@1234#'
-search_string = '2100025'
+search_string = 'ADRENT'
 
 # Establish connection
 conn = pyodbc.connect(
@@ -31,18 +32,35 @@ for table in tables:
         column_name = column[0]
         data_type = column[1]
         
-        # Only search in text-like columns
-        if data_type in ['varchar', 'nvarchar', 'text']:
-            try:
-                cursor.execute(f"SELECT * FROM {table_name} WHERE {column_name} LIKE ?", ('%' + search_string + '%',))
-                results = cursor.fetchall()
-                if results:
-                    if not found_in_table:
-                        print(f"Found in table: {table_name}")
-                        found_in_table = True
-                    print(f"- Found in column: {column_name}")
-            except pyodbc.Error as err:
-                print(f"Error searching {table_name}.{column_name}: {err}")
+        try:
+            # Handle different data types
+            if data_type in ['varchar', 'nvarchar', 'text', 'char', 'nchar']:
+                # Text search
+                cursor.execute(f"SELECT * FROM {table_name} WHERE CAST({column_name} AS NVARCHAR(MAX)) LIKE ?", ('%' + str(search_string) + '%',))
+            elif data_type in ['int', 'bigint', 'smallint', 'tinyint']:
+                # Integer search - only if search string is a valid integer
+                if str(search_string).isdigit():
+                    cursor.execute(f"SELECT * FROM {table_name} WHERE {column_name} = ?", (int(search_string),))
+            elif data_type in ['decimal', 'numeric', 'float', 'real', 'money']:
+                # Decimal/float search - only if search string is a valid number
+                try:
+                    float_value = float(search_string)
+                    cursor.execute(f"SELECT * FROM {table_name} WHERE {column_name} = ?", (float_value,))
+                except ValueError:
+                    continue
+            else:
+                continue  # Skip other data types
+                
+            results = cursor.fetchall()
+            if results:
+                if not found_in_table:
+                    print(f"\nFound in table: {table_name}")
+                    found_in_table = True
+                print(f"- Found in column: {column_name} ({data_type})")
+                for row in results[:5]:  # Show first 5 matching rows
+                    print(f"  Value: {row[columns.index(column)]}")
+        except pyodbc.Error as err:
+            print(f"Error searching {table_name}.{column_name}: {err}")
     
     if not found_in_table:
         print(f"No match found in table: {table_name}")

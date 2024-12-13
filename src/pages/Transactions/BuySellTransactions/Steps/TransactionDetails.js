@@ -24,8 +24,9 @@ import { AuthContext } from "../../../../contexts/AuthContext";
 import { useToast } from "../../../../contexts/ToastContext";
 
 const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
+  console.log("exchangeData:", data.exchangeData);
   const { Type: vTrntype } = useParams();
-  const {showToast, hideToast} = useToast();
+  const { showToast, hideToast,showInfoModal } = useToast();
   const { branch } = useContext(AuthContext);
   const { setError, clearError } = useTransaction();
   const [currencyOptions, setCurrencyOptions] = useState([]);
@@ -48,8 +49,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   const [openModal, setOpenModal] = useState(false);
 
   const commissionTypeOptions = [
-    { value: "%", label: "Percent" },
-    { value: "Ps", label: "Paise" },
+    { value: "P", label: "Percent" },
+    { value: "F", label: "Paise" },
   ];
 
   useEffect(() => {
@@ -156,11 +157,49 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     }
   }, [currentRow.rate]);
 
+  useEffect(() => {
+    if (data.exchangeData?.length > 0) {
+      const formattedRows = data.exchangeData.map((item, index) => ({
+        id: index + 1,
+        currencyCode: item.CNCodeID,
+        currencyLabel: item.CNCodeID,
+        type: item.ExchType,
+        issuer: item.ISSCodeID,
+        feAmount: item.FEAmount,
+        rate: item.Rate,
+        commissionType: item.CommType,
+        commissionValue: item.CommRate,
+        commissionAmount: item.CommAmt,
+        amount: item.Amount,
+        roundOff: item.Round,
+        srNo: index + 1,
+      }));
+      setRows(formattedRows);
+    }
+  }, [data.exchangeData]);
+
+  const updateExchangeData = (updatedRows) => {
+    const exchangeFormat = updatedRows.map((row) => ({
+      CNCodeID: row.currencyCode,
+      ExchType: row.type,
+      ISSCodeID: row.issuer || "",
+      FEAmount: parseFloat(row.feAmount).toFixed(5),
+      Rate: parseFloat(row.rate).toFixed(6),
+      Per: "1",
+      Amount: parseFloat(row.amount).toFixed(2),
+      Round: parseFloat(row.roundOff).toFixed(2),
+      CommType: row.commissionType || "F",
+      CommRate: (parseFloat(row.commissionValue) || 0).toFixed(2),
+      CommAmt: (parseFloat(row.commissionAmount) || 0).toFixed(2),
+    }));
+    onUpdate({ exchangeData: exchangeFormat });
+  };
+
   const calculateCommissionAmount = (feAmount, rate, commType, commValue) => {
     if (!feAmount || !rate || !commType || !commValue) return "";
     const baseAmount = feAmount * rate;
 
-    if (commType === "%") {
+    if (commType === "P") {
       return (baseAmount * (commValue / 100)).toFixed(2);
     } else {
       return (feAmount * commValue).toFixed(2);
@@ -222,71 +261,98 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   };
 
   const handleAddRow = () => {
-    // Validate required fields
+    // Validation
     if (!currentRow.currencyCode?.value) {
-      showToast("Please select a currency","fail");
+      showToast("Please select a currency", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
       return;
     }
     if (!currentRow.type) {
-      showToast("Please select a type","fail" );
-       setTimeout(() => {
+      showToast("Please select a type", "fail");
+      setTimeout(() => {
         hideToast();
       }, 2000);
       return;
     }
-    if (!currentRow.feAmount || isNaN(currentRow.feAmount) || parseFloat(currentRow.feAmount) <= 0) {
+
+    // Check for duplicate currency and type combination
+    const isDuplicate = rows.some((row, index) => 
+      index !== editIndex && // Skip checking the row being edited
+      row.currencyCode === currentRow.currencyCode.value &&
+      row.type === currentRow.type
+    );
+
+    if (isDuplicate) {
+      showInfoModal(
+        "Duplicate Product and Currency","Row with the same currency and product cannot be added, either change the product or edit the amount for already added currency"
+      );
+      return;
+    }
+
+    if (
+      !currentRow.feAmount ||
+      isNaN(currentRow.feAmount) ||
+      parseFloat(currentRow.feAmount) <= 0
+    ) {
       showToast("Please enter a valid FE amount", "fail");
-       setTimeout(() => {
+      setTimeout(() => {
         hideToast();
       }, 2000);
       return;
     }
-    if (!currentRow.rate || isNaN(currentRow.rate) || parseFloat(currentRow.rate) <= 0) {
+    if (
+      !currentRow.rate ||
+      isNaN(currentRow.rate) ||
+      parseFloat(currentRow.rate) <= 0
+    ) {
       showToast("Please enter a valid rate", "fail");
-       setTimeout(() => {
+      setTimeout(() => {
         hideToast();
       }, 2000);
       return;
     }
-    
-    // For non-CN types, validate issuer
+
     if (currentRow.type !== "CN" && !currentRow.issuer) {
       showToast("Please select an issuer", "fail");
-       setTimeout(() => {
+      setTimeout(() => {
         hideToast();
       }, 2000);
       return;
     }
 
     clearError();
-    
+
     const newRow = {
       id: Date.now(),
       currencyCode: currentRow.currencyCode?.value || "",
       currencyLabel: currentRow.currencyCode?.label || "",
       type: currentRow.type,
       issuer: currentRow.issuer,
-      feAmount: currentRow.feAmount,
-      rate: currentRow.rate,
-      commissionType: currentRow.commissionType,
-      commissionValue: currentRow.commissionValue,
-      commissionAmount: currentRow.commissionAmount,
-      amount: currentRow.amount,
-      roundOff: currentRow.roundOff,
+      feAmount: parseFloat(currentRow.feAmount),
+      rate: parseFloat(currentRow.rate),
+      commissionType: currentRow.commissionType || "F",
+      commissionValue: parseFloat(currentRow.commissionValue) || 0,
+      commissionAmount: parseFloat(currentRow.commissionAmount) || 0,
+      amount: parseFloat(currentRow.amount) || 0,
+      roundOff: parseFloat(currentRow.roundOff) || 0,
       srNo: editIndex >= 0 ? editIndex + 1 : rows.length + 1,
     };
 
+    let updatedRows;
     if (editIndex >= 0) {
-      const updatedRows = [...rows];
+      updatedRows = [...rows];
       updatedRows[editIndex] = newRow;
       setRows(updatedRows);
       setEditIndex(-1);
     } else {
-      setRows((prev) => [...prev, newRow]);
+      updatedRows = [...rows, newRow];
+      setRows(updatedRows);
     }
+
+    // Update context with exchange data
+    updateExchangeData(updatedRows);
 
     // Reset form
     setCurrentRow({
@@ -308,7 +374,14 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     setEditIndex(index);
     setOpenModal(false);
     // Remove the row being edited from the view
-    setRows(prevRows => prevRows.filter((_, i) => i !== index));
+    setRows((prevRows) => prevRows.filter((_, i) => i !== index));
+
+    // First fetch issuers for the row's type
+    if (row.type && row.type !== "CN") {
+      fetchIssuers(row.type);
+    }
+
+    // Then set the current row values
     setCurrentRow({
       currencyCode: { value: row.currencyCode, label: row.currencyLabel },
       type: row.type,
@@ -324,10 +397,16 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   };
 
   const handleDelete = (index) => {
-    setRows((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      return updated.map((row, i) => ({ ...row, srNo: i + 1 }));
-    });
+    const updatedRows = rows
+      .filter((_, i) => i !== index)
+      .map((row, i) => ({ ...row, srNo: i + 1 }));
+    setRows(updatedRows);
+    // Update context when row is deleted
+    updateExchangeData(updatedRows);
+    // Close modal if no rows remain
+    if (updatedRows.length === 0) {
+      setOpenModal(false);
+    }
   };
 
   const getColumns = () => {
@@ -352,9 +431,6 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
         width: 100,
         type: "number",
       },
-
-    
-      
 
       {
         field: "amount",
@@ -400,8 +476,12 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       });
     }
 
-    // Only add issuer column if not all rows are type "CN"
-    if (data.agentCode !== "") {
+    // Only add commission column if agentCode is present
+    if (
+      data.agentCode !== "" &&
+      data.agentCode !== null &&
+      data.agentCode !== "0"
+    ) {
       baseColumns.splice(5, 0, {
         field: "commissionType",
         headerName: "Comm Type",
@@ -469,7 +549,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             value={currentRow.issuer}
             onChange={(e) => handleInputChange("issuer", e.target.value)}
             options={issuers}
-            disabled={currentRow.type === "CN"}
+            disabled={currentRow.type === "CN" || !currentRow.type}
             required
           >
             {issuers.map((option) => (
@@ -498,47 +578,50 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             required
           />
         </Grid>
-        {data.agentCode !== "" && (
-          <>
-            <Grid item xs={12} md={2}>
-              <CustomTextField
-                select
-                label="Comm Type"
-                value={currentRow.commissionType}
-                onChange={(e) =>
-                  handleInputChange("commissionType", e.target.value)
-                }
-                required
-              >
-                {commissionTypeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-            </Grid>
 
-            {/* Second Row */}
-            <Grid item xs={12} md={2}>
-              <CustomTextField
-                label="Comm Value"
-                type="number"
-                value={currentRow.commissionValue}
-                onChange={(e) =>
-                  handleInputChange("commissionValue", e.target.value)
-                }
-                required
-              />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <CustomTextField
-                label="Comm Amount"
-                value={currentRow.commissionAmount}
-                disabled
-              />
-            </Grid>
-          </>
-        )}
+        {data.agentCode !== "" &&
+          data.agentCode !== null &&
+          data.agentCode !== "0" && (
+            <>
+              <Grid item xs={12} md={2}>
+                <CustomTextField
+                  select
+                  label="Comm Type"
+                  value={currentRow.commissionType}
+                  onChange={(e) =>
+                    handleInputChange("commissionType", e.target.value)
+                  }
+                  required
+                >
+                  {commissionTypeOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </CustomTextField>
+              </Grid>
+
+              {/* Second Row */}
+              <Grid item xs={12} md={2}>
+                <CustomTextField
+                  label="Comm Value"
+                  type="number"
+                  value={currentRow.commissionValue}
+                  onChange={(e) =>
+                    handleInputChange("commissionValue", e.target.value)
+                  }
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <CustomTextField
+                  label="Comm Amount"
+                  value={currentRow.commissionAmount}
+                  disabled
+                />
+              </Grid>
+            </>
+          )}
 
         <Grid item xs={12} md={2}>
           <CustomTextField label="Amount" value={currentRow.amount} disabled />
@@ -551,12 +634,14 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
           />
         </Grid>
         <Grid item xs={12} md={2}>
+        
           <StyledButton
             onClick={handleAddRow}
-            addIcon={true}
+            addIcon={editIndex >= 0 ? false: true}
+            doneIcon={editIndex >= 0 ? true : false}
             style={{ width: "90%", height: "56px", gap: "10px" }}
           >
-            Add Row
+            {editIndex >= 0 ? "Update Row":"Add Row"}
           </StyledButton>
         </Grid>
         <Grid item xs={12} md={2}>
@@ -596,7 +681,9 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             justifyContent="space-between"
             alignItems="center"
           >
-            <Typography variant="h6" fontFamily={'Poppins'}>Transaction Details</Typography>
+            <Typography variant="h6" fontFamily={"Poppins"}>
+              Transaction Details
+            </Typography>
             <StyledButton onClick={handleCloseModal} style={{ width: 150 }}>
               Close
             </StyledButton>
@@ -608,7 +695,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             color: Colortheme.text,
           }}
         >
-          <Box sx={{ height: 400, width: "100%", mt: 2 }}>
+          <Box sx={{ height: 'auto', width: "100%", mt: 2 }}>
             <CustomDataGrid
               rows={rows}
               columns={getColumns()}
@@ -617,6 +704,57 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
               disableSelectionOnClick
               Colortheme={Colortheme}
             />
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: 1,
+                mt: 2,
+                pr: 2,
+                borderTop: `1px solid ${Colortheme.text}`,
+                pt: 1
+              }}
+            >
+              {/* <Typography 
+                sx={{ 
+                  color: Colortheme.text,
+                  fontWeight: 'bold',
+                  fontFamily: 'Poppins'
+                }}
+              >
+                Total FE Amount: {rows.reduce((sum, row) => sum + parseFloat(row.feAmount), 0).toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </Typography> */}
+              {data.agentCode !== "" && data.agentCode !== null && data.agentCode !== "0" && (
+                <Typography 
+                  sx={{ 
+                    color: Colortheme.text,
+                    fontWeight: 'bold',
+                    fontFamily: 'Poppins'
+                  }}
+                >
+                  Total Commission: ₹{rows.reduce((sum, row) => sum + parseFloat(row.commissionAmount || 0), 0).toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </Typography>
+              )}
+              <Typography 
+                sx={{ 
+                  color: Colortheme.text,
+                  fontWeight: 'bold',
+                  fontFamily: 'Poppins'
+                }}
+              >
+                Total Amount: ₹{rows.reduce((sum, row) => sum + parseFloat(row.amount), 0).toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </Typography>
+            </Box>
           </Box>
         </DialogContent>
       </Dialog>

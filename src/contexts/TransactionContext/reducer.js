@@ -31,6 +31,8 @@ export const initialState = {
     byCard: 0,
     byTransfer: 0,
     byOth: 0,
+    // Exchange Data
+    exchangeData: [],
     // Other fields
     PartyName: "",
     PurposeDescription: "",

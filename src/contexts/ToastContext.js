@@ -12,6 +12,12 @@ export const ToastProvider = ({ children }) => {
     handleAction: null,
   });
 
+  const [infoModal, setInfoModal] = useState({
+    open: false,
+    title: "",
+    dialogMsg: "",
+  });
+
   const [alertModalCurrency, setAlertModalCurrency] = useState({
     open: false,
     title: "",
@@ -30,6 +36,10 @@ export const ToastProvider = ({ children }) => {
     setAlertModal({ open: true, title, dialogMsg, handleAction });
   };
 
+  const showInfoModal = (title, dialogMsg) => {
+    setInfoModal({ open: true, title, dialogMsg });
+  };
+
   const hideAlertDialog = () => {
     setAlertModal({
       open: false,
@@ -37,6 +47,10 @@ export const ToastProvider = ({ children }) => {
       dialogMsg: "",
       handleAction: null,
     });
+  };
+
+  const hideInfoModal = () => {
+    setInfoModal({ open: false, title: "", dialogMsg: "" });
   };
 
   const showAlertDialogCurrency = (title, dialogMsg) => {
@@ -53,11 +67,14 @@ export const ToastProvider = ({ children }) => {
         showToast,
         hideToast,
         showAlertDialog,
+        showInfoModal,
         hideAlertDialog,
+        hideInfoModal,
         showAlertDialogCurrency,
         hideAlertDialogCurrency,
         toast,
         alertModal,
+        infoModal,
         alertModalCurrency,
       }}
     >

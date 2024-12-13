@@ -4,6 +4,7 @@ import styled from "styled-components";
 import ThemeContext from "../../contexts/ThemeContext";
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
+import DoneIcon from '@mui/icons-material/Done';
 
 const Button = styled.button`
   border: none;
@@ -44,8 +45,10 @@ const StyledButton = ({
   textColOnHover,
   SearchIconColorOnHover,
   AddIconColorOnHover,
+  DoneIconColorOnHover,
   searchIcon=false,
   addIcon = false,
+  doneIcon = false,
   ...props
 }) => {
   const { Colortheme } = useContext(ThemeContext);
@@ -59,12 +62,15 @@ const StyledButton = ({
       bgColorHover={bgColorHover}
       SearchIconColorOnHover={SearchIconColorOnHover}
       AddIconColorOnHover={AddIconColorOnHover}
+      DoneIconColorOnHover={DoneIconColorOnHover}
+      DoneIcon={DoneIcon}
       searchIcon={searchIcon}
       addIcon={addIcon}
       {...props}
     >
       {searchIcon && <SearchIcon sx={{color: SearchIconColorOnHover}}/>}
       {addIcon && <AddIcon sx={{color: AddIconColorOnHover}}/>}
+      {doneIcon && <DoneIcon sx={{color: DoneIconColorOnHover}}/>}
       {children}
     </Button>
   );

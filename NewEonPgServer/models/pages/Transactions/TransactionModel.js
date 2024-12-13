@@ -790,6 +790,46 @@ ORDER BY "PRODUCTCODE" ASC
     
     }
   }
+
+  // Get exchange data for a transaction
+  static async getExchangeData(vNo, vTrnwith, vTrntype) {
+    try {
+      const query = `
+        SELECT 
+          "CNCodeID",
+          "ExchType",
+          "ISSCodeID",
+          CAST("FEAmount" AS DECIMAL(18,5))::TEXT as "FEAmount",
+          CAST("Rate" AS DECIMAL(18,6))::TEXT as "Rate",
+          "Per",
+          CAST("Amount" AS DECIMAL(18,2))::TEXT as "Amount",
+          CAST("Round" AS DECIMAL(18,2))::TEXT as "Round",
+          "CommType",
+          CAST("CommRate" AS DECIMAL(18,2))::TEXT as "CommRate",
+          CAST("CommAmt" AS DECIMAL(18,2))::TEXT as "CommAmt",
+          "TDSRate",
+          "TDSAmount",
+          "HoldCost",
+          "Profit",
+          "ibrRate",
+          "FWDID",
+          "FWDSrno",
+          "CancelLinkIDSrno",
+          "bIsSettled",
+          "nExchID"
+        FROM "Exchange"
+        WHERE "vNo" = $1
+          AND "vTrnwith" = $2
+          AND "vTrntype" = $3
+        ORDER BY "sr_no"
+      `;
+
+      const result = await this.executeQuery(query, [vNo, vTrnwith, vTrntype]);
+      return result;
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch exchange data", error);
+    }
+  }
 }
 
 module.exports = TransactionModel;

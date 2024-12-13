@@ -356,6 +356,21 @@ router.get('/getRateWithMargin', async (req, res) => {
   }
 });
 
+// Get exchange data for a transaction
+router.get("/getExchangeData", authMiddleware, async (req, res) => {
+  try {
+    const { vNo, vTrnwith, vTrntype } = req.query;
+    const result = await TransactionModel.getExchangeData(vNo, vTrnwith, vTrntype);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Error fetching exchange data:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || "Error fetching exchange data" 
+    });
+  }
+});
+
 // Update rates every 15 minutes
 const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
 setInterval(async () => {
