@@ -45,7 +45,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
 
   useEffect(() => {
     fetchTransactions();
-    setSearchText("");
+    // setSearchText("");
     setFromDate(
       new Date(new Date().setMonth(new Date().getMonth() - 6))
         .toISOString()
@@ -56,7 +56,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
 
   useEffect(() => {
     fetchTransactions();
-    setSearchText("");
+    // setSearchText("");
   }, [vTrnwith, vTrntype, fromDate, toDate]);
 
   const getColumns = () => {
