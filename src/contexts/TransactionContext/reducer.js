@@ -33,6 +33,10 @@ export const initialState = {
     byOth: 0,
     // Exchange Data
     exchangeData: [],
+    exchangeTotalAmount:0,
+    // Charges
+    Charges: [],
+    ChargesTotalAmount: 0,
     // Other fields
     PartyName: "",
     PurposeDescription: "",

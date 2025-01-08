@@ -38,7 +38,7 @@ const SubItem = ({
   const [open, setOpen] = useState(false);
   const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  // const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     if (openItems.includes(subItem.id)) {
@@ -137,7 +137,7 @@ const NewSidebar = () => {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   // const [openItems, setOpenItems] = useState([]);
-  const { token } = useContext(AuthContext);
+  // const { token } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
 
   // useEffect(() => {

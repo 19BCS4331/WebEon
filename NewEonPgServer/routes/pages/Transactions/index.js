@@ -371,6 +371,17 @@ router.get("/getExchangeData", authMiddleware, async (req, res) => {
   }
 });
 
+// Get other charge accounts
+router.get('/getOtherChargeAccounts', authMiddleware, async (req, res) => {
+  try {
+    const accounts = await TransactionModel.getOtherChargeAccounts();
+    res.json(accounts);
+  } catch (error) {
+    console.error('Error fetching other charge accounts:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // Update rates every 15 minutes
 const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
 setInterval(async () => {

@@ -15,7 +15,7 @@
 // import renderRoutes from "./routes";
 // import LazyFallBack from "./pages/LazyFallBack";
 
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import { BrowserRouter, Routes } from "react-router-dom";
 import { ToastProvider } from "./contexts/ToastContext";
 import Toast from "./components/Toast";

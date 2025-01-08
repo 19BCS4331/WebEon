@@ -6,11 +6,9 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Button,
   Typography,
   MenuItem,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import CustomTextField from "../../../../components/global/CustomTextField";
@@ -108,8 +106,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
           params: {
             currencyCode: currencyCode.value,
             productType: type,
-            branchId: branch.nBranchID, // You might want to get this from context or props
-            trnType: vTrntype, // This should be passed from parent component
+            branchId: branch.nBranchID,
+            trnType: vTrntype,
             issCode: issuer,
           },
         }
@@ -192,7 +190,13 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       CommRate: (parseFloat(row.commissionValue) || 0).toFixed(2),
       CommAmt: (parseFloat(row.commissionAmount) || 0).toFixed(2),
     }));
-    onUpdate({ exchangeData: exchangeFormat });
+    onUpdate({
+      exchangeData: exchangeFormat,
+      exchangeTotalAmount: exchangeFormat?.reduce(
+        (sum, row) => sum + parseFloat(row.Amount || 0),
+        0
+      ),
+    });
   };
 
   const calculateCommissionAmount = (feAmount, rate, commType, commValue) => {
@@ -742,6 +746,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
                   })}
                 </Typography>
               )}
+              <Box display="flex" alignItems={'center'} gap={1}>
               <Typography 
                 sx={{ 
                   color: Colortheme.text,
@@ -754,6 +759,17 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
                   maximumFractionDigits: 2
                 })}
               </Typography>
+              <Typography 
+                sx={{ 
+                  color: Colortheme.text,
+                  fontWeight: 'Regular',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                }}
+              >
+               (*Tax Excluded)
+              </Typography>
+              </Box>
             </Box>
           </Box>
         </DialogContent>

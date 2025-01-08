@@ -16,6 +16,7 @@ import BasicDetails from "./Steps/BasicDetails";
 import PartyDetails from "./Steps/PartyDetails";
 import AgentRefDetails from "./Steps/AgentRefDetails";
 import TransactionDetails from "./Steps/TransactionDetails";
+import ChargesAndRecPay from "./Steps/ChargesAndRecPay";
 import TransactionList from "./Steps/TransactionList";
 import { apiClient } from "../../../services/apiClient";
 import StyledButton from "../../../components/global/StyledButton";
@@ -42,8 +43,8 @@ const steps = [
     component: TransactionDetails,
   },
   {
-    label: "Purpose & Amount",
-    component: null,
+    label: "Charges and Rec/Pay",
+    component: ChargesAndRecPay,
   },
   {
     label: "Review & Submit",
@@ -227,6 +228,8 @@ const BuySellTransactionsContent = () => {
       case 2:
         return <StepComponent {...commonProps} />;
       case 3:
+        return <StepComponent {...commonProps} />;
+      case 4:
         return <StepComponent {...commonProps} />;
       default:
         return null;

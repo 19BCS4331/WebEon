@@ -8,8 +8,8 @@ mssql_params = {
     'host': '101.53.148.243,9137',  # changed 'server' to 'host'
     'username': 'mil',
     'password': 'mil@1234#',
-    # 'database': 'wsgfmastUAT',
-    'database': 'WAPR24AHMDUAT',
+    'database': 'wsgfmastUAT',
+    # 'database': 'WAPR24AHMDUAT',
     'query': {'driver': 'ODBC Driver 17 for SQL Server'}
 }
 
@@ -28,7 +28,7 @@ mssql_engine = create_engine(URL.create(**mssql_params))
 postgres_engine = create_engine(URL.create(**postgres_params))
 
 # List of tables to migrate
-tables = ['Exchange']
+tables = ['OtherChargeAcc']
 
 for table in tables:
     # Read data from MSSQL

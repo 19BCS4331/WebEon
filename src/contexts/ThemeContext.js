@@ -1,6 +1,6 @@
 // ThemeContext.js
 import React, { createContext, useEffect, useState } from "react";
-import { apiClient } from "../services/apiClient";
+import { useThemePersistence } from "../hooks/useThemePersistence";
 import {
   DEFAULT_LIGHT,
   DEFAULT_DARK,
@@ -71,33 +71,21 @@ export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [open, setOpen] = useState(false);
   const [openItems, setOpenItems] = useState([]);
+  const { saveTheme, loadTheme } = useThemePersistence();
 
-  // useEffect(() => {
-  //   // Load the theme from the backend when the component mounts
-  //   const fetchTheme = async () => {
-  //     try {
-  //       const response = await apiClient.get("/user/theme");
-  //       const { theme, mode } = response.data;
-  //       setThemeName(theme);
-  //       setIsDarkMode(mode === "dark");
-  //     } catch (error) {
-  //       console.error("Error fetching theme:", error);
-  //     }
-  //   };
-  //   fetchTheme();
-  // }, []);
-
-  // const Colortheme = isDarkMode ? DEFAULT_DARK : DEFAULT_LIGHT;
+  useEffect(() => {
+    const initTheme = async () => {
+      const savedTheme = await loadTheme();
+      if (savedTheme) {
+        const { theme, mode } = savedTheme;
+        setThemeName(theme);
+        setIsDarkMode(mode === "dark");
+      }
+    };
+    initTheme();
+  }, [loadTheme]);
 
   const Colortheme = themes[themeName][isDarkMode ? "dark" : "light"];
-
-  const saveTheme = async (theme, mode) => {
-    try {
-      await apiClient.post("/user/theme", { theme, mode });
-    } catch (error) {
-      console.error("Error saving theme:", error);
-    }
-  };
 
   const setTheme = (theme) => {
     setThemeName(theme);
@@ -113,12 +101,7 @@ export const ThemeProvider = ({ children }) => {
   const toggleModeNotLoggedIn = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    // saveTheme(themeName, newMode ? "dark" : "light");
   };
-
-  // const toggleTheme = () => {
-  //   setIsDarkMode((prevMode) => !prevMode);
-  // };
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -130,7 +113,6 @@ export const ThemeProvider = ({ children }) => {
   return (
     <ThemeContext.Provider
       value={{
-        // toggleTheme,
         Colortheme,
         setTheme,
         setThemeName,

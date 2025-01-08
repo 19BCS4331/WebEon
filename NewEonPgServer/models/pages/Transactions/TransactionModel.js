@@ -830,6 +830,31 @@ ORDER BY "PRODUCTCODE" ASC
       throw new DatabaseError("Failed to fetch exchange data", error);
     }
   }
+
+  // Get other charge accounts
+  static async getOtherChargeAccounts() {
+    try {
+      const query = `
+        SELECT * 
+FROM "AccountsProfile" as ac 
+INNER JOIN "OtherChargeAcc" as oa 
+ON ac."vCode" = oa."OtherChargeAcc" 
+WHERE "bDoPurchase" = true AND "vNature" = 'G' 
+ORDER BY "vCode"
+      `;
+
+      const result = await this.executeQuery(query);
+      return result.map(account => ({
+        value: account.nAccID,
+        label: `${account.vCode} - ${account.vName}`,
+        code: account.vCode,
+        name: account.vName,
+        OtherChargeGST: account.OtherChargeGST
+      }));
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch other charge accounts", error);
+    }
+  }
 }
 
 module.exports = TransactionModel;
