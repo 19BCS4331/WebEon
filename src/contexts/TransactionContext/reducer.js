@@ -37,6 +37,9 @@ export const initialState = {
     // Charges
     Charges: [],
     ChargesTotalAmount: 0,
+    // Taxes
+    Taxes: [],
+    TaxTotalAmount: 0,
     // Other fields
     PartyName: "",
     PurposeDescription: "",

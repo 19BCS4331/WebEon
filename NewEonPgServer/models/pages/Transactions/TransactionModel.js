@@ -855,6 +855,66 @@ ORDER BY "vCode"
       throw new DatabaseError("Failed to fetch other charge accounts", error);
     }
   }
+
+  // Get tax data for transaction
+  static async getTaxData(vTrntype) {
+    try {
+      // Get active taxes based on transaction type
+      const taxQuery = `
+        SELECT 
+          "nTaxID", "CODE", "DESCRIPTION", "APPLYAS", "VALUE", 
+          "SLABWISETAX", "RETAILBUYSIGN", "RETAILSELLSIGN"
+        FROM "mstTax" 
+        WHERE 
+          "ISACTIVE" = true 
+          AND CURRENT_TIMESTAMP BETWEEN "FROMDT" AND "TILLDT"
+          AND (
+            ($1 = 'B' AND "RETAILBUY" = true)
+            OR
+            ($1 = 'S' AND "RETAILSELL" = true)
+          )
+          AND "bIsDeleted" = false
+        ORDER BY "CODE"
+      `;
+      const taxes = await this.executeQuery(taxQuery, [vTrntype]);
+
+      // Get tax slabs for slab-wise taxes
+      const slabWiseTaxIds = taxes
+        .filter(tax => tax.SLABWISETAX)
+        .map(tax => tax.nTaxID);
+
+      let taxSlabs = {};
+      if (slabWiseTaxIds.length > 0) {
+        const slabQuery = `
+          SELECT 
+            "nTaxID", "nTaxIdD", "SRNO", "FROMAMT", "TOAMT", 
+            "VALUE", "BASEVALUE"
+          FROM "mstTaxd" 
+          WHERE 
+            "nTaxID" = ANY($1)
+            AND "bIsDeleted" = false
+          ORDER BY "nTaxID", "SRNO"
+        `;
+        const slabs = await this.executeQuery(slabQuery, [slabWiseTaxIds]);
+        
+        // Group slabs by tax ID
+        taxSlabs = slabs.reduce((acc, slab) => {
+          if (!acc[slab.nTaxID]) {
+            acc[slab.nTaxID] = [];
+          }
+          acc[slab.nTaxID].push(slab);
+          return acc;
+        }, {});
+      }
+
+      return {
+        taxes,
+        taxSlabs
+      };
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch tax data", error);
+    }
+  }
 }
 
 module.exports = TransactionModel;

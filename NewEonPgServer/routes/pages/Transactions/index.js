@@ -382,6 +382,18 @@ router.get('/getOtherChargeAccounts', authMiddleware, async (req, res) => {
   }
 });
 
+// Get tax data for transaction
+router.get("/getTaxData", authMiddleware, async (req, res) => {
+  try {
+    const { vTrntype } = req.query;
+    const result = await TransactionModel.getTaxData(vTrntype);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching tax data:", error);
+    res.status(500).json({ error: error.message || "Error fetching tax data" });
+  }
+});
+
 // Update rates every 15 minutes
 const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
 setInterval(async () => {
