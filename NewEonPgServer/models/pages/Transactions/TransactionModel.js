@@ -915,6 +915,24 @@ ORDER BY "vCode"
       throw new DatabaseError("Failed to fetch tax data", error);
     }
   }
+
+  // Get payment codes for transaction
+  static async getPaymentCodes() {
+    try {
+      const query = `
+        SELECT "vCode", "vName", "vNature", "vBankType", 
+               "nCurrencyID", "nDivisionID", "vFinType", "vFinCode" 
+        FROM "AccountsProfile" 
+        WHERE "bDoPurchase" = true 
+          AND "vNature" NOT IN ('P') 
+          AND ("vCode" = 'ICICI' OR "vCode" = 'CASH')
+      `;
+      
+      return await this.executeQuery(query);
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch payment codes", error);
+    }
+  }
 }
 
 module.exports = TransactionModel;

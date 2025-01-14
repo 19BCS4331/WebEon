@@ -24,13 +24,13 @@ class AdvSettingsModel extends BaseModel {
             return await this.executeTransactionQuery(async (client) => {
                 // Update each setting within the transaction
                 for (const setting of settings) {
-                    const { DATACODE, DATAVALUE } = setting;
+                    const { ID, DATAVALUE } = setting;
                     await client.query(
                         `UPDATE "advsettings" 
                         SET "DATAVALUE" = $1 
-                        WHERE "DATACODE" = $2 
+                        WHERE "ID" = $2 
                         AND "nBranchID" = $3`,
-                        [DATAVALUE, DATACODE, nBranchID]
+                        [DATAVALUE, ID, nBranchID]
                     );
                 }
                 return { message: "Settings updated successfully" };

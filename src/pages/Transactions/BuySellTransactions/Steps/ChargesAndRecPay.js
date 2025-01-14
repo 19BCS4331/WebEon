@@ -22,16 +22,20 @@ import { useToast } from "../../../../contexts/ToastContext";
 import CustomBoxButton from "../../../../components/global/CustomBoxButton";
 import CustomTextField from "../../../../components/global/CustomTextField";
 import CustomAutocomplete from "../../../../components/global/CustomAutocomplete";
+import CustomDatePicker from "../../../../components/global/CustomDatePicker";
 import StyledButton from "../../../../components/global/StyledButton";
 import { apiClient } from "../../../../services/apiClient";
 import { useParams } from "react-router-dom";
 import Alert from "@mui/material/Alert";
+import { useSettings } from "../../../../contexts/SettingsContext";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const ChargesAndRecPay = ({ data, onUpdate }) => {
   const { Type: vTrntype } = useParams();
 
   const { Colortheme } = useContext(ThemeContext);
   const { showToast, hideToast } = useToast();
+  const { getSetting } = useSettings();
 
   // Modal states
   const [openChargesModal, setOpenChargesModal] = useState(false);
@@ -70,6 +74,128 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   const [fixedTaxAmounts, setFixedTaxAmounts] = useState({});
   const [originalFixedTaxAmounts, setOriginalFixedTaxAmounts] = useState({});
 
+  // State for RecPay Modal
+  const [recPayData, setRecPayData] = useState([]);
+  const [codeOptions, setCodeOptions] = useState([]);
+  const [chequeOptions, setChequeOptions] = useState([]);
+  const [remainingAmount, setRemainingAmount] = useState(0);
+  const [newRecPayRow, setNewRecPayRow] = useState({
+    code: "",
+    chequeNo: "",
+    chequeDate: new Date(),
+    drawnOn: "",
+    branch: "",
+    accountDate: new Date(),
+    amount: "",
+  });
+
+  // RecPay Modal effects
+  // Add this effect to fetch code options
+  useEffect(() => {
+    const fetchCodeOptions = async () => {
+      try {
+        const response = await apiClient.get(
+          "/pages/Transactions/getPaymentCodes"
+        );
+        // Format the options to have label and value properties
+        const formattedOptions = response.data.map((option) => ({
+          label: `${option.vCode} - ${option.vName}`, // Display code and name
+          value: option.vCode,
+          ...option, // Keep the original data
+        }));
+        setCodeOptions(formattedOptions);
+      } catch (error) {
+        console.error("Error fetching code options:", error);
+      }
+    };
+
+    fetchCodeOptions();
+  }, []);
+
+  // Add this effect to fetch cheque options
+  useEffect(() => {
+    const fetchChequeOptions = async () => {
+      try {
+        const response = await apiClient.get("/your-endpoint-for-cheques");
+        setChequeOptions(response.data);
+      } catch (error) {
+        console.error("Error fetching cheque options:", error);
+      }
+    };
+
+    fetchChequeOptions();
+  }, []);
+
+  useEffect(() => {
+    setNewRecPayRow((prev) => ({
+      ...prev,
+      amount: amountAfterTax || 0,
+    }));
+    setRemainingAmount(amountAfterTax || 0);
+  }, [amountAfterTax]);
+
+  //RecPay Modal handlers
+  // Add these handlers
+  const handleRecPayInputChange = (field, value) => {
+    setNewRecPayRow((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddRecPayRow = () => {
+    const newRow = {
+      ...newRecPayRow,
+      // Set chequeDate to null if code is CASH
+      chequeDate: newRecPayRow.code === "CASH" ? null : newRecPayRow.chequeDate,
+      srno: recPayData.length + 1,
+    };
+  
+    setRecPayData((prev) => [...prev, newRow]);
+  
+    // Update remaining amount
+    setRemainingAmount(
+      (prev) => parseFloat(prev) - parseFloat(newRow.amount || 0)
+    );
+  
+    // Reset the input row with remaining amount
+    setNewRecPayRow({
+      code: "",
+      chequeNo: "",
+      chequeDate: null,
+      drawnOn: "",
+      branch: "",
+      accountDate: new Date(),
+      amount: remainingAmount - parseFloat(newRow.amount || 0),
+    });
+  };
+
+  const handleDeleteRecPayRow = (srno) => {
+    // Find the row being deleted to get its amount
+    const deletedRow = recPayData.find((row) => row.srno === srno);
+
+    // Filter out the row with matching srno
+    setRecPayData((prev) => {
+      const filteredData = prev.filter((row) => row.srno !== srno);
+      // Reorder srno for remaining rows
+      return filteredData.map((row, index) => ({
+        ...row,
+        srno: index + 1,
+      }));
+    });
+
+    // Add back the deleted amount to remaining amount
+    setRemainingAmount(
+      (prev) => parseFloat(prev) + parseFloat(deletedRow?.amount || 0)
+    );
+
+    // Update the input row amount with new remaining amount
+    setNewRecPayRow((prev) => ({
+      ...prev,
+      amount: parseFloat(remainingAmount) + parseFloat(deletedRow?.amount || 0),
+    }));
+  };
+
   // Initial useEffect for data initialization
   useEffect(() => {
     // Initialize ChargesTotalAmount with exchangeTotalAmount only if no charges exist
@@ -96,7 +222,11 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
 
   const checkUnsavedChanges = () => {
     // If there's only one empty row and no original charges, there are no changes
-    if (chargesData.length === 1 && !chargesData[0].account && originalCharges.length === 0) {
+    if (
+      chargesData.length === 1 &&
+      !chargesData[0].account &&
+      originalCharges.length === 0
+    ) {
       return false;
     }
 
@@ -108,17 +238,19 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     // Compare each row
     return chargesData.some((row, index) => {
       const originalRow = originalCharges[index];
-      
+
       // If row has no account and is empty, treat it as unchanged
       if (!row.account && !row.value && !row.operation) {
         return false;
       }
 
       // Check if the row is different from original
-      return !originalRow || 
+      return (
+        !originalRow ||
         row.account?.value !== originalRow.account?.value ||
         row.value !== originalRow.value ||
-        row.operation !== originalRow.operation;
+        row.operation !== originalRow.operation
+      );
     });
   };
 
@@ -143,13 +275,17 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   const handleConfirmClose = () => {
     setShowUnsavedWarning(false);
     // If original charges is empty, ensure we have at least one empty row
-    const revertData = originalCharges.length > 0 ? [...originalCharges] : [{ ...emptyRow }];
+    const revertData =
+      originalCharges.length > 0 ? [...originalCharges] : [{ ...emptyRow }];
     setChargesData(revertData);
     calculateTotalWithCharges(revertData);
     // Update the context with the reverted data
     onUpdate({
-      Charges: revertData.length === 1 && !revertData[0].account ? [] : revertData,
-      ChargesTotalAmount: parseFloat(calculateTotalWithCharges(revertData)).toFixed(2),
+      Charges:
+        revertData.length === 1 && !revertData[0].account ? [] : revertData,
+      ChargesTotalAmount: parseFloat(
+        calculateTotalWithCharges(revertData)
+      ).toFixed(2),
     });
     setOpenChargesModal(false);
   };
@@ -320,9 +456,11 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   useEffect(() => {
     if (data.Taxes?.length > 0) {
       // Find HFEE and HFEEIGST in existing taxes
-      const existingHFEE = data.Taxes.find(tax => tax.CODE === "HFEE");
-      const existingHFEEIGST = data.Taxes.find(tax => tax.CODE === "HFEEIGST");
-      
+      const existingHFEE = data.Taxes.find((tax) => tax.CODE === "HFEE");
+      const existingHFEEIGST = data.Taxes.find(
+        (tax) => tax.CODE === "HFEEIGST"
+      );
+
       // If we have HFEE but no HFEEIGST, add it
       if (existingHFEE && !existingHFEEIGST) {
         const hfeeigst = {
@@ -335,9 +473,12 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
           currentSign: existingHFEE.currentSign,
           isAutoCalculated: true,
           amount: existingHFEE.amount * 0.18,
-          lineTotal: (existingHFEE.amount * 0.18) * (existingHFEE.currentSign === "+" ? 1 : -1)
+          lineTotal:
+            existingHFEE.amount *
+            0.18 *
+            (existingHFEE.currentSign === "+" ? 1 : -1),
         };
-        
+
         setTaxData([...data.Taxes, hfeeigst]);
         setOriginalTaxData([...data.Taxes, hfeeigst]);
       } else {
@@ -347,7 +488,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
 
       // Initialize fixed amounts from existing tax data
       const fixedAmounts = {};
-      data.Taxes.forEach(tax => {
+      data.Taxes.forEach((tax) => {
         if (tax.APPLYAS === "F" || tax.CODE === "HFEEIGST") {
           fixedAmounts[tax.nTaxID] = tax.amount || 0;
         }
@@ -451,7 +592,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
 
     if (tax.APPLYAS === "F") {
       const amount = currentFixedAmounts[tax.nTaxID] || 0;
-      
+
       return parseFloat(amount) || 0;
     }
 
@@ -462,16 +603,15 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
           parseFloat(exchangeAmount) >= parseFloat(s.FROMAMT) &&
           parseFloat(exchangeAmount) <= parseFloat(s.TOAMT)
       );
-      
 
       if (slab) {
         if (tax.APPLYAS === "%") {
           const amount = exchangeAmount * (parseFloat(slab.VALUE) / 100);
-          
+
           return amount;
         } else {
           const amount = parseFloat(slab.VALUE);
-          
+
           return amount;
         }
       }
@@ -479,11 +619,11 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     } else {
       if (tax.APPLYAS === "%") {
         const amount = exchangeAmount * (parseFloat(tax.VALUE) / 100);
-        
+
         return amount;
       } else {
         const amount = parseFloat(tax.VALUE);
-        
+
         return amount;
       }
     }
@@ -495,15 +635,21 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     currentFixedAmounts = fixedTaxAmounts
   ) => {
     // First, calculate HFEE if it exists
-    const hfeeTax = taxList.find(tax => tax.CODE === "HFEE");
-    const hfeeAmount = hfeeTax ? calculateTaxAmount(hfeeTax, data.exchangeTotalAmount || 0, currentFixedAmounts) : 0;
+    const hfeeTax = taxList.find((tax) => tax.CODE === "HFEE");
+    const hfeeAmount = hfeeTax
+      ? calculateTaxAmount(
+          hfeeTax,
+          data.exchangeTotalAmount || 0,
+          currentFixedAmounts
+        )
+      : 0;
 
     // Calculate HFEEIGST based on HFEE amount if HFEE exists
-    const hfeeigstTax = taxList.find(tax => tax.CODE === "HFEEIGST");
+    const hfeeigstTax = taxList.find((tax) => tax.CODE === "HFEEIGST");
     if (hfeeigstTax && hfeeTax) {
       currentFixedAmounts = {
         ...currentFixedAmounts,
-        [hfeeigstTax.nTaxID]: hfeeAmount * 0.18
+        [hfeeigstTax.nTaxID]: hfeeAmount * 0.18,
       };
     }
 
@@ -513,9 +659,13 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
         // For HFEEIGST, use the calculated amount based on HFEE
         amount = hfeeAmount * 0.18;
       } else {
-        amount = calculateTaxAmount(tax, data.exchangeTotalAmount || 0, currentFixedAmounts);
+        amount = calculateTaxAmount(
+          tax,
+          data.exchangeTotalAmount || 0,
+          currentFixedAmounts
+        );
       }
-      
+
       const sign = tax.currentSign === "+" ? 1 : -1;
       const lineTotal = amount * sign;
 
@@ -532,17 +682,58 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   };
 
   // Handle fixed tax amount change
+
+  // const handleFixedTaxAmountChange = (taxId, amount) => {
+  //   const newFixedTaxAmounts = {
+  //     ...fixedTaxAmounts,
+  //     [taxId]: parseFloat(amount) || 0,
+  //   };
+
+  //   setFixedTaxAmounts(newFixedTaxAmounts);
+  //   setHasUnsavedTaxChanges(true);
+
+  //   // Calculate new tax amounts
+  //   const { updatedTaxes, total } = calculateTotalTaxAmount(taxData, newFixedTaxAmounts);
+
+  //   // Update states
+  //   setTaxData(updatedTaxes);
+  //   setTotalTaxAmount(total);
+  //   setAmountAfterTax(parseFloat(data.exchangeTotalAmount || 0) + total);
+  // };
+
   const handleFixedTaxAmountChange = (taxId, amount) => {
+    let validAmount = parseFloat(amount) || 0;
+
+    // Find the tax object using nTaxID
+    const tax = taxData.find((t) => t.nTaxID === taxId);
+
+    // Check HFEE max value
+    if (tax?.CODE === "HFEE") {
+      const maxHfeeValue = parseFloat(
+        getSetting("HFEEMAXVALUE", "advanced", "0")
+      );
+      if (validAmount > maxHfeeValue) {
+        showToast(`HFEE cannot exceed ${maxHfeeValue}`, "error");
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        validAmount = maxHfeeValue;
+      }
+    }
+
     const newFixedTaxAmounts = {
       ...fixedTaxAmounts,
-      [taxId]: parseFloat(amount) || 0,
+      [taxId]: validAmount,
     };
-    
+
     setFixedTaxAmounts(newFixedTaxAmounts);
     setHasUnsavedTaxChanges(true);
 
     // Calculate new tax amounts
-    const { updatedTaxes, total } = calculateTotalTaxAmount(taxData, newFixedTaxAmounts);
+    const { updatedTaxes, total } = calculateTotalTaxAmount(
+      taxData,
+      newFixedTaxAmounts
+    );
 
     // Update states
     setTaxData(updatedTaxes);
@@ -588,15 +779,18 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     // Revert to original data
     setTaxData(JSON.parse(JSON.stringify(originalTaxData)));
     setFixedTaxAmounts(JSON.parse(JSON.stringify(originalFixedTaxAmounts)));
-    
+
     // Recalculate with original data
-    const { updatedTaxes, total } = calculateTotalTaxAmount(originalTaxData, originalFixedTaxAmounts);
-    
+    const { updatedTaxes, total } = calculateTotalTaxAmount(
+      originalTaxData,
+      originalFixedTaxAmounts
+    );
+
     // Update state
     setTaxData(updatedTaxes);
     setTotalTaxAmount(total);
     setAmountAfterTax(parseFloat(data.exchangeTotalAmount || 0) + total);
-    
+
     // Clear flags
     setHasUnsavedTaxChanges(false);
     setShowUnsavedTaxWarning(false);
@@ -613,17 +807,20 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   // Handle saving tax changes
   const handleSaveTaxChanges = () => {
     // Calculate final tax amounts before saving
-    const { updatedTaxes, total } = calculateTotalTaxAmount(taxData, fixedTaxAmounts);
-    
+    const { updatedTaxes, total } = calculateTotalTaxAmount(
+      taxData,
+      fixedTaxAmounts
+    );
+
     // Update state
     setTaxData(updatedTaxes);
     setTotalTaxAmount(total);
     setAmountAfterTax(parseFloat(data.exchangeTotalAmount || 0) + total);
-    
+
     // Update original data to match current state
     setOriginalTaxData(JSON.parse(JSON.stringify(updatedTaxes)));
     setOriginalFixedTaxAmounts(JSON.parse(JSON.stringify(fixedTaxAmounts)));
-    
+
     // Clear flags
     setHasUnsavedTaxChanges(false);
     setShowUnsavedTaxWarning(false);
@@ -725,12 +922,33 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Tax Code</TableCell>
-                <TableCell>Apply As</TableCell>
-                <TableCell>Value</TableCell>
-                <TableCell align="center">Sign</TableCell>
-                <TableCell>Tax Amount</TableCell>
+              <TableRow sx={{ backgroundColor: Colortheme.text }}>
+                <TableCell
+                  sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                >
+                  Tax Code
+                </TableCell>
+                <TableCell
+                  sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                >
+                  Apply As
+                </TableCell>
+                <TableCell
+                  sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                >
+                  Value
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                >
+                  Sign
+                </TableCell>
+                <TableCell
+                  sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                >
+                  Tax Amount
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -740,11 +958,29 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                   data.exchangeTotalAmount
                 );
                 return (
-                  <TableRow key={tax.nTaxID}>
-                    <TableCell>{tax.CODE}</TableCell>
-                    <TableCell>{tax.APPLYAS}</TableCell>
-                    <TableCell>{tax.VALUE}</TableCell>
-                    <TableCell align="center">
+                  <TableRow
+                    sx={{ backgroundColor: Colortheme.secondaryBG }}
+                    key={tax.nTaxID}
+                  >
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {tax.CODE}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {tax.APPLYAS}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {tax.VALUE}
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
                       <CustomTextField
                         select
                         value={tax.currentSign}
@@ -851,6 +1087,248 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       </DialogActions>
     </Dialog>
   );
+
+  // RecPay Modal Render function
+  const renderRecPayModal = () => {
+    const isCashSelected = newRecPayRow.code === "CASH";
+
+    return (
+      <Dialog
+        open={openRecPayModal}
+        onClose={() => setOpenRecPayModal(false)}
+        maxWidth="xl"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            backgroundColor: Colortheme.background,
+            color: Colortheme.text,
+            fontFamily: "Poppins",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          Receipt/Payment Details
+          <IconButton
+            onClick={() => setOpenRecPayModal(false)}
+            sx={{ color: Colortheme.text }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ backgroundColor: Colortheme.background, p: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              sx={{
+                color: Colortheme.text,
+                fontFamily: "Poppins",
+              }}
+            >
+              Total Amount: ₹{parseFloat(amountAfterTax || 0).toFixed(2)}
+            </Typography>
+            <Typography
+              sx={{
+                color: Colortheme.text,
+                fontFamily: "Poppins",
+                mt: 1,
+              }}
+            >
+              Remaining Amount: ₹{parseFloat(remainingAmount || 0).toFixed(2)}
+            </Typography>
+          </Box>
+
+          {/* Input Row */}
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+            {/* <CustomAutocomplete
+              options={codeOptions}
+              value={newRecPayRow.code}
+              onChange={(_, value) => handleRecPayInputChange("code", value)}
+              label="Code"
+            /> */}
+            <CustomAutocomplete
+              options={codeOptions}
+              value={
+                codeOptions.find(
+                  (option) => option.value === newRecPayRow.code
+                ) || null
+              }
+              onChange={(_, value) =>
+                handleRecPayInputChange("code", value?.value || "")
+              }
+              label="Code"
+              getOptionLabel={(option) => option.label || ""}
+            />
+            <CustomAutocomplete
+              options={chequeOptions}
+              value={newRecPayRow.chequeNo}
+              onChange={(_, value) =>
+                handleRecPayInputChange("chequeNo", value)
+              }
+              label="Cheque No"
+              disabled={isCashSelected}
+            />
+            <CustomDatePicker
+              value={newRecPayRow.chequeDate}
+              onChange={(date) => handleRecPayInputChange("chequeDate", date)}
+              label="Cheque Date"
+              disabled={isCashSelected}
+            />
+            <CustomTextField
+              value={newRecPayRow.drawnOn}
+              onChange={(e) =>
+                handleRecPayInputChange("drawnOn", e.target.value)
+              }
+              label="Drawn On"
+              disabled={isCashSelected}
+            />
+            <CustomTextField
+              value={newRecPayRow.branch}
+              onChange={(e) =>
+                handleRecPayInputChange("branch", e.target.value)
+              }
+              label="Branch"
+              disabled={isCashSelected}
+            />
+            <CustomDatePicker
+              value={newRecPayRow.accountDate}
+              onChange={(date) => handleRecPayInputChange("accountDate", date)}
+              label="Account Date"
+            />
+            <CustomTextField
+              value={newRecPayRow.amount}
+              onChange={(e) =>
+                handleRecPayInputChange("amount", e.target.value)
+              }
+              label="Amount"
+              type="number"
+            />
+            <StyledButton
+              style={{ width: 150, height: 50 }}
+              onClick={handleAddRecPayRow}
+              addIcon
+            >
+              Add
+            </StyledButton>
+          </Box>
+
+          {/* Table */}
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: Colortheme.text }}>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Sr No
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Code
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Cheque No
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Cheque Date
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Drawn On
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Branch
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Account Date
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Amount
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: Colortheme.background, fontFamily: "Poppins" }}
+                  >
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {recPayData.map((row) => (
+                  <TableRow
+                    sx={{ backgroundColor: Colortheme.secondaryBG }}
+                    key={row.srno}
+                  >
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.srno}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.code}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.chequeNo}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.chequeDate?.toLocaleDateString()}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.drawnOn}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.branch}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      {row.accountDate?.toLocaleDateString()}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      ₹{parseFloat(row.amount).toFixed(2)}
+                    </TableCell>
+                    <TableCell
+                      sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
+                    >
+                      <IconButton
+                        onClick={() => handleDeleteRecPayRow(row.srno)}
+                        sx={{ color: Colortheme.text }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <Box sx={{ width: "100%", mt: 2 }}>
@@ -1182,94 +1660,8 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
           )}
         </DialogActions>
       </Dialog>
-
-      {/* Fee/Taxes Modal - To be implemented */}
-      <Dialog
-        open={openFeeTaxesModal}
-        onClose={() => setOpenFeeTaxesModal(false)}
-        maxWidth="xl"
-        fullWidth
-        PaperProps={{
-          style: {
-            backgroundColor: Colortheme.background,
-            width: "90%",
-            maxWidth: "none",
-            borderRadius: "20px",
-            padding: 5,
-            border: `1px solid ${Colortheme.text}`,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            color: Colortheme.text,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontFamily: "Poppins",
-          }}
-        >
-          <Box display="flex" alignItems="center">
-            <Typography variant="h6" sx={{ color: Colortheme.text }}>
-              Fee/Taxes
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={() => setOpenFeeTaxesModal(false)}
-            sx={{ color: Colortheme.text }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ backgroundColor: Colortheme.background }}>
-          {/* Fee/Taxes content will be implemented later */}
-        </DialogContent>
-      </Dialog>
-
-      {/* Rec/Pay Modal - To be implemented */}
-      <Dialog
-        open={openRecPayModal}
-        onClose={() => setOpenRecPayModal(false)}
-        maxWidth="xl"
-        fullWidth
-        PaperProps={{
-          style: {
-            backgroundColor: Colortheme.background,
-            width: "90%",
-            maxWidth: "none",
-            borderRadius: "20px",
-            padding: 5,
-            border: `1px solid ${Colortheme.text}`,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            color: Colortheme.text,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontFamily: "Poppins",
-          }}
-        >
-          <Box display="flex" alignItems="center">
-            <Typography variant="h6" sx={{ color: Colortheme.text }}>
-              Rec/Pay
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={() => setOpenRecPayModal(false)}
-            sx={{ color: Colortheme.text }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ backgroundColor: Colortheme.background }}>
-          {/* Rec/Pay content will be implemented later */}
-        </DialogContent>
-      </Dialog>
-
       {renderTaxModal()}
+      {renderRecPayModal()}
     </Box>
   );
 };

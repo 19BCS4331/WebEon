@@ -22,7 +22,6 @@ import { AuthContext } from "../../../../contexts/AuthContext";
 import { useToast } from "../../../../contexts/ToastContext";
 
 const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
-  console.log("exchangeData:", data.exchangeData);
   const { Type: vTrntype } = useParams();
   const { showToast, hideToast,showInfoModal } = useToast();
   const { branch } = useContext(AuthContext);

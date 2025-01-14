@@ -72,7 +72,6 @@ const BranchLocationProfile = () => {
 
   const handleDeleteClick = (row) => {
     const rowid = row.nBranchID;
-    console.log("Delete button clicked for ID:", row.nBranchID);
     showAlertDialog(`Delete the record : ${row.vBranchCode} `, "", () =>
       DeleteFunc(rowid)
     );
@@ -85,7 +84,6 @@ const BranchLocationProfile = () => {
         `/pages/Master/SystemSetup/branchProfileDelete`,
         { nBranchID: nBranchID }
       );
-      console.log(response.data);
       setRows((prev) => prev.filter((row) => row.nBranchID !== nBranchID));
       setLoading(false);
       showToast("Successfully Deleted!", "success");
@@ -95,7 +93,6 @@ const BranchLocationProfile = () => {
       hideAlertDialog();
       setSearchKeyword("");
     } catch (error) {
-      console.log(error);
       setLoading(false);
       hideAlertDialog();
       showToast("Error deleting data", "error");
@@ -106,7 +103,6 @@ const BranchLocationProfile = () => {
   };
 
   const handleFormSubmit = (formData) => {
-    const token = localStorage.getItem("token");
     setLoading(true);
     if (editData) {
       apiClient

@@ -1,0 +1,5 @@
+2025-01-13 18:13:06,985 - INFO - Database connections established successfully
+2025-01-13 18:13:07,160 - INFO - Found 672 tables in MSSQL database
+2025-01-13 18:13:07,160 - INFO - Starting migration of table: BookD
+2025-01-13 18:13:07,533 - INFO - Successfully completed migration of table: BookD
+2025-01-13 18:13:07,533 - INFO - Migration completed successfully

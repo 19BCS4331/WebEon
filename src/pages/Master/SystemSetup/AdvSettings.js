@@ -128,7 +128,6 @@ const AdvSettings = () => {
 
   const handleCloseModal = () => setIsModalOpen(false);
 
-  console.log("formData", formData);
   useEffect(() => {
     if (settingsData.length > 0) {
       const initialFormData = settingsData.reduce((acc, setting) => {

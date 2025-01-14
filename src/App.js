@@ -39,39 +39,44 @@ import ChatWidget from './components/global/ChatWidget';
 import { AppActionsProvider } from './contexts/AppActionsContext';
 import CustomInfoModal from './components/CustomInfoModal';
 import CustomAlertModal from './components/CustomAlertModal';
+import { SettingsProvider } from './contexts/SettingsContext';
 
 function App() {
   return (
     <AuthProvider>
       <BaseUrlProvider>
-        <LocalizationProvider>
-          <CustomThemeProvider>
-            <ThemeContext.Consumer>
-              {({ Colortheme }) => (
-                <StyledThemeProvider theme={Colortheme}>
-                  <FormDataProvider>
-                    <BrowserRouter>
-                      <ModalProvider>
-                        <ToastProvider>
-                          <AppActionsProvider>
-                            <Toast />
-                            <CustomInfoModal />
-                            <CustomAlertModal />
-                            <AuthBasedSidebar />
-                            <ChatWidget />
-                            <Suspense fallback={<LazyFallBack />}>
-                              <Routes>{renderRoutes()}</Routes>
-                            </Suspense>
-                          </AppActionsProvider>
-                        </ToastProvider>
-                      </ModalProvider>
-                    </BrowserRouter>
-                  </FormDataProvider>
-                </StyledThemeProvider>
-              )}
-            </ThemeContext.Consumer>
-          </CustomThemeProvider>
-        </LocalizationProvider>
+      <ToastProvider>
+        <SettingsProvider>
+          <LocalizationProvider>
+            <CustomThemeProvider>
+              <ThemeContext.Consumer>
+                {({ Colortheme }) => (
+                  <StyledThemeProvider theme={Colortheme}>
+                    <FormDataProvider>
+                      <BrowserRouter>
+                        <ModalProvider>
+                         
+                            <AppActionsProvider>
+                              <Toast />
+                              <CustomInfoModal />
+                              <CustomAlertModal />
+                              <AuthBasedSidebar />
+                              <ChatWidget />
+                              <Suspense fallback={<LazyFallBack />}>
+                                <Routes>{renderRoutes()}</Routes>
+                              </Suspense>
+                            </AppActionsProvider>
+                        
+                        </ModalProvider>
+                      </BrowserRouter>
+                    </FormDataProvider>
+                  </StyledThemeProvider>
+                )}
+              </ThemeContext.Consumer>
+            </CustomThemeProvider>
+          </LocalizationProvider>
+        </SettingsProvider>
+        </ToastProvider>
       </BaseUrlProvider>
     </AuthProvider>
   );

@@ -394,6 +394,17 @@ router.get("/getTaxData", authMiddleware, async (req, res) => {
   }
 });
 
+// Get payment codes for transaction
+router.get('/getPaymentCodes', authMiddleware, async (req, res) => {
+  try {
+    const codes = await TransactionModel.getPaymentCodes();
+    res.json(codes);
+  } catch (error) {
+    console.error('Error fetching payment codes:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch payment codes' });
+  }
+});
+
 // Update rates every 15 minutes
 const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
 setInterval(async () => {
