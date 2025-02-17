@@ -705,7 +705,13 @@ ORDER BY "PRODUCTCODE" ASC
     }
   }
 
-  static async getRateWithMargin(currencyCode, productType, branchId, issCode, trnType) {
+  static async getRateWithMargin(
+    currencyCode,
+    productType,
+    branchId,
+    issCode,
+    trnType
+  ) {
     try {
       // Get base rate from APIrates
       const rateResult = await this.executeQuery(
@@ -722,53 +728,58 @@ ORDER BY "PRODUCTCODE" ASC
       // Get margin from MarginMaster
       const marginResult = await this.executeQuery(
         'SELECT * FROM "MarginMaster" WHERE "CurrencyCode" = $1 AND "PRODUCT" = $2 AND "nBranchID" = $3 AND "isscode" = $4',
-        [currencyCode, productType, branchId, issCode || '']
+        [currencyCode, productType, branchId, issCode || ""]
       );
 
       if (!marginResult || marginResult.length === 0) {
-        throw new Error(`No margin configuration found for currency ${currencyCode}`);
+        throw new Error(
+          `No margin configuration found for currency ${currencyCode}`
+        );
       }
 
       const margin = marginResult[0];
-      
+
       // Apply margin based on transaction type and ensure it's a number
-      const marginValue = Number(trnType === 'B' ? margin.BuyMargin : margin.SellMargin);
-      
+      const marginValue = Number(
+        trnType === "B" ? margin.BuyMargin : margin.SellMargin
+      );
+
       // Calculate final rate by adding margin to base rate
       const finalRate = baseRate + marginValue;
 
       return {
         baseRate,
         marginValue,
-        finalRate: Number(finalRate.toFixed(4))
+        finalRate: Number(finalRate.toFixed(4)),
       };
-
     } catch (error) {
-      console.error('Error getting rate with margin:', error);
+      console.error("Error getting rate with margin:", error);
       throw error;
     }
   }
 
   static async updateExchangeRates() {
     try {
-      const API_KEY = '29fb1e0ab32ce2068121d99f';
-      const response = await fetch(`https://v6.exchangerate-api.com/v6/${API_KEY}/latest/INR`);
+      const API_KEY = "29fb1e0ab32ce2068121d99f";
+      const response = await fetch(
+        `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/INR`
+      );
       const data = await response.json();
 
-      if (data.result === 'success') {
+      if (data.result === "success") {
         const rates = data.conversion_rates;
         const values = [];
-        
+
         // Convert rates to have each currency as base currency
         for (const [currencyCode, rateToINR] of Object.entries(rates)) {
-          if (currencyCode === 'INR') continue;
-          
+          if (currencyCode === "INR") continue;
+
           // Calculate rate as: 1 foreign currency = X INR
           const rateFromBase = 1 / rateToINR;
-          
+
           values.push({
             currencyCode,
-            rate: rateFromBase
+            rate: rateFromBase,
           });
         }
 
@@ -776,9 +787,9 @@ ORDER BY "PRODUCTCODE" ASC
         await this.executeTransactionQuery(async (client) => {
           // Clear existing rates
           await client.query('DELETE FROM "APIrates"');
-          
+
           // Insert new rates
-          for (const {currencyCode, rate} of values) {
+          for (const { currencyCode, rate } of values) {
             await client.query(
               'INSERT INTO "APIrates" ("CnCode", "Rate") VALUES ($1, $2)',
               [currencyCode, rate]
@@ -787,9 +798,8 @@ ORDER BY "PRODUCTCODE" ASC
         });
       }
     } catch (error) {
-      console.error('Error updating exchange rates:', error);
+      console.error("Error updating exchange rates:", error);
       throw error;
-    
     }
   }
 
@@ -846,12 +856,12 @@ ORDER BY "vCode"
       `;
 
       const result = await this.executeQuery(query);
-      return result.map(account => ({
+      return result.map((account) => ({
         value: account.nAccID,
         label: `${account.vCode} - ${account.vName}`,
         code: account.vCode,
         name: account.vName,
-        OtherChargeGST: account.OtherChargeGST
+        OtherChargeGST: account.OtherChargeGST,
       }));
     } catch (error) {
       throw new DatabaseError("Failed to fetch other charge accounts", error);
@@ -882,8 +892,8 @@ ORDER BY "vCode"
 
       // Get tax slabs for slab-wise taxes
       const slabWiseTaxIds = taxes
-        .filter(tax => tax.SLABWISETAX)
-        .map(tax => tax.nTaxID);
+        .filter((tax) => tax.SLABWISETAX)
+        .map((tax) => tax.nTaxID);
 
       let taxSlabs = {};
       if (slabWiseTaxIds.length > 0) {
@@ -898,7 +908,7 @@ ORDER BY "vCode"
           ORDER BY "nTaxID", "SRNO"
         `;
         const slabs = await this.executeQuery(slabQuery, [slabWiseTaxIds]);
-        
+
         // Group slabs by tax ID
         taxSlabs = slabs.reduce((acc, slab) => {
           if (!acc[slab.nTaxID]) {
@@ -911,7 +921,7 @@ ORDER BY "vCode"
 
       return {
         taxes,
-        taxSlabs
+        taxSlabs,
       };
     } catch (error) {
       throw new DatabaseError("Failed to fetch tax data", error);
@@ -929,7 +939,7 @@ ORDER BY "vCode"
           AND "vNature" NOT IN ('P') 
           AND ("vCode" = 'ICICI' OR "vCode" = 'CASH')
       `;
-      
+
       return await this.executeQuery(query);
     } catch (error) {
       throw new DatabaseError("Failed to fetch payment codes", error);
@@ -957,10 +967,10 @@ ORDER BY "vCode"
           AND Ap."bIsDeleted" = false
           AND Ap."vCode" = $1
       `;
-  
-      return await this.executeQuery(query,[bankCode]);
+
+      return await this.executeQuery(query, [bankCode]);
     } catch (error) {
-      console.error('Error in getChequeOptions:', error);
+      console.error("Error in getChequeOptions:", error);
       throw error;
     }
   }
