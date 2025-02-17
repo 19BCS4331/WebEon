@@ -405,6 +405,40 @@ router.get('/getPaymentCodes', authMiddleware, async (req, res) => {
   }
 });
 
+
+// Get Cheque Options
+router.get('/cheque-options/:bankCode', async (req, res) => {
+  try {
+    const { bankCode } = req.params;
+    const chequeOptions = await TransactionModel.getChequeOptions(bankCode);
+    
+    if (!chequeOptions) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: chequeOptions.map(option => ({
+        value: String(option.ChequeNo),  // Convert to string
+        label: String(option.ChequeNo),  // Convert to string
+        code: option.Code,
+        recType: option.RecType,
+        issued: option.Issued
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching cheque options:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching cheque options',
+      error: error.message
+    });
+  }
+});
+
 // Update rates every 15 minutes
 const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
 setInterval(async () => {

@@ -464,7 +464,15 @@ const PartyDetails = ({
 
   return (
     <>
-      <Grid container spacing={2}>
+      <Grid container 
+      sx={{ 
+        pt:1,
+        width: '100%',
+        '& .MuiGrid-item': {
+          mb: 3,  
+          px: { xs: 0, md: 1.5 }  
+        }
+      }}>
         <Grid item xs={12} md={3}>
           <CustomAutoComplete
             options={partyTypeOptions}

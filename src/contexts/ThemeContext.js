@@ -35,6 +35,7 @@ import {
   EXEC_BLUE_STEAL_LIGHT,
   EXEC_BLUE_STEAL_DARK,
 } from "../assets/colors/COLORS";
+import { useAuth } from "./AuthContext";
 
 const ThemeContext = createContext();
 
@@ -67,6 +68,7 @@ export const themes = {
 };
 
 export const ThemeProvider = ({ children }) => {
+  const {isAuthenticated} = useAuth();
   const [themeName, setThemeName] = useState("default");
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [open, setOpen] = useState(false);
@@ -74,6 +76,7 @@ export const ThemeProvider = ({ children }) => {
   const { saveTheme, loadTheme } = useThemePersistence();
 
   useEffect(() => {
+    if(isAuthenticated){
     const initTheme = async () => {
       const savedTheme = await loadTheme();
       if (savedTheme) {
@@ -83,7 +86,8 @@ export const ThemeProvider = ({ children }) => {
       }
     };
     initTheme();
-  }, [loadTheme]);
+  }
+  }, [isAuthenticated]);
 
   const Colortheme = themes[themeName][isDarkMode ? "dark" : "light"];
 

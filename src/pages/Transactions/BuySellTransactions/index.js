@@ -117,13 +117,16 @@ const BuySellTransactionsContent = () => {
 
   const fetchExchangeData = async (vNo) => {
     try {
-      const response = await apiClient.get("/pages/Transactions/getExchangeData", {
-        params: {
-          vNo,
-          vTrnwith,
-          vTrntype,
-        },
-      });
+      const response = await apiClient.get(
+        "/pages/Transactions/getExchangeData",
+        {
+          params: {
+            vNo,
+            vTrnwith,
+            vTrntype,
+          },
+        }
+      );
       if (response.data.success) {
         const exchangeData = response.data.data;
         updateFormData({
@@ -296,19 +299,158 @@ const BuySellTransactionsContent = () => {
             />
           </Paper>
         ) : (
+          // <Paper
+          //   elevation={3}
+          //   sx={{
+          //     p: { xs: 2, sm: 3 },
+          //     backgroundColor: Colortheme.background,
+          //     height: "95%",
+          //     borderRadius: "20px",
+          //     display: "flex",
+          //     flexDirection: "column",
+          //   }}
+          // >
+          //   <Box
+          //     sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}
+          //   >
+          //     <Typography
+          //       variant="h6"
+          //       color={Colortheme.text}
+          //       fontFamily={"Poppins"}
+          //     >
+          //       {isEditMode ? "Edit Transaction" : "New Transaction"}
+          //     </Typography>
+          //     <Box display="flex" gap={2}>
+          //       {isEditMode && (
+          //         <StyledButton
+          //           onClick={() => {
+          //             resetForm();
+          //             setEditMode(false);
+          //             handleNewTransaction();
+          //           }}
+          //           style={{ width: 200 }}
+          //           addIcon={true}
+          //         >
+          //           New Transaction
+          //         </StyledButton>
+          //       )}
+          //       <StyledButton
+          //         onClick={() => setShowList(true)}
+          //         style={{ width: 150 }}
+          //         searchIcon={true}
+          //       >
+          //         Search
+          //       </StyledButton>
+          //     </Box>
+          //   </Box>
+
+          //   <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          //     <CustomStepper
+          //       steps={steps.map((step) => step.label)}
+          //       activeStep={activeStep}
+          //       onStepClick={handleStepClick}
+          //       onNext={handleNext}
+          //       onBack={handleBack}
+          //       isStepValid={validateStep}
+          //       sx={{
+          //         backgroundColor: Colortheme.background,
+          //         color: Colortheme.text,
+          //         mb: 3,
+          //       }}
+          //     />
+
+          //     <Paper
+          //       elevation={3}
+          //       sx={{
+          //         mt: { lg: 2, sm: 2, xs: 2 },
+          //         p: { xs: 2, sm: 3 },
+          //         backgroundColor: Colortheme.background,
+          //         flex: 1,
+          //         minHeight: "40vh",
+          //         maxHeight: { xs: "calc(100vh - 550px)", sm: "calc(100vh - 580px)" },
+          //         borderRadius: "20px",
+          //         display: "flex",
+          //         flexDirection: "column",
+          //         overflow: "auto",
+          //         overflowX: "hidden",
+          //         "& .MuiGrid-container": {
+          //           flexWrap: "wrap",
+          //           width: "100%",
+          //         },
+          //         // Custom Scrollbar Styles
+          //         "&::-webkit-scrollbar": {
+          //           width: "8px",
+          //           height: "8px",
+          //         },
+          //         "&::-webkit-scrollbar-track": {
+          //           backgroundColor: Colortheme.background,
+          //         },
+          //         "&::-webkit-scrollbar-thumb": {
+          //           backgroundColor: Colortheme.text,
+          //           borderRadius: "8px",
+          //         },
+          //         "&::-webkit-scrollbar-thumb:hover": {
+          //           backgroundColor: Colortheme.secondaryBGcontra,
+          //         },
+          //       }}
+          //     >
+          //       <Typography
+          //         variant="h6"
+          //         color={Colortheme.text}
+          //         sx={{ mb: 3 }}
+          //         fontFamily={"Poppins"}
+          //       >
+          //         {steps[activeStep].label}
+          //       </Typography>
+
+          //       <Box sx={{ flex: 1 }}>{renderStepContent()}</Box>
+
+          //       <Box
+          //         sx={{
+          //           display: "flex",
+          //           justifyContent: "center",
+          //           gap: 10,
+          //           mt: "auto",
+          //           pt: 4,
+          //         }}
+          //       >
+          //         <StyledButton
+          //           onClick={handleBack}
+          //           disabled={activeStep === 0}
+          //           style={{ width: 250 }}
+          //         >
+          //           Back
+          //         </StyledButton>
+          //         <StyledButton
+          //           onClick={handleNext}
+          //           disabled={activeStep === steps.length - 1}
+          //           style={{ width: 250 }}
+          //         >
+          //           {activeStep === steps.length - 1 ? "Submit" : "Next"}
+          //         </StyledButton>
+          //       </Box>
+          //     </Paper>
+          //   </Box>
+          // </Paper>
           <Paper
             elevation={3}
             sx={{
               p: { xs: 2, sm: 3 },
               backgroundColor: Colortheme.background,
-              height: "95%",
+              height: "95%", // Changed from 95%
               borderRadius: "20px",
               display: "flex",
               flexDirection: "column",
             }}
           >
+            {/* Header */}
             <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mb: 3,
+                flexShrink: 0, // Prevent header from shrinking
+              }}
             >
               <Typography
                 variant="h6"
@@ -341,7 +483,16 @@ const BuySellTransactionsContent = () => {
               </Box>
             </Box>
 
-            <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            {/* Content Container */}
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0, // Important for flex child scrolling
+              }}
+            >
+              {/* Stepper */}
               <CustomStepper
                 steps={steps.map((step) => step.label)}
                 activeStep={activeStep}
@@ -353,54 +504,77 @@ const BuySellTransactionsContent = () => {
                   backgroundColor: Colortheme.background,
                   color: Colortheme.text,
                   mb: 3,
+                  flexShrink: 0, // Prevent stepper from shrinking
                 }}
               />
 
+              {/* Content Paper */}
               <Paper
                 elevation={3}
                 sx={{
-                  mt: { lg: 2 },
+                  mt: { lg: 2, sm: 2, xs: 2 },
                   p: { xs: 2, sm: 3 },
                   backgroundColor: Colortheme.background,
-                  flex: 1,
-                  minHeight: "40vh",
-                  maxHeight: { xs: "calc(100vh - 500px)", sm: "none" },
                   borderRadius: "20px",
                   display: "flex",
                   flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0, // Important for flex child scrolling
+                  overflow: "hidden", // Handle overflow at container level
                   "& .MuiGrid-container": {
                     flexWrap: "wrap",
-                  },
-                  // Custom Scrollbar Styles
-                  "&::-webkit-scrollbar": {
-                    width: "8px",
-                    height: "8px",
-                  },
-                  "&::-webkit-scrollbar-track": {
-                    backgroundColor: Colortheme.background,
-                  },
-                  "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: Colortheme.text,
-                    borderRadius: "8px",
-                  },
-                  "&::-webkit-scrollbar-thumb:hover": {
-                    backgroundColor: Colortheme.secondaryBGcontra,
+                    width: "100%",
+                    margin: 0,
                   },
                 }}
               >
-                <Typography variant="h6" color={Colortheme.text} sx={{ mb: 3 }} fontFamily={"Poppins"}>
+                {/* Step Title */}
+                <Typography
+                  variant="h6"
+                  color={Colortheme.text}
+                  sx={{ mb: 3, flexShrink: 0 }} // Prevent title from shrinking
+                  fontFamily={"Poppins"}
+                >
                   {steps[activeStep].label}
                 </Typography>
 
-                <Box sx={{ flex: 1 }}>{renderStepContent()}</Box>
+                {/* Step Content */}
+                <Box
+                  sx={{
+                    // backgroundColor: 'black',
+                    flex: 1,
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    // Scrollbar Styles
+                    "&::-webkit-scrollbar": {
+                      width: "8px",
+                      height: "8px",
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor: Colortheme.background,
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: Colortheme.text,
+                      borderRadius: "8px",
+                    },
+                    "&::-webkit-scrollbar-thumb:hover": {
+                      backgroundColor: Colortheme.secondaryBGcontra,
+                    },
+                  }}
+                >
+                  {renderStepContent()}
+                </Box>
 
+                {/* Footer Buttons */}
                 <Box
                   sx={{
                     display: "flex",
                     justifyContent: "center",
                     gap: 10,
-                    mt: "auto",
-                    pt: 4,
+                    mt: 3,
+                    pt: 2,
+                    borderTop: `1px solid ${Colortheme.border}`,
+                    flexShrink: 0, // Prevent footer from shrinking
                   }}
                 >
                   <StyledButton

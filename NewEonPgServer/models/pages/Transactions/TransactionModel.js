@@ -185,6 +185,7 @@ class TransactionModel extends BaseModel {
           AND "vTrnType" = $2
           AND "TrnSubType" = $3
           AND "isActive" = true 
+          AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
         ORDER BY "Description"
       `;
       const result = await this.executeQuery(query, [
@@ -307,6 +308,7 @@ class TransactionModel extends BaseModel {
         SELECT *
         FROM "mstpax"
         WHERE "bIsdeleted" = false
+        AND "vPaxname" != ''
       `;
 
       const params = [];
@@ -931,6 +933,35 @@ ORDER BY "vCode"
       return await this.executeQuery(query);
     } catch (error) {
       throw new DatabaseError("Failed to fetch payment codes", error);
+    }
+  }
+
+  // Add this method to TransactionModel class
+  static async getChequeOptions(bankCode) {
+    try {
+      const query = `
+        SELECT 
+          Bd."BillDtlID", 
+          Ap."vCode" AS Code, 
+          Bk."RecType", 
+          Bd."BillNo" AS "ChequeNo", 
+          Bd."Issued"
+        FROM "BookD" AS Bd
+        INNER JOIN "BookH" AS Bk
+          ON Bd."BillID" = Bk."BillID"
+        INNER JOIN "AccountsProfile" AS Ap
+          ON Bk."nAccID" = Ap."nAccID"
+        WHERE Bd."isCancelled" = false 
+          AND Bd."Issued" = false 
+          AND Bk."bIsDeleted" = false 
+          AND Ap."bIsDeleted" = false
+          AND Ap."vCode" = $1
+      `;
+  
+      return await this.executeQuery(query,[bankCode]);
+    } catch (error) {
+      console.error('Error in getChequeOptions:', error);
+      throw error;
     }
   }
 }

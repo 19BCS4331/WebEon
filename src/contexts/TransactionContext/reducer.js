@@ -31,6 +31,16 @@ export const initialState = {
     byCard: 0,
     byTransfer: 0,
     byOth: 0,
+    OthChgID1: "",
+    OthAmt1: 0,
+    OthChgID2: "",
+    OthAmt2: 0,
+    OthChgID3: "",
+    OthAmt3: 0,
+    OthChgID4: "",
+    OthAmt4: 0,
+    OthChgID5: "",
+    OthAmt5: 0,
     // Exchange Data
     exchangeData: [],
     exchangeTotalAmount:0,
@@ -40,14 +50,14 @@ export const initialState = {
     // Taxes
     Taxes: [],
     TaxTotalAmount: 0,
+    // RecPay
+    RecPay: [],
+    RecPayTotalAmount: 0,
     // Other fields
     PartyName: "",
     PurposeDescription: "",
     SubPurposeDescription: "",
-    OthChgID1: "",
-    OthAmt1: 0,
-    OthChgID2: "",
-    OthAmt2: 0,
+    
     TDSRate: 0,
     TDSAmount: 0,
     agentCode: "",

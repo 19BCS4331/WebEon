@@ -23,7 +23,7 @@ import { useToast } from "../../../../contexts/ToastContext";
 
 const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   const { Type: vTrntype } = useParams();
-  const { showToast, hideToast,showInfoModal } = useToast();
+  const { showToast, hideToast, showInfoModal } = useToast();
   const { branch } = useContext(AuthContext);
   const { setError, clearError } = useTransaction();
   const [currencyOptions, setCurrencyOptions] = useState([]);
@@ -175,6 +175,29 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     }
   }, [data.exchangeData]);
 
+  // const updateExchangeData = (updatedRows) => {
+  //   const exchangeFormat = updatedRows.map((row) => ({
+  //     CNCodeID: row.currencyCode,
+  //     ExchType: row.type,
+  //     ISSCodeID: row.issuer || "",
+  //     FEAmount: parseFloat(row.feAmount).toFixed(5),
+  //     Rate: parseFloat(row.rate).toFixed(6),
+  //     Per: "1",
+  //     Amount: parseFloat(row.amount).toFixed(2),
+  //     Round: parseFloat(row.roundOff).toFixed(2),
+  //     CommType: row.commissionType || "F",
+  //     CommRate: (parseFloat(row.commissionValue) || 0).toFixed(2),
+  //     CommAmt: (parseFloat(row.commissionAmount) || 0).toFixed(2),
+  //   }));
+  //   onUpdate({
+  //     exchangeData: exchangeFormat,
+  //     exchangeTotalAmount: exchangeFormat?.reduce(
+  //       (sum, row) => sum + parseFloat(row.Amount || 0),
+  //       0
+  //     ),
+  //   });
+  // };
+
   const updateExchangeData = (updatedRows) => {
     const exchangeFormat = updatedRows.map((row) => ({
       CNCodeID: row.currencyCode,
@@ -189,12 +212,15 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       CommRate: (parseFloat(row.commissionValue) || 0).toFixed(2),
       CommAmt: (parseFloat(row.commissionAmount) || 0).toFixed(2),
     }));
+
+    const totalAmount = exchangeFormat?.reduce(
+      (sum, row) => sum + parseFloat(row.Amount || 0),
+      0
+    );
+
     onUpdate({
       exchangeData: exchangeFormat,
-      exchangeTotalAmount: exchangeFormat?.reduce(
-        (sum, row) => sum + parseFloat(row.Amount || 0),
-        0
-      ),
+      Amount: totalAmount, // Changed from exchangeTotalAmount to Amount
     });
   };
 
@@ -281,15 +307,17 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     }
 
     // Check for duplicate currency and type combination
-    const isDuplicate = rows.some((row, index) => 
-      index !== editIndex && // Skip checking the row being edited
-      row.currencyCode === currentRow.currencyCode.value &&
-      row.type === currentRow.type
+    const isDuplicate = rows.some(
+      (row, index) =>
+        index !== editIndex && // Skip checking the row being edited
+        row.currencyCode === currentRow.currencyCode.value &&
+        row.type === currentRow.type
     );
 
     if (isDuplicate) {
       showInfoModal(
-        "Duplicate Product and Currency","Row with the same currency and product cannot be added, either change the product or edit the amount for already added currency"
+        "Duplicate Product and Currency",
+        "Row with the same currency and product cannot be added, either change the product or edit the amount for already added currency"
       );
       return;
     }
@@ -519,15 +547,45 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
 
   return (
     <Box sx={{ width: "100%", mt: 2 }}>
-      <Grid container spacing={2}>
+      <Grid
+        container
+        sx={{
+          pt: 1,
+          width: "100%",
+          "& .MuiGrid-item": {
+            mb: 3,
+            px: { xs: 0, md: 1.5 },
+          },
+        }}
+      >
         {/* First Row */}
         <Grid item xs={12} md={2}>
-          <CustomAutocomplete
+          {/* <CustomAutocomplete
             options={currencyOptions}
             value={currentRow.currencyCode}
             onChange={(_, value) => handleInputChange("currencyCode", value)}
             label="Currency Code"
             required
+          /> */}
+          <CustomAutocomplete
+            options={currencyOptions}
+            value={
+              typeof currentRow.currencyCode === "object"
+                ? currentRow.currencyCode
+                : currencyOptions.find(
+                    (option) => option.value === currentRow.currencyCode
+                  ) || null
+            }
+            onChange={(_, value) => handleInputChange("currencyCode", value)}
+            label="Currency Code"
+            required
+            getOptionLabel={(option) => option?.label || ""}
+            isOptionEqualToValue={(option, value) => {
+              // Handle both cases where value might be the full object or just the value
+              const valueToCompare =
+                typeof value === "object" ? value?.value : value;
+              return option?.value === valueToCompare;
+            }}
           />
         </Grid>
         <Grid item xs={12} md={2}>
@@ -637,14 +695,13 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
           />
         </Grid>
         <Grid item xs={12} md={2}>
-        
           <StyledButton
             onClick={handleAddRow}
-            addIcon={editIndex >= 0 ? false: true}
+            addIcon={editIndex >= 0 ? false : true}
             doneIcon={editIndex >= 0 ? true : false}
             style={{ width: "90%", height: "56px", gap: "10px" }}
           >
-            {editIndex >= 0 ? "Update Row":"Add Row"}
+            {editIndex >= 0 ? "Update Row" : "Add Row"}
           </StyledButton>
         </Grid>
         <Grid item xs={12} md={2}>
@@ -698,7 +755,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             color: Colortheme.text,
           }}
         >
-          <Box sx={{ height: 'auto', width: "100%", mt: 2 }}>
+          <Box sx={{ height: "auto", width: "100%", mt: 2 }}>
             <CustomDataGrid
               rows={rows}
               columns={getColumns()}
@@ -707,16 +764,16 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
               disableSelectionOnClick
               Colortheme={Colortheme}
             />
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                alignItems: 'flex-end',
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end",
                 gap: 1,
                 mt: 2,
                 pr: 2,
                 borderTop: `1px solid ${Colortheme.text}`,
-                pt: 1
+                pt: 1,
               }}
             >
               {/* <Typography 
@@ -731,43 +788,55 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
                   maximumFractionDigits: 2
                 })}
               </Typography> */}
-              {data.agentCode !== "" && data.agentCode !== null && data.agentCode !== "0" && (
-                <Typography 
-                  sx={{ 
+              {data.agentCode !== "" &&
+                data.agentCode !== null &&
+                data.agentCode !== "0" && (
+                  <Typography
+                    sx={{
+                      color: Colortheme.text,
+                      fontWeight: "bold",
+                      fontFamily: "Poppins",
+                    }}
+                  >
+                    Total Commission: ₹
+                    {rows
+                      .reduce(
+                        (sum, row) =>
+                          sum + parseFloat(row.commissionAmount || 0),
+                        0
+                      )
+                      .toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                  </Typography>
+                )}
+              <Box display="flex" alignItems={"center"} gap={1}>
+                <Typography
+                  sx={{
                     color: Colortheme.text,
-                    fontWeight: 'bold',
-                    fontFamily: 'Poppins'
+                    fontWeight: "bold",
+                    fontFamily: "Poppins",
                   }}
                 >
-                  Total Commission: ₹{rows.reduce((sum, row) => sum + parseFloat(row.commissionAmount || 0), 0).toLocaleString('en-IN', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}
+                  Total Amount: ₹
+                  {rows
+                    .reduce((sum, row) => sum + parseFloat(row.amount), 0)
+                    .toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                 </Typography>
-              )}
-              <Box display="flex" alignItems={'center'} gap={1}>
-              <Typography 
-                sx={{ 
-                  color: Colortheme.text,
-                  fontWeight: 'bold',
-                  fontFamily: 'Poppins'
-                }}
-              >
-                Total Amount: ₹{rows.reduce((sum, row) => sum + parseFloat(row.amount), 0).toLocaleString('en-IN', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </Typography>
-              <Typography 
-                sx={{ 
-                  color: Colortheme.text,
-                  fontWeight: 'Regular',
-                  fontFamily: 'Poppins',
-                  fontSize: '12px',
-                }}
-              >
-               (*Tax Excluded)
-              </Typography>
+                <Typography
+                  sx={{
+                    color: Colortheme.text,
+                    fontWeight: "Regular",
+                    fontFamily: "Poppins",
+                    fontSize: "12px",
+                  }}
+                >
+                  (*Tax Excluded)
+                </Typography>
               </Box>
             </Box>
           </Box>

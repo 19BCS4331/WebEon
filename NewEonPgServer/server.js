@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const navRoutes = require("./routes/navRoutes");
@@ -26,7 +27,7 @@ app.use(cors({
         const allowedOrigins = [
             'http://localhost:3000',
             'http://192.168.1.107:3000',
-            'http://127.0.0.1:3000'
+            'http://127.0.0.1:3000',
         ];
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -44,13 +45,26 @@ app.use(cors({
 // Parse cookies before CSRF middleware
 app.use(cookieParser());
 
-// Add security headers
-app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
-});
+// Security configuration with Helmet
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "http://localhost:3000", "http://192.168.1.107:3000", "http://127.0.0.1:3000"],
+        }
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    }
+}));
 
 app.use(csrfMiddleware);
 
@@ -66,6 +80,11 @@ app.use("/pages/Transactions", TransactionsRoutes);
 app.use(rateLimitMiddleware);
 
 app.use('/api/ai', aiRoutes);
+
+// Test route for security headers
+app.get("/test-security", (req, res) => {
+  res.json({ message: "Security headers test endpoint" });
+});
 
 app.get("/ping", (req, res) => {
   res.send("pong");

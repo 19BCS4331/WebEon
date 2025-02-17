@@ -27,6 +27,7 @@ const CustomDatePicker = (props) => {
           name: props.name,
           required: props.required,
           fullWidth: true,
+          style: props.styleTF,
           sx: {
             "& .MuiOutlinedInput-root": {
               "& fieldset": {

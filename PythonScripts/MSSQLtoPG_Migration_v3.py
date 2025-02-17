@@ -614,8 +614,7 @@ def main():
         
         # Or specify specific tables to migrate
         tables = [
-            'BookH',
-            'BookD'
+            'RECPAY'
             # Add more tables here
         ]
         

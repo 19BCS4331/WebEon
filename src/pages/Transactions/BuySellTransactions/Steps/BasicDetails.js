@@ -78,7 +78,17 @@ const BasicDetails = ({ data, onUpdate }) => {
   }, [data.TRNWITHIC, data.vTrnwith, data.vTrntype]);
 
   return (
-    <Grid container spacing={3} width={'100%'}>
+    <Grid 
+      container 
+      sx={{ 
+        pt:1,
+        width: '100%',
+        '& .MuiGrid-item': {
+          mb: 3,  
+          px: { xs: 0, md: 1.5 }  
+        }
+      }}
+    >
       <Grid item xs={12} md={2.4}>
         <CustomTextField
           select={true}
@@ -86,6 +96,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           value={data.TRNWITHIC || ''}
           onChange={(e) => handleChange('TRNWITHIC', e.target.value)}
           required
+          style={{width: '100%'}}
         
         >
           {entityOptions.map((option) => (
@@ -104,6 +115,7 @@ const BasicDetails = ({ data, onUpdate }) => {
         value={data.Purpose || ''}
         onChange={(e) => handleChange('Purpose', e.target.value)}
         required
+        style={{width: '100%'}}
       >
         {purposeOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
@@ -121,6 +133,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           label="Date"
           value={data.date}
           disabled={true}
+          styleTF={{width: '100%'}}
         />
       </Grid>
 
@@ -129,6 +142,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           label="Manual Bill Ref."
           value={data.ManualBillRef || ''}
           onChange={(e) => handleChange('ManualBillRef', e.target.value)}
+          style={{width: '100%'}}
         />
       </Grid>
 
@@ -138,6 +152,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           value={data.vNo || ''}
           disabled
           required
+          style={{width: '100%'}}
         />
       </Grid>
 
@@ -148,6 +163,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           value={data.Category || ''}
           onChange={(e) => handleChange('Category', e.target.value)}
           required
+          style={{width: '100%'}}
         >
           {categoryOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -162,6 +178,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           label="Inv Vendor No."
           value={data.InvVendorNo || ''}
           onChange={(e) => handleChange('InvVendorNo', e.target.value)}
+          style={{width: '100%'}}
         />
       </Grid>
 
@@ -172,6 +189,7 @@ const BasicDetails = ({ data, onUpdate }) => {
           onChange={(e) => handleChange('Remark', e.target.value)}
           multiline
           rows={2}
+          style={{width: '100%'}}
         />
       </Grid>
     </Grid>
