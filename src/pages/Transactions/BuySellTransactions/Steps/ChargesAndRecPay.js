@@ -38,11 +38,6 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     // console.log("what triggered the change:", JSON.stringify(data, null, 2));
   }, [data]);
 
-  useEffect(() => {
-    console.log("Tax Data from CONTEXT", data.Taxes)
-
-  },[data.Taxes])
-
   const { Type: vTrntype } = useParams();
 
   const { Colortheme } = useContext(ThemeContext);
@@ -64,6 +59,9 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   const [amountAfterTax, setAmountAfterTax] = useState(0);
   const [hasUnsavedTaxChanges, setHasUnsavedTaxChanges] = useState(false);
   const [originalTaxData, setOriginalTaxData] = useState([]);
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  const amountRef = useRef(0);
+  const isInitialMountRef = useRef(true);
 
   // Charges modal states
   const [chargesData, setChargesData] = useState([]);
@@ -680,7 +678,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   };
 
   // Function to calculate tax amounts
-  const calculateTaxAmounts = (taxes, slabs, amount) => {
+  const calculateTaxAmounts = (taxes, slabs, amount, preserveHFEE = false) => {
     // First calculate GST18% without rounding
     const gst18Tax = taxes.find((t) => t.CODE === "gst18%");
     let gst18Amount = 0;
@@ -717,12 +715,12 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       } else if (tax.CODE === "TAXROFF") {
         taxAmount = roundOffAmount;
       } else if (tax.CODE === "HFEE") {
-        // For HFEE, use existing amount or 0
-        taxAmount = parseFloat(tax.amount || 0);
+        // Preserve HFEE amount only if flag is true
+        taxAmount = preserveHFEE ? parseFloat(tax.amount || 0) : 0;
       } else if (tax.CODE === "HFEEIGST") {
-        // Calculate HFEEIGST as 18% of HFEE
+        // Calculate HFEEIGST based on current HFEE
         const hfeeTax = taxes.find((t) => t.CODE === "HFEE");
-        const hfeeAmount = parseFloat(hfeeTax?.amount || 0);
+        const hfeeAmount = preserveHFEE ? parseFloat(hfeeTax?.amount || 0) : 0;
         taxAmount = parseFloat((hfeeAmount * 0.18).toFixed(2));
       } else if (tax.SLABWISETAX) {
         // Handle other slab-based taxes
@@ -743,7 +741,8 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       } else {
         // Handle fixed or percentage based tax
         if (tax.APPLYAS === "F") {
-          taxAmount = parseFloat(tax.amount || 0);
+          // For fixed taxes, preserve if flag is true
+          taxAmount = preserveHFEE ? parseFloat(tax.amount || 0) : 0;
         } else if (tax.APPLYAS === "%") {
           taxAmount = amount * (parseFloat(tax.VALUE) / 100);
         }
@@ -759,10 +758,87 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     });
   };
 
-  // Track previous amount for comparison
-  const prevAmountRef = useRef(data.Amount);
+  // Calculate taxes with proper preservation logic
+  const calculateAndUpdateTaxes = (amount, taxes, slabs, shouldPreserveHFEE) => {
+    console.log("Calculating taxes with amount:", amount, "preserve HFEE:", shouldPreserveHFEE);
+    
+    // Reset non-HFEE taxes or all taxes based on preservation flag
+    const resetTaxes = taxes.map(tax => {
+      if (shouldPreserveHFEE && (tax.CODE === "HFEE" || tax.CODE === "HFEEIGST")) {
+        // Preserve HFEE and HFEEIGST if flag is true
+        return tax;
+      }
+      return {
+        ...tax,
+        amount: 0,
+        lineTotal: 0
+      };
+    });
 
-  // Fetch tax data on mount and when amount changes
+    const calculatedTaxes = calculateTaxAmounts(
+      resetTaxes,
+      slabs,
+      parseFloat(amount),
+      shouldPreserveHFEE
+    );
+
+    const total = calculatedTaxes.reduce(
+      (sum, tax) => sum + tax.lineTotal,
+      0
+    );
+
+    setTaxData(calculatedTaxes);
+    setOriginalTaxData(calculatedTaxes);
+    setTotalTaxAmount(total);
+    setAmountAfterTax(parseFloat(amount) + total);
+
+    onUpdate({
+      Taxes: calculatedTaxes,
+      TaxTotalAmount: total.toFixed(2),
+    });
+
+    return calculatedTaxes;
+  };
+
+  // Handle data prop changes
+  useEffect(() => {
+    const newAmount = parseFloat(data.Amount || 0);
+    const prevAmount = parseFloat(amountRef.current || 0);
+    
+    if (newAmount !== prevAmount) {
+      // If this is the initial mount and we have an amount, preserve HFEE
+      if (isInitialMountRef.current && newAmount > 0) {
+        console.log('Initial mount with amount:', newAmount);
+        calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, true);
+      }
+      // If amount changed from TransactionDetails (exchangeData update)
+      else if (data.exchangeData && data.exchangeData.length > 0) {
+        console.log('Amount changed from TransactionDetails:', newAmount);
+        calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, false);
+      }
+      // For other amount changes (like manual updates), preserve HFEE
+      else {
+        console.log('Amount changed from other source:', newAmount);
+        calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, true);
+      }
+    }
+    
+    // Update the ref after processing
+    amountRef.current = newAmount;
+    isInitialMountRef.current = false;
+  }, [data.Amount, data.exchangeData, taxData, taxSlabData]);
+
+  // Handle amount changes from user input
+  const handleAmountChange = (newAmount) => {
+    console.log("User changed amount to:", newAmount);
+    // Trigger the data update which will be caught by the effect above
+    onUpdate({
+      ...data,
+      Amount: newAmount
+    });
+  };
+
+  // Handle initial mount and tax data loading
   useEffect(() => {
     const fetchTaxData = async () => {
       try {
@@ -806,12 +882,8 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
           return (order[a.CODE] || 5) - (order[b.CODE] || 5);
         });
 
-        // Check if amount has changed
-        const hasAmountChanged = prevAmountRef.current !== data.Amount;
-        prevAmountRef.current = data.Amount;
-
-        // If we have existing tax data and amount hasn't changed, use existing values
-        if (data.Taxes && data.Taxes.length > 0 && !hasAmountChanged) {
+        // If we have existing tax data, use it
+        if (data.Taxes && data.Taxes.length > 0) {
           taxesWithSign = taxesWithSign.map((tax) => {
             const existingTax = data.Taxes.find((t) => t.CODE === tax.CODE);
             if (existingTax) {
@@ -823,23 +895,21 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
             }
             return tax;
           });
+        }
 
-          const total = taxesWithSign.reduce(
-            (sum, tax) => sum + tax.lineTotal,
-            0
-          );
+        setTaxData(taxesWithSign);
+        setOriginalTaxData(taxesWithSign);
+        setTaxSlabData(taxSlabs);
 
-          setTaxData(taxesWithSign);
-          setOriginalTaxData(taxesWithSign);
-          setTaxSlabData(taxSlabs);
-          setTotalTaxAmount(total);
-          setAmountAfterTax(parseFloat(data.Amount) + total);
-        } else if (data.Amount) {
-          // Calculate initial values for new amount or no existing tax data
+        // Calculate initial tax amounts if we have an amount
+        if (data.Amount) {
+          // Preserve HFEE if we have existing tax data
+          const shouldPreserveHFEE = data.Taxes && data.Taxes.length > 0;
           const calculatedTaxes = calculateTaxAmounts(
             taxesWithSign,
             taxSlabs,
-            parseFloat(data.Amount)
+            parseFloat(data.Amount),
+            shouldPreserveHFEE
           );
           const total = calculatedTaxes.reduce(
             (sum, tax) => sum + tax.lineTotal,
@@ -848,7 +918,6 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
 
           setTaxData(calculatedTaxes);
           setOriginalTaxData(calculatedTaxes);
-          setTaxSlabData(taxSlabs);
           setTotalTaxAmount(total);
           setAmountAfterTax(parseFloat(data.Amount) + total);
 
@@ -864,11 +933,18 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     };
 
     fetchTaxData();
-  }, [data.Amount, vTrntype]);
+  }, [vTrntype]); // Only run on mount and vTrntype change
 
-  // Handle tax amount change for fixed taxes
+  // Add a debug effect to track data changes
+  useEffect(() => {
+    console.log("data prop changed:", data);
+    if (data.Amount) {
+      console.log("Amount in data changed to:", data.Amount);
+    }
+  }, [data]);
+
   const handleTaxAmountChange = (taxId, value) => {
-    const tax = taxData.find((t) => t.nTaxID === taxId);
+    const tax = taxData.find(t => t.nTaxID === taxId);
     let amount = parseFloat(value) || 0;
 
     // Validate HFEE amount if this is HFEE tax
@@ -885,7 +961,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       }
     }
 
-    const updatedTaxes = taxData.map((tax) => {
+    const updatedTaxes = taxData.map(tax => {
       if (tax.nTaxID === taxId) {
         return {
           ...tax,
@@ -896,7 +972,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       // If we're updating HFEE, also update HFEEIGST
       if (
         tax.CODE === "HFEEIGST" &&
-        taxId === taxData.find((t) => t.CODE === "HFEE")?.nTaxID
+        taxId === taxData.find(t => t.CODE === "HFEE")?.nTaxID
       ) {
         const hfeeigstAmount = parseFloat((amount * 0.18).toFixed(2));
         return {
