@@ -614,7 +614,7 @@ def main():
         
         # Or specify specific tables to migrate
         tables = [
-            'RECPAY'
+            'FXTRANSOTHERCHARG'
             # Add more tables here
         ]
         

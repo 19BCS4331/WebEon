@@ -806,7 +806,8 @@ ORDER BY "PRODUCTCODE" ASC
   // Get exchange data for a transaction
   static async getExchangeData(vNo, vTrnwith, vTrntype) {
     try {
-      const query = `
+      // Get exchange data
+      const exchangeQuery = `
         SELECT 
           "CNCodeID",
           "ExchType",
@@ -836,10 +837,175 @@ ORDER BY "PRODUCTCODE" ASC
         ORDER BY "sr_no"
       `;
 
-      const result = await this.executeQuery(query, [vNo, vTrnwith, vTrntype]);
-      return result;
+      // Get charges data from FXTRANSOTHERCHARG
+      const chargesQuery = `
+        SELECT 
+          "Id",
+          "vNo",
+          "vTrntype",
+          "dSrno" as "srno",
+          "vAccCodeCgst" as "cgstCode",
+          CAST("dCgstAmount" AS DECIMAL(18,2))::TEXT as "cgstAmount",
+          "vAccCodeSgst" as "sgstCode",
+          CAST("dSgstAmount" AS DECIMAL(18,2))::TEXT as "sgstAmount",
+          "vAccCodeIgst" as "igstCode",
+          CAST("dIgstAmount" AS DECIMAL(18,2))::TEXT as "igstAmount"
+        FROM "FXTRANSOTHERCHARG"
+        WHERE "vNo" = $1
+          AND "vTrntype" = $2
+        ORDER BY "dSrno"
+      `;
+
+      // Get tax data from TaxT
+      const taxQuery = `
+        SELECT 
+          "UniqID",
+          "vTrnwith",
+          "vTrntype",
+          "vNo",
+          "sAdded",
+          "sTaxCode" as "code",
+          "sApplyAs" as "applyAs",
+          CAST("nTaxValue" AS DECIMAL(18,2))::TEXT as "taxValue",
+          CAST("nTaxAmt" AS DECIMAL(18,2))::TEXT as "amount",
+          "sACCode" as "accountCode",
+          "STAXID" as "taxId",
+          "SACCID" as "accountId"
+        FROM "TaxT"
+        WHERE "vNo" = $1
+          AND "vTrnwith" = $2
+          AND "vTrntype" = $3
+        ORDER BY "STAXID", "sACCode"
+      `;
+
+      // Get rec/pay data from RECPAY
+      const recPayQuery = `
+        SELECT 
+          "nRPID" as "id",
+          "vTrnwith",
+          "vTrntype",
+          "vNo",
+          "vRp" as "type",
+          "vCb" as "mode",
+          "vCode" as "code",
+          CAST("nAmount" AS DECIMAL(18,2))::TEXT as "amount",
+          "vChqno" as "chequeNo",
+          "dChqdt" as "chequeDate",
+          "vDrawnon" as "drawnOn",
+          "vBranch" as "branch",
+          "adate" as "accountDate",
+          "vPayinno" as "payinNo"
+        FROM "RECPAY"
+        WHERE "vNo" = $1
+          AND "vTrnwith" = $2
+          AND "vTrntype" = $3
+        ORDER BY "nRPID"
+      `;
+
+      try {
+        // Execute queries in parallel with better error handling
+        const [exchangeData, chargesData, taxData, recPayData] = await Promise.all([
+          this.executeQuery(exchangeQuery, [vNo, vTrnwith, vTrntype]).catch(err => {
+            console.error('Error fetching exchange data:', err);
+            return [];
+          }),
+          this.executeQuery(chargesQuery, [vNo, vTrntype]).catch(err => {
+            console.error('Error fetching charges data:', err);
+            return [];
+          }),
+          this.executeQuery(taxQuery, [vNo, vTrnwith, vTrntype]).catch(err => {
+            console.error('Error fetching tax data:', err);
+            return [];
+          }),
+          this.executeQuery(recPayQuery, [vNo, vTrnwith, vTrntype]).catch(err => {
+            console.error('Error fetching recpay data:', err);
+            return [];
+          })
+        ]);
+
+        // Format charges data with null checks
+        const formattedCharges = (chargesData || []).map(charge => ({
+          srno: charge.srno,
+          charges: [
+            {
+              code: charge.cgstCode,
+              amount: Math.abs(parseFloat(charge.cgstAmount || 0)),
+              type: 'CGST'
+            },
+            {
+              code: charge.sgstCode,
+              amount: Math.abs(parseFloat(charge.sgstAmount || 0)),
+              type: 'SGST'
+            },
+            {
+              code: charge.igstCode,
+              amount: Math.abs(parseFloat(charge.igstAmount || 0)),
+              type: 'IGST'
+            }
+          ].filter(gst => parseFloat(gst.amount || 0) > 0)
+        }));
+
+        // Format tax data with null checks
+        const formattedTaxes = Object.values((taxData || []).reduce((acc, tax) => {
+          if (!acc[tax.code]) {
+            acc[tax.code] = {
+              code: tax.code,
+              applyAs: tax.applyAs,
+              taxValue: tax.taxValue,
+              amount: 0,
+              components: []
+            };
+          }
+          acc[tax.code].amount += parseFloat(tax.amount || 0);
+          acc[tax.code].components.push({
+            accountCode: tax.accountCode,
+            amount: tax.amount
+          });
+          return acc;
+        }, {}));
+
+        // Format RecPay data with null checks
+        const formattedRecPay = (recPayData || []).map(rp => ({
+          srno: rp.id,
+          code: rp.code,
+          amount: rp.amount,
+          chequeNo: rp.chequeNo || '',
+          chequeDate: rp.chequeDate && rp.chequeDate !== 'NULL' ? rp.chequeDate : null,
+          drawnOn: rp.drawnOn || '',
+          branch: rp.branch || '',
+          accountDate: rp.accountDate ? new Date(rp.accountDate).toISOString().split('T')[0] : null,
+          type: rp.type,
+          mode: rp.mode
+        }));
+
+        // Calculate totals from the formatted data
+        const ChargesTotalAmount = formattedCharges.reduce((total, charge) => {
+          const chargeTotal = charge.charges.reduce((sum, gst) => sum + parseFloat(gst.amount || 0), 0);
+          return total + chargeTotal;
+        }, 0).toFixed(2);
+
+        const TaxTotalAmount = formattedTaxes.reduce((total, tax) => 
+          total + parseFloat(tax.amount || 0), 0).toFixed(2);
+
+        const RecPayTotalAmount = formattedRecPay.reduce((total, rp) => 
+          total + parseFloat(rp.amount || 0), 0).toFixed(2);
+
+        // Return combined data with calculated totals
+        return {
+          exchangeData: exchangeData || [],
+          Charges: formattedCharges,
+          Taxes: formattedTaxes,
+          RecPay: formattedRecPay,
+          ChargesTotalAmount: ChargesTotalAmount.toString(),
+          TaxTotalAmount: TaxTotalAmount.toString(),
+          RecPayTotalAmount: RecPayTotalAmount.toString()
+        };
+      } catch (error) {
+        console.error('Error in getExchangeData:', error);
+        throw new DatabaseError("Failed to fetch transaction data", error);
+      }
     } catch (error) {
-      throw new DatabaseError("Failed to fetch exchange data", error);
+      throw new DatabaseError("Failed to fetch transaction data", error);
     }
   }
 

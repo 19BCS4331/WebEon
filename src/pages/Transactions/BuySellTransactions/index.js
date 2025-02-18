@@ -135,14 +135,54 @@ const BuySellTransactionsContent = () => {
           },
         }
       );
+      
       if (response.data.success) {
-        const exchangeData = response.data.data;
+        const { 
+          exchangeData,
+          Charges,
+          Taxes,
+          RecPay,
+          ChargesTotalAmount,
+          TaxTotalAmount,
+          RecPayTotalAmount 
+        } = response.data.data;
+
+        // Update form data with all transaction details
         updateFormData({
-          exchangeData: exchangeData,
+          exchangeData,
+          Charges,
+          Taxes,
+          RecPay,
+          ChargesTotalAmount,
+          TaxTotalAmount,
+          RecPayTotalAmount,
+          // Set additional form fields based on exchange data
+          Amount: exchangeData[0]?.Amount || "0.00",
+          Rate: exchangeData[0]?.Rate || "0.00",
+          FEAmount: exchangeData[0]?.FEAmount || "0.00",
+          Per: exchangeData[0]?.Per || "1",
+          Round: exchangeData[0]?.Round || "0.00",
+          CommType: exchangeData[0]?.CommType || "",
+          CommRate: exchangeData[0]?.CommRate || "0.00",
+          CommAmt: exchangeData[0]?.CommAmt || "0.00",
+          TDSRate: exchangeData[0]?.TDSRate || "0.00",
+          TDSAmount: exchangeData[0]?.TDSAmount || "0.00",
+          HoldCost: exchangeData[0]?.HoldCost || "0.00",
+          Profit: exchangeData[0]?.Profit || "0.00"
         });
+
+        // If transaction has pax details, fetch them
+        if (formData.PaxCode) {
+          fetchPaxDetails(formData.PaxCode);
+        }
+
+        showToast("Transaction data loaded successfully", "success");
+        setTimeout(() => hideToast(), 3000);
       }
     } catch (error) {
-      console.error("Error fetching exchange data:", error);
+      console.error("Error fetching transaction data:", error);
+      showToast("Error loading transaction data", "error");
+      setTimeout(() => hideToast(), 3000);
     }
   };
 
@@ -383,6 +423,7 @@ const BuySellTransactionsContent = () => {
                 <Typography
                   variant="h6"
                   color={Colortheme.text}
+                  sx={{ mb: 3, flexShrink: 0 }} // Prevent title from shrinking
                   fontFamily={"Poppins"}
                 >
                   {isEditMode ? "Edit Transaction" : "New Transaction"}
