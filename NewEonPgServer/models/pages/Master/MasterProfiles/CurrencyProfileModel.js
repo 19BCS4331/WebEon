@@ -41,6 +41,7 @@ class CurrencyProfileModel extends BaseModel {
             vAmexCode,
             vCountryName,
             bTradedCurrency,
+            RBI_Code,
         } = currencyData;
 
         try {
@@ -58,8 +59,9 @@ class CurrencyProfileModel extends BaseModel {
                     "bIsActive",
                     "vAmexCode",
                     "vCountryName",
-                    "bTradedCurrency"
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+                    "bTradedCurrency",
+                    "RBI_Code"
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14) RETURNING *`,
                 params: [
                     vCncode || null,
                     vCnName || null,
@@ -74,6 +76,7 @@ class CurrencyProfileModel extends BaseModel {
                     vAmexCode || null,
                     vCountryName || null,
                     bTradedCurrency || null,
+                    RBI_Code || null
                 ]
             }]);
             return result[0][0];
@@ -98,6 +101,7 @@ class CurrencyProfileModel extends BaseModel {
             vAmexCode,
             vCountryName,
             bTradedCurrency,
+            RBI_Code,
         } = currencyData;
 
         try {
@@ -115,7 +119,8 @@ class CurrencyProfileModel extends BaseModel {
                     "bIsActive" = $11,
                     "vAmexCode" = $12,
                     "vCountryName" = $13,
-                    "bTradedCurrency" = $14
+                    "bTradedCurrency" = $14,
+                    "RBI_Code" = $15
                 WHERE "nCurrencyID" = $1 RETURNING *`,
                 params: [
                     nCurrencyID,
@@ -132,6 +137,7 @@ class CurrencyProfileModel extends BaseModel {
                     vAmexCode || null,
                     vCountryName || null,
                     bTradedCurrency || null,
+                    RBI_Code || null
                 ]
             }]);
             return result[0][0];

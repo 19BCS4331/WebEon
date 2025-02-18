@@ -96,6 +96,14 @@ export const formConfigs = {
         label: "Amex Map Code",
         type: "text",
         required: false,
+        disabled: true,
+      },
+      {
+        name: "RBI_Code",
+        label: "RBI Map Code",
+        type: "text",
+        required: false,
+       
       },
       {
         name: "nCurrencyGroupID",

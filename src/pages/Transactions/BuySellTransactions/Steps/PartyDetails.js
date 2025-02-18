@@ -218,12 +218,14 @@ const PartyDetails = ({
 
   const handlePartyTypeChange = (event, newValue) => {
     const newCodeID = newValue ? newValue.value.toString() : "";
+    const partyType = newValue ? newValue.label : "";
 
     // Reset PAX details in parent component
     onUpdate({
       PaxCode: "",
       PaxName: "",
       PartyID: newCodeID,
+      PartyType: partyType,
       OnBehalfClient: newValue ? newValue.label : "",
     });
 

@@ -23,7 +23,8 @@ const BasicDetails = ({ data, onUpdate }) => {
     if (field === 'TRNWITHIC') {
       onUpdate({
         [field]: value,
-        Purpose: value === 'I' ? '8' : '30'
+        Purpose: value === 'I' ? '8' : '30',
+        PurposeDescription: value === 'I' ? 'ENCASHMENT' : 'ENCASHMENT'
       });
       clearError(field);
     } else {
@@ -67,6 +68,7 @@ const BasicDetails = ({ data, onUpdate }) => {
             }
           });
           setPurposeOptions(response.data);
+          console.log("Purpose Options:", response.data);
         } catch (error) {
           console.error('Error getting purpose options:', error);
           setError('Purpose', 'Failed to load purposes');
@@ -113,7 +115,11 @@ const BasicDetails = ({ data, onUpdate }) => {
         select={true}
         label="Purpose"
         value={data.Purpose || ''}
-        onChange={(e) => handleChange('Purpose', e.target.value)}
+        onChange={(e) => {
+          const selectedOption = purposeOptions.find(option => option.value === e.target.value);
+          handleChange('Purpose', e.target.value);
+          handleChange('PurposeDescription', selectedOption ? selectedOption.label : '');
+        }}
         required
         style={{width: '100%'}}
       >
@@ -124,7 +130,6 @@ const BasicDetails = ({ data, onUpdate }) => {
         ))}
       </CustomTextField>
     </Grid>
-      
       }
       
 

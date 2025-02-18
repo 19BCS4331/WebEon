@@ -8,6 +8,8 @@ import {
   Stepper,
   Step,
   StepLabel,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import CustomStepper from "../../../components/global/CustomStepper/CustomStepper";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
@@ -18,12 +20,16 @@ import AgentRefDetails from "./Steps/AgentRefDetails";
 import TransactionDetails from "./Steps/TransactionDetails";
 import ChargesAndRecPay from "./Steps/ChargesAndRecPay";
 import TransactionList from "./Steps/TransactionList";
+import ReviewAndSubmit from "./Steps/ReviewAndSubmit";
 import { apiClient } from "../../../services/apiClient";
 import StyledButton from "../../../components/global/StyledButton";
 import {
   TransactionProvider,
   useTransaction,
 } from "../../../contexts/TransactionContext";
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { useToast } from "../../../contexts/ToastContext";
 
 const steps = [
   {
@@ -48,7 +54,7 @@ const steps = [
   },
   {
     label: "Review & Submit",
-    component: null,
+    component: ReviewAndSubmit,
   },
 ];
 
@@ -69,6 +75,8 @@ const BuySellTransactionsContent = () => {
   const { With: vTrnwith, Type: vTrntype } = useParams();
   const { Colortheme } = useContext(ThemeContext);
   const [paxDetails, setPaxDetails] = useState(null);
+  const [showStepper, setShowStepper] = useState(true);
+  const { showToast,hideToast } = useToast();
 
   useEffect(() => {
     // Reset form and show list when transaction parameters change
@@ -191,19 +199,69 @@ const BuySellTransactionsContent = () => {
     }
   };
 
-  const validateStep = (step) => {
+  const getValidationMessage = (step) => {
     switch (step) {
       case 0:
-        return formData.TRNWITHIC && formData.vNo;
+        if (!formData.TRNWITHIC) return "Entity Type is required";
+        if (!formData.vNo) return "Transaction Number is required";
+        if (!formData.Purpose) return "Purpose is required";
+        if (!formData.Category) return "Category is required";
+        if (!formData.vBranchCode) return "Branch is required";
+        if (!formData.date) return "Date is required";
+        return "";
+      
       case 1:
-        return true;
+        if (!formData.PartyID) return "Party Selection is required";
+        if (!formData.PartyType) return "Party Type is required";
+        if (!formData.PaxCode) return "Please Select A PAX";
+        if (!formData.PaxName) return "Pax Name is required";
+        return "";
+      
       case 2:
-        return true;
+        if (formData.agentCode && !formData.agentCommCN) {
+          return "Agent Commission is required when Agent is selected";
+        }
+        return "";
+      
       case 3:
-        return true;
+        if (!formData.exchangeData || formData.exchangeData.length === 0) {
+          return "At least one exchange transaction is required";
+        }
+        const invalidTxn = formData.exchangeData.find(item => 
+          !item.CNCodeID || !item.ExchType || !item.Amount || !item.Rate
+        );
+        if (invalidTxn) {
+          return "All exchange transactions must have Currency, Exchange Type, Amount, and Rate";
+        }
+        return "";
+      
+      case 4:
+        const netAmount = (() => {
+          const chargesTotal = Math.abs(parseFloat(formData.ChargesTotalAmount || 0));
+          const taxTotal = Math.abs(parseFloat(formData.TaxTotalAmount || 0));
+          const totalDeductions = chargesTotal + taxTotal;
+          return (parseFloat(formData.Amount) || 0) - totalDeductions;
+        })();
+        const totalPayments = (formData.RecPay || [])
+          .reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
+        if (totalPayments < netAmount) {
+          return "Total payments must cover the net amount";
+        }
+        return "";
+      
       default:
-        return true;
+        return "";
     }
+  };
+
+  const validateStep = (step) => {
+    const validationMessage = getValidationMessage(step);
+    if (validationMessage) {
+      showToast(validationMessage, "error");
+      setTimeout(() => hideToast(), 3000);
+      return false;
+    }
+    return true;
   };
 
   const renderStepContent = () => {
@@ -233,6 +291,8 @@ const BuySellTransactionsContent = () => {
       case 3:
         return <StepComponent {...commonProps} />;
       case 4:
+        return <StepComponent {...commonProps} />;
+      case 5:
         return <StepComponent {...commonProps} />;
       default:
         return null;
@@ -299,145 +359,12 @@ const BuySellTransactionsContent = () => {
             />
           </Paper>
         ) : (
-          // <Paper
-          //   elevation={3}
-          //   sx={{
-          //     p: { xs: 2, sm: 3 },
-          //     backgroundColor: Colortheme.background,
-          //     height: "95%",
-          //     borderRadius: "20px",
-          //     display: "flex",
-          //     flexDirection: "column",
-          //   }}
-          // >
-          //   <Box
-          //     sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}
-          //   >
-          //     <Typography
-          //       variant="h6"
-          //       color={Colortheme.text}
-          //       fontFamily={"Poppins"}
-          //     >
-          //       {isEditMode ? "Edit Transaction" : "New Transaction"}
-          //     </Typography>
-          //     <Box display="flex" gap={2}>
-          //       {isEditMode && (
-          //         <StyledButton
-          //           onClick={() => {
-          //             resetForm();
-          //             setEditMode(false);
-          //             handleNewTransaction();
-          //           }}
-          //           style={{ width: 200 }}
-          //           addIcon={true}
-          //         >
-          //           New Transaction
-          //         </StyledButton>
-          //       )}
-          //       <StyledButton
-          //         onClick={() => setShowList(true)}
-          //         style={{ width: 150 }}
-          //         searchIcon={true}
-          //       >
-          //         Search
-          //       </StyledButton>
-          //     </Box>
-          //   </Box>
-
-          //   <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          //     <CustomStepper
-          //       steps={steps.map((step) => step.label)}
-          //       activeStep={activeStep}
-          //       onStepClick={handleStepClick}
-          //       onNext={handleNext}
-          //       onBack={handleBack}
-          //       isStepValid={validateStep}
-          //       sx={{
-          //         backgroundColor: Colortheme.background,
-          //         color: Colortheme.text,
-          //         mb: 3,
-          //       }}
-          //     />
-
-          //     <Paper
-          //       elevation={3}
-          //       sx={{
-          //         mt: { lg: 2, sm: 2, xs: 2 },
-          //         p: { xs: 2, sm: 3 },
-          //         backgroundColor: Colortheme.background,
-          //         flex: 1,
-          //         minHeight: "40vh",
-          //         maxHeight: { xs: "calc(100vh - 550px)", sm: "calc(100vh - 580px)" },
-          //         borderRadius: "20px",
-          //         display: "flex",
-          //         flexDirection: "column",
-          //         overflow: "auto",
-          //         overflowX: "hidden",
-          //         "& .MuiGrid-container": {
-          //           flexWrap: "wrap",
-          //           width: "100%",
-          //         },
-          //         // Custom Scrollbar Styles
-          //         "&::-webkit-scrollbar": {
-          //           width: "8px",
-          //           height: "8px",
-          //         },
-          //         "&::-webkit-scrollbar-track": {
-          //           backgroundColor: Colortheme.background,
-          //         },
-          //         "&::-webkit-scrollbar-thumb": {
-          //           backgroundColor: Colortheme.text,
-          //           borderRadius: "8px",
-          //         },
-          //         "&::-webkit-scrollbar-thumb:hover": {
-          //           backgroundColor: Colortheme.secondaryBGcontra,
-          //         },
-          //       }}
-          //     >
-          //       <Typography
-          //         variant="h6"
-          //         color={Colortheme.text}
-          //         sx={{ mb: 3 }}
-          //         fontFamily={"Poppins"}
-          //       >
-          //         {steps[activeStep].label}
-          //       </Typography>
-
-          //       <Box sx={{ flex: 1 }}>{renderStepContent()}</Box>
-
-          //       <Box
-          //         sx={{
-          //           display: "flex",
-          //           justifyContent: "center",
-          //           gap: 10,
-          //           mt: "auto",
-          //           pt: 4,
-          //         }}
-          //       >
-          //         <StyledButton
-          //           onClick={handleBack}
-          //           disabled={activeStep === 0}
-          //           style={{ width: 250 }}
-          //         >
-          //           Back
-          //         </StyledButton>
-          //         <StyledButton
-          //           onClick={handleNext}
-          //           disabled={activeStep === steps.length - 1}
-          //           style={{ width: 250 }}
-          //         >
-          //           {activeStep === steps.length - 1 ? "Submit" : "Next"}
-          //         </StyledButton>
-          //       </Box>
-          //     </Paper>
-          //   </Box>
-          // </Paper>
           <Paper
             elevation={3}
             sx={{
               p: { xs: 2, sm: 3 },
               backgroundColor: Colortheme.background,
-              height: "95%", // Changed from 95%
+              height: "95%",
               borderRadius: "20px",
               display: "flex",
               flexDirection: "column",
@@ -452,13 +379,36 @@ const BuySellTransactionsContent = () => {
                 flexShrink: 0, // Prevent header from shrinking
               }}
             >
-              <Typography
-                variant="h6"
-                color={Colortheme.text}
-                fontFamily={"Poppins"}
-              >
-                {isEditMode ? "Edit Transaction" : "New Transaction"}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Typography
+                  variant="h6"
+                  color={Colortheme.text}
+                  fontFamily={"Poppins"}
+                >
+                  {isEditMode ? "Edit Transaction" : "New Transaction"}
+                </Typography>
+                <Tooltip title={showStepper ? "Hide Stepper" : "Show Stepper"}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowStepper(!showStepper)}
+                    sx={{
+                      backgroundColor: Colortheme.secondaryBG,
+                      padding: '4px',
+                      '&:hover': {
+                        backgroundColor: `${Colortheme.text}20`,
+                      },
+                      transition: 'transform 0.3s',
+                      transform: showStepper ? 'rotate(180deg)' : 'none',
+                    }}
+                  >
+                    {showStepper ? (
+                      <KeyboardArrowUpIcon sx={{ color: Colortheme.text, fontSize: '1.2rem' }} />
+                    ) : (
+                      <KeyboardArrowDownIcon sx={{ color: Colortheme.text, fontSize: '1.2rem' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Box>
               <Box display="flex" gap={2}>
                 {isEditMode && (
                   <StyledButton
@@ -483,36 +433,45 @@ const BuySellTransactionsContent = () => {
               </Box>
             </Box>
 
-            {/* Content Container */}
+            {/* Main Content Container */}
             <Box
               sx={{
-                flex: 1,
                 display: "flex",
                 flexDirection: "column",
+                flexGrow: 1,
                 minHeight: 0, // Important for flex child scrolling
               }}
             >
-              {/* Stepper */}
-              <CustomStepper
-                steps={steps.map((step) => step.label)}
-                activeStep={activeStep}
-                onStepClick={handleStepClick}
-                onNext={handleNext}
-                onBack={handleBack}
-                isStepValid={validateStep}
+              {/* Collapsible Stepper */}
+              <Box
                 sx={{
-                  backgroundColor: Colortheme.background,
-                  color: Colortheme.text,
-                  mb: 3,
-                  flexShrink: 0, // Prevent stepper from shrinking
+                  height: showStepper ? 'auto' : 0,
+                  overflow: 'hidden',
+                  transition: 'all 0.3s ease-in-out',
+                  mb: showStepper ? 1 : 0
                 }}
-              />
+              >
+                <CustomStepper
+                  steps={steps.map((step) => step.label)}
+                  activeStep={activeStep}
+                  onStepClick={handleStepClick}
+                  onNext={handleNext}
+                  onBack={handleBack}
+                  isStepValid={validateStep}
+                  sx={{
+                    backgroundColor: Colortheme.background,
+                    color: Colortheme.text,
+                    // mb: 3,
+                    flexShrink: 0,
+                  }}
+                />
+              </Box>
 
               {/* Content Paper */}
               <Paper
                 elevation={3}
                 sx={{
-                  mt: { lg: 2, sm: 2, xs: 2 },
+                  // mt: { lg: 2, sm: 2, xs: 2 },
                   p: { xs: 2, sm: 3 },
                   backgroundColor: Colortheme.background,
                   borderRadius: "20px",

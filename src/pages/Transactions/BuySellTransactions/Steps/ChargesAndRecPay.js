@@ -202,15 +202,17 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       data.RecPay?.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) ||
       0;
 
-    // Parse and convert charges amounts to positive numbers
+    // Parse and convert charges and tax amounts to positive numbers
     const chargesTotal = Math.abs(parseFloat(data.ChargesTotalAmount || 0));
-    const totalDeductions = chargesTotal;
+    const taxTotal = Math.abs(parseFloat(data.TaxTotalAmount || 0));
+    const totalDeductions = chargesTotal + taxTotal;
 
     const netAmount = (parseFloat(data.Amount) || 0) - totalDeductions;
     const remaining = netAmount - totalPaid;
 
     console.log("Total Paid:", totalPaid);
     console.log("Charges Total:", chargesTotal);
+    console.log("Tax Total:", taxTotal);
     console.log("Total Deductions:", totalDeductions);
     console.log("Net Amount:", netAmount);
     console.log("Remaining Amount:", remaining);
@@ -222,7 +224,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       amount: remaining,
     }));
     setRemainingAmount(remaining);
-  }, [data.Amount, data.ChargesTotalAmount, data.RecPay]);
+  }, [data.Amount, data.ChargesTotalAmount, data.TaxTotalAmount, data.RecPay]);
 
   //RecPay Modal handlers
   // Add these handlers
@@ -1077,25 +1079,101 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
         <DialogContent sx={{ backgroundColor: Colortheme.background, p: 2 }}>
           <Box sx={{ mb: 2 }}>
             <Typography
+              variant="subtitle1"
               sx={{
                 color: Colortheme.text,
                 fontFamily: "Poppins",
+                fontWeight: "bold",
+                mb: 1
               }}
             >
-              Total Amount: ₹
-              {parseFloat(netAmount || 0).toLocaleString("en-IN", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              Amount Breakdown:
             </Typography>
+            <Box sx={{ pl: 2, mb: 2 }}>
+              <Typography
+                sx={{
+                  color: Colortheme.text,
+                  fontFamily: "Poppins",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mb: 0.5
+                }}
+              >
+                <span>Base Amount:</span>
+                <span>₹{parseFloat(data.Amount || 0).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</span>
+              </Typography>
+              <Typography
+                sx={{
+                  color: Colortheme.text,
+                  fontFamily: "Poppins",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mb: 0.5
+                }}
+              >
+                <span>Charges:</span>
+                <span>- ₹{Math.abs(parseFloat(data.ChargesTotalAmount || 0)).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</span>
+              </Typography>
+              <Typography
+                sx={{
+                  color: Colortheme.text,
+                  fontFamily: "Poppins",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mb: 0.5
+                }}
+              >
+                <span>Taxes:</span>
+                <span>- ₹{Math.abs(parseFloat(data.TaxTotalAmount || 0)).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</span>
+              </Typography>
+              <Box sx={{ 
+                borderTop: `1px solid ${Colortheme.text}`,
+                mt: 1, 
+                pt: 1
+              }}>
+                <Typography
+                  sx={{
+                    color: Colortheme.text,
+                    fontFamily: "Poppins",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: "bold"
+                  }}
+                >
+                  <span>Net Amount:</span>
+                  <span>₹{parseFloat(netAmount || 0).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}</span>
+                </Typography>
+              </Box>
+            </Box>
             <Typography
               sx={{
                 color: Colortheme.text,
                 fontFamily: "Poppins",
                 mt: 1,
+                display: "flex",
+                justifyContent: "space-between",
+                fontWeight: "bold",
+                borderTop: `1px solid ${Colortheme.text}`,
+                pt: 1
               }}
             >
-              Remaining Amount: ₹{parseFloat(remainingAmount || 0).toFixed(2)}
+              <span>Remaining Amount:</span>
+              <span>₹{parseFloat(remainingAmount || 0).toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}</span>
             </Typography>
           </Box>
 
@@ -1429,7 +1507,8 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                 fontFamily: "Poppins",
               }}
             >
-              Amount: ₹{parseFloat(data.Amount || 0).toFixed(2)}
+              Amount: ₹
+              {parseFloat(data.Amount || 0).toFixed(2)}
             </Typography>
           </Box>
 
@@ -1847,9 +1926,10 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
           <Box
             sx={{
               mt: 3,
+              mr:2,
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              flexDirection: "column",
+              alignItems: "flex-end",
             }}
           >
             <Typography
@@ -1860,6 +1940,16 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
               }}
             >
               Total Tax Amount: ₹{totalTaxAmount.toFixed(2)}
+            </Typography>
+
+            <Typography
+              variant="h6"
+              sx={{
+                color: Colortheme.text,
+                fontFamily: "Poppins",
+              }}
+            >
+              Amount After Tax: ₹{amountAfterTax.toFixed(2)}
             </Typography>
           </Box>
         </DialogContent>
