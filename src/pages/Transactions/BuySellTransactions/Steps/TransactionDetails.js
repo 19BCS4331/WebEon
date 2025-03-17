@@ -217,10 +217,15 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       (sum, row) => sum + parseFloat(row.Amount || 0),
       0
     );
+    const agentCommAmount = exchangeFormat?.reduce(
+      (sum, row) => sum + parseFloat(row.CommAmt || 0),
+      0
+    );
 
     onUpdate({
       exchangeData: exchangeFormat,
       Amount: totalAmount, // Changed from exchangeTotalAmount to Amount
+      agentCommCN: agentCommAmount,
     });
   };
 

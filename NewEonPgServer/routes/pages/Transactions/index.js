@@ -439,6 +439,35 @@ router.get('/cheque-options/:bankCode', async (req, res) => {
   }
 });
 
+// Save new transaction with all related data
+router.post("/save-transaction", authMiddleware, async (req, res) => {
+  try {
+    const result = await TransactionModel.saveTransaction(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error("Error saving transaction:", error);
+    res.status(500).json({ 
+      error: error.message || "Error saving transaction",
+      details: error.details || null
+    });
+  }
+});
+
+// Update existing transaction
+router.put("/update-transaction/:id", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await TransactionModel.updateTransaction(id, req.body);
+    res.json(result);
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    res.status(500).json({ 
+      error: error.message || "Error updating transaction",
+      details: error.details || null
+    });
+  }
+});
+
 // Update rates every 15 minutes
 const updateRatesInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
 setInterval(async () => {

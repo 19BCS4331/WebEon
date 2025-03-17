@@ -13,8 +13,10 @@ import {
   Box,
   ListItemIcon,
   InputAdornment,
+  Typography,
+  Paper,
+  Divider,
 } from "@mui/material";
-
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -30,15 +32,14 @@ const SubItem = ({
   toggleDrawer,
   depth,
   setSearchQuery,
-  setFilteredItems, // Add setFilteredItems to props
-  items, // Add items to props
+  setFilteredItems,
+  items,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const { Colortheme } = useContext(ThemeContext);
   const theme = useTheme();
-  // const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     if (openItems.includes(subItem.id)) {
@@ -51,14 +52,13 @@ const SubItem = ({
   };
 
   const handleLinkClick = () => {
-    console.log("subItem", subItem);
     if (subItem.subItems.length > 0) {
       toggleSubItems();
     } else {
       if (subItem.link) {
         toggleDrawer();
-        setSearchQuery(""); // Reset search query
-        setFilteredItems(items); // Reset filtered items to original items
+        setSearchQuery("");
+        setFilteredItems(items);
 
         if (location.pathname === subItem.link) {
           navigate(subItem.link, { replace: true });
@@ -69,31 +69,70 @@ const SubItem = ({
     }
   };
 
+  const isActive = location.pathname === subItem.link;
+
   return (
     <>
       <ListItemButton
         onClick={handleLinkClick}
         sx={{
-          textAlign: "center",
-
-          pl: 2,
-          color: Colortheme.text,
-          border:
-            depth > 1
-              ? `2px solid ${Colortheme.text}`
-              : `1px solid ${Colortheme.text}`,
-          marginTop: 2,
-          borderRadius: depth > 1 ? 5 : 3,
-          width: depth > 1 ? "75%" : "85%",
-          marginLeft: depth > 1 ? 5 : 3,
-          boxShadow: depth > 1 ? "-1px 4px 10px 0px rgba(0,0,0,0.1);" : "",
+          position: "relative",
+          pl: depth > 1 ? 6 : 3,
+          pr: 2,
+          py: 1.75,
+          my: 0.5,
+          borderRadius: 2,
+          backgroundColor: isActive ? `${Colortheme.text}15` : "transparent",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&:before": {
+            content: '""',
+            position: "absolute",
+            left: depth > 1 ? "24px" : "12px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "4px",
+            height: "4px",
+            borderRadius: "50%",
+            backgroundColor: isActive ? Colortheme.text : "transparent",
+            transition: "all 0.3s ease",
+          },
+          "&:hover": {
+            backgroundColor: `${Colortheme.text}10`,
+            "&:before": {
+              backgroundColor: Colortheme.text,
+              width: isActive ? "4px" : "6px",
+            },
+          },
         }}
       >
-        <ListItemText primary={subItem.name} sx={{ color: Colortheme.text }} />
-
-        {subItem.subItems.length > 0 &&
-          (open ? <ExpandLess /> : <ExpandMore />)}
+        <ListItemText
+          primary={subItem.name}
+          sx={{
+            m: 0,
+            "& .MuiTypography-root": {
+              fontSize: depth > 1 ? "0.875rem" : "0.925rem",
+              fontWeight: isActive ? 600 : 400,
+              color: isActive ? Colortheme.text : `${Colortheme.text}cc`,
+              transition: "all 0.3s ease",
+            },
+          }}
+        />
+        {subItem.subItems.length > 0 && (
+          <Box
+            component="span"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              transform: open ? "rotate(-180deg)" : "none",
+              color: `${Colortheme.text}99`,
+            }}
+          >
+            <ExpandMore fontSize="small" />
+          </Box>
+        )}
       </ListItemButton>
+      <Divider sx={{ opacity: 0.5,backgroundColor: Colortheme.text }}/>
       <Collapse
         in={open || openItems.includes(subItem.id)}
         timeout="auto"
@@ -101,17 +140,19 @@ const SubItem = ({
       >
         <List component="div" disablePadding>
           {subItem.subItems.map((item) => (
-            <SubItem
-              key={item.id}
-              subItem={item}
-              openItems={openItems}
-              setOpenItems={setOpenItems}
-              toggleDrawer={toggleDrawer}
-              setSearchQuery={setSearchQuery}
-              setFilteredItems={setFilteredItems} // Pass setFilteredItems to subitems
-              items={items} // Pass items to subitems
-              depth={depth + 1} // Increment depth for nested items
-            />
+            <Box key={item.id}>
+              <SubItem
+                subItem={item}
+                openItems={openItems}
+                setOpenItems={setOpenItems}
+                toggleDrawer={toggleDrawer}
+                setSearchQuery={setSearchQuery}
+                setFilteredItems={setFilteredItems}
+                items={items}
+                depth={depth + 1}
+              />
+              <Divider sx={{ opacity: 0.5,backgroundColor: Colortheme.text }} />
+            </Box>
           ))}
         </List>
       </Collapse>
@@ -133,35 +174,9 @@ const NewSidebar = () => {
     toggleDrawer,
   } = useContext(ThemeContext);
 
-  // const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  // const [openItems, setOpenItems] = useState([]);
-  // const { token } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // useEffect(() => {
-  //   if (!isLoginPage) {
-  //     const fetchItems = async () => {
-  //       try {
-  //         const response = await axios.get(`${baseUrl}/nav/navigation`, {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         });
-  //         const fetchedItems = response.data.map((item) => ({
-  //           ...item,
-  //           open: false,
-  //         }));
-  //         setItems(fetchedItems);
-  //         setFilteredItems(fetchedItems); // Set initial filtered items
-  //       } catch (error) {
-  //         console.error("Error fetching navigation items:", error);
-  //       }
-  //     };
-  //     fetchItems();
-  //   }
-  // }, [isLoginPage, token]);
 
   useEffect(() => {
     if (!isLoginPage) {
@@ -169,7 +184,7 @@ const NewSidebar = () => {
         try {
           const data = await fetchNavigationItems();
           setItems(data);
-          setFilteredItems(data); // Set initial filtered items
+          setFilteredItems(data);
         } catch (error) {
           console.error("Error fetching navigation items:", error);
         }
@@ -180,7 +195,6 @@ const NewSidebar = () => {
 
   const toggleSubItems = (itemId) => {
     setOpenItems((prevOpenItems) => {
-      // Close all other items when opening a new one
       if (prevOpenItems.includes(itemId)) {
         return prevOpenItems.filter((id) => id !== itemId);
       } else {
@@ -199,7 +213,6 @@ const NewSidebar = () => {
       setFilteredItems(filtered);
       setOpenItems(expandedIds);
     } else {
-      // Reset to original items when search is cleared
       setFilteredItems(items);
       setOpenItems([]);
     }
@@ -231,7 +244,7 @@ const NewSidebar = () => {
       if (item.subItems.length > 0) {
         const subItemIds = getExpandedIds(item.subItems, query);
         if (subItemIds.length > 0) {
-          ids.push(item.id); // Also include this item's ID if any subItem matches
+          ids.push(item.id);
           ids = [...ids, ...subItemIds];
         }
       }
@@ -243,168 +256,258 @@ const NewSidebar = () => {
     return null;
   }
 
-  // Dynamic Icon Component
   const DynamicIcon = ({ iconName }) => {
     const IconComponent = MaterialIcons[iconName];
-
-    if (!IconComponent) {
-      return null;
-    }
-
+    if (!IconComponent) return null;
     return (
-      <IconComponent sx={{ width: 25, height: 25, color: Colortheme.text }} />
+      <IconComponent
+        sx={{
+          width: 20,
+          height: 20,
+          color: Colortheme.text,
+          opacity: 0.9,
+        }}
+      />
     );
   };
 
   return (
-    <>
-      <Drawer
-        anchor="left"
-        open={open}
-        onClose={toggleDrawer}
-        PaperProps={{
-          style: {
-            backgroundColor: Colortheme.secondaryBG,
-            color: "white",
-            width: isMobile ? "250px" : "300px",
-            paddingTop: "20px",
-            borderTopRightRadius: 40,
-            height: "98vh",
+    <Drawer
+      anchor="left"
+      open={open}
+      onClose={toggleDrawer}
+      PaperProps={{
+        style: {
+          width: isMobile ? "280px" : "300px",
+          height: "100vh",
+          background: isDarkMode
+            ? `linear-gradient(165deg, ${Colortheme.secondaryBG}, ${Colortheme.secondaryBG}ee)`
+            : "linear-gradient(165deg, #ffffff, #fafafa)",
+          borderRight: `1px solid ${Colortheme.text}15`,
+          backdropFilter: "blur(8px)",
+        },
+        sx: {
+          "&::-webkit-scrollbar": {
+            width: "5px",
+            height: "5px",
           },
-          sx: {
-            "&::-webkit-scrollbar": {
-              width: "8px",
-            },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: Colortheme.background,
-            },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: Colortheme.text,
-              borderRadius: "4px",
-            },
-            "&::-webkit-scrollbar-thumb:hover": {
-              backgroundColor: Colortheme.accent, // Use an accent color if you want a hover effect
-            },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
           },
+          "&::-webkit-scrollbar-thumb": {
+            background: `${Colortheme.text}22`,
+            borderRadius: "24px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            background: `${Colortheme.text}44`,
+          },
+        },
+      }}
+    >
+      <Box
+        sx={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Box
-          display={"flex"}
-          alignItems={"center"}
-          justifyContent={"space-around"}
+          sx={{
+            px: 3,
+            py: 3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          <h1 style={{ fontSize: 22, color: Colortheme.text }}>Advanced EON</h1>
-          {open && (
-            <IconButton
-              onClick={toggleDrawer}
-              style={{
-                width: 40,
-                height: 40,
-                alignItems: "center",
-                justifyContent: "center",
-                color: Colortheme.secondaryBG,
-                backgroundColor: Colortheme.text,
-                padding: "5px",
-                borderRadius: "50%",
-                boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CloseIcon
-                sx={{ width: 25, height: 25, color: Colortheme.background }}
-              />
-            </IconButton>
-          )}
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              background: `linear-gradient(45deg, ${Colortheme.text}, ${Colortheme.text}99)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Advanced EON
+          </Typography>
+          <IconButton
+            onClick={toggleDrawer}
+            size="small"
+            sx={{
+              color: Colortheme.text,
+              backgroundColor: `${Colortheme.text}10`,
+              borderRadius: "12px",
+              width: 32,
+              height: 32,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: `${Colortheme.text}20`,
+                transform: "scale(1.05)",
+              },
+              "&:active": {
+                transform: "scale(0.95)",
+              },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </Box>
 
-        {/* ## Search Input For Filtering Sidebar Items */}
+        <Box sx={{ px: 3, mb: 3 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              backgroundColor: isDarkMode ? `${Colortheme.text}08` : "#f5f5f5",
+              borderRadius: 2,
+              overflow: "hidden",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: isDarkMode
+                  ? `${Colortheme.text}10`
+                  : "#f0f0f0",
+              },
+            }}
+          >
+            <TextField
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              fullWidth
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MaterialIcons.Search
+                      sx={{
+                        width: 18,
+                        height: 18,
+                        color: `${Colortheme.text}88`,
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiInputBase-root": {
+                  height: 44,
+                  "& input": {
+                    fontSize: "0.875rem",
+                    color: Colortheme.text,
+                    "&::placeholder": {
+                      color: `${Colortheme.text}88`,
+                      opacity: 1,
+                    },
+                  },
+                },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  border: "none",
+                },
+              }}
+            />
+          </Paper>
+        </Box>
 
-        <Box width={"100%"} display={"flex"} justifyContent={"center"}>
-          <TextField
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <MaterialIcons.Search
+        <List
+          sx={{
+            px: 2,
+            flex: 1,
+            overflow: "auto",
+          }}
+        >
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {index > 0 && (
+                  <Divider
                     sx={{
-                      width: 25,
-                      height: 25,
-                      color: "#141619",
+                      my: 1,
+                      opacity: 0.5,
+                      backgroundColor: Colortheme.text,
                     }}
                   />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              marginTop: 4,
-              width: "80%",
-              // marginLeft: 4,
-              backgroundColor: "white",
-              borderRadius: 20,
-              "& .MuiInputBase-input": {
-                color: "black", // Text color when typing
-                pl: 1,
-              },
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderWidth: 1.5,
-                  borderRadius: 5,
-                  borderColor: isDarkMode ? "transparent" : "black", // Border color
-                },
-                "&:hover fieldset": {
-                  borderColor: isDarkMode ? "transparent" : "black", // Border color on hover
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: isDarkMode ? "transparent" : "gray", // Border color when focused
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: Colortheme.background, // Placeholder color
-              },
-            }}
-          />
-        </Box>
-
-        <List>
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <React.Fragment key={item.id}>
+                )}
                 <ListItemButton
-                  onClick={() => {
-                    toggleSubItems(item.id);
-                  }}
-                  component={item.link && Link}
+                  onClick={() => toggleSubItems(item.id)}
+                  component={item.link ? Link : "div"}
                   to={item.link}
                   sx={{
-                    color: "#fff",
-                    border: `2px solid ${Colortheme.text}`,
-                    marginTop: 4,
-                    borderTopRightRadius: 15,
-                    marginLeft: 2,
-                    width: "90%",
+                    position: "relative",
+                    py: 1.75,
+                    px: 2,
+                    borderRadius: 2,
+                    backgroundColor:
+                      location.pathname === item.link
+                        ? `${Colortheme.text}15`
+                        : "transparent",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:before": {
+                      content: '""',
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "4px",
+                      height: "4px",
+                      borderRadius: "50%",
+                      backgroundColor:
+                        location.pathname === item.link
+                          ? Colortheme.text
+                          : "transparent",
+                      transition: "all 0.3s ease",
+                    },
+                    "&:hover": {
+                      backgroundColor: `${Colortheme.text}10`,
+                      "&:before": {
+                        backgroundColor: Colortheme.text,
+                        width: location.pathname === item.link ? "4px" : "6px",
+                      },
+                    },
                   }}
                   onClickCapture={() => {
-                    setSearchQuery(""); // Reset search query
-                    setFilteredItems(items); // Reset filtered items to original items
+                    setSearchQuery("");
+                    setFilteredItems(items);
                   }}
                 >
-                  {/* Add Icon here */}
                   {item.icon_name && (
-                    <ListItemIcon>
-                      <DynamicIcon iconName={item.icon_name} size={20} />
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <DynamicIcon iconName={item.icon_name} />
                     </ListItemIcon>
                   )}
                   <ListItemText
                     primary={item.name}
-                    sx={{ color: Colortheme.text }}
+                    sx={{
+                      m: 0,
+                      "& .MuiTypography-root": {
+                        fontSize: "0.925rem",
+                        fontWeight: location.pathname === item.link ? 600 : 500,
+                        color:
+                          location.pathname === item.link
+                            ? Colortheme.text
+                            : `${Colortheme.text}cc`,
+                        transition: "all 0.3s ease",
+                      },
+                    }}
                   />
-                  {item.subItems.length > 0 &&
-                    (openItems.includes(item.id) ? (
-                      <ExpandLess sx={{ color: Colortheme.text }} />
-                    ) : (
-                      <ExpandMore sx={{ color: Colortheme.text }} />
-                    ))}
+                  {item.subItems?.length > 0 && (
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        transition:
+                          "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        transform: openItems.includes(item.id)
+                          ? "rotate(-180deg)"
+                          : "none",
+                        color: `${Colortheme.text}99`,
+                      }}
+                    >
+                      <ExpandMore fontSize="small" />
+                    </Box>
+                  )}
                 </ListItemButton>
                 <Collapse
                   in={openItems.includes(item.id)}
@@ -412,7 +515,7 @@ const NewSidebar = () => {
                   unmountOnExit
                 >
                   <List component="div" disablePadding>
-                    {item.subItems.map((subItem) => (
+                    {item.subItems?.map((subItem) => (
                       <SubItem
                         key={subItem.id}
                         subItem={subItem}
@@ -420,8 +523,8 @@ const NewSidebar = () => {
                         setOpenItems={setOpenItems}
                         toggleDrawer={toggleDrawer}
                         setSearchQuery={setSearchQuery}
-                        setFilteredItems={setFilteredItems} // Pass setFilteredItems to subitems
-                        items={items} // Pass items to subitems
+                        setFilteredItems={setFilteredItems}
+                        items={items}
                         depth={1}
                       />
                     ))}
@@ -430,14 +533,60 @@ const NewSidebar = () => {
               </React.Fragment>
             ))
           ) : (
-            <ListItemText
-              primary="No results found"
-              sx={{ color: Colortheme.text, textAlign: "center", marginTop: 4 }}
-            />
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: 200,
+                opacity: 0.5,
+              }}
+            >
+              <MaterialIcons.SearchOff
+                sx={{
+                  fontSize: 48,
+                  color: Colortheme.text,
+                  mb: 2,
+                  opacity: 0.5,
+                  animation: "fadeIn 0.5s ease",
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: Colortheme.text,
+                  fontSize: "0.875rem",
+                  animation: "fadeIn 0.5s ease 0.2s both",
+                }}
+              >
+                No items found
+              </Typography>
+            </Box>
           )}
         </List>
-      </Drawer>
-    </>
+
+        <Box
+          sx={{
+            p: 3,
+            mt: "auto",
+            borderTop: `1px solid ${Colortheme.text}10`,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              color: `${Colortheme.text}88`,
+              fontSize: "0.75rem",
+              display: "block",
+              textAlign: "center",
+            }}
+          >
+            Maraekat Infotech Ltd.
+          </Typography>
+        </Box>
+      </Box>
+    </Drawer>
   );
 };
 

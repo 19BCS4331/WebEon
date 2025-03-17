@@ -32,7 +32,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import WarningIcon from "@mui/icons-material/Warning";
 
-const ChargesAndRecPay = ({ data, onUpdate }) => {
+const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
   useEffect(() => {
     console.log("data changed:", data);
     // console.log("what triggered the change:", JSON.stringify(data, null, 2));
@@ -679,10 +679,16 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     };
   };
 
+  useEffect(() => {
+    if(isEditMode){
+      setTaxData(data.Taxes);
+    }
+  },[isEditMode])
+
   // Function to calculate tax amounts
   const calculateTaxAmounts = (taxes, slabs, amount, preserveHFEE = false) => {
     // First calculate GST18% without rounding
-    const gst18Tax = taxes.find((t) => t.CODE === "gst18%");
+    const gst18Tax = isEditMode ? taxes.find((t) => t.code === "GST18%") :taxes.find((t) => t.CODE === "gst18%");
     let gst18Amount = 0;
     let roundOffAmount = 0;
 
@@ -712,7 +718,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     return taxes.map((tax) => {
       let taxAmount = 0;
 
-      if (tax.CODE === "gst18%") {
+      if (isEditMode ? tax.code ==="GST18%": tax.CODE === "gst18%") {
         taxAmount = gst18Amount;
       } else if (tax.CODE === "TAXROFF") {
         taxAmount = roundOffAmount;
@@ -761,73 +767,90 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   };
 
   // Calculate taxes with proper preservation logic
-  const calculateAndUpdateTaxes = (amount, taxes, slabs, shouldPreserveHFEE) => {
-    console.log("Calculating taxes with amount:", amount, "preserve HFEE:", shouldPreserveHFEE);
-    
-    // Reset non-HFEE taxes or all taxes based on preservation flag
-    const resetTaxes = taxes.map(tax => {
-      if (shouldPreserveHFEE && (tax.CODE === "HFEE" || tax.CODE === "HFEEIGST")) {
-        // Preserve HFEE and HFEEIGST if flag is true
-        return tax;
-      }
-      return {
-        ...tax,
-        amount: 0,
-        lineTotal: 0
-      };
-    });
+  const calculateAndUpdateTaxes = (
+    amount,
+    taxes,
+    slabs,
+    shouldPreserveHFEE
+  ) => {
+    if (!isEditMode) {
+      console.log(
+        "Calculating taxes with amount:",
+        amount,
+        "preserve HFEE:",
+        shouldPreserveHFEE
+      );
 
-    const calculatedTaxes = calculateTaxAmounts(
-      resetTaxes,
-      slabs,
-      parseFloat(amount),
-      shouldPreserveHFEE
-    );
+      // Reset non-HFEE taxes or all taxes based on preservation flag
+      const resetTaxes = taxes.map((tax) => {
+        if (
+          shouldPreserveHFEE &&
+          (tax.CODE === "HFEE" || tax.CODE === "HFEEIGST")
+        ) {
+          // Preserve HFEE and HFEEIGST if flag is true
+          return tax;
+        }
+        return {
+          ...tax,
+          amount: 0,
+          lineTotal: 0,
+        };
+      });
 
-    const total = calculatedTaxes.reduce(
-      (sum, tax) => sum + tax.lineTotal,
-      0
-    );
+      const calculatedTaxes = calculateTaxAmounts(
+        resetTaxes,
+        slabs,
+        parseFloat(amount),
+        shouldPreserveHFEE
+      );
 
-    setTaxData(calculatedTaxes);
-    setOriginalTaxData(calculatedTaxes);
-    setTotalTaxAmount(total);
-    setAmountAfterTax(parseFloat(amount) + total);
+      const total = calculatedTaxes.reduce(
+        (sum, tax) => sum + tax.lineTotal,
+        0
+      );
 
-    onUpdate({
-      Taxes: calculatedTaxes,
-      TaxTotalAmount: total.toFixed(2),
-    });
+      setTaxData(calculatedTaxes);
+      setOriginalTaxData(calculatedTaxes);
+      setTotalTaxAmount(total);
+      setAmountAfterTax(parseFloat(amount) + total);
 
-    return calculatedTaxes;
+      onUpdate({
+        Taxes: calculatedTaxes,
+        TaxTotalAmount: total.toFixed(2),
+      });
+
+      return calculatedTaxes;
+    }
   };
 
   // Handle data prop changes
   useEffect(() => {
-    const newAmount = parseFloat(data.Amount || 0);
-    const prevAmount = parseFloat(amountRef.current || 0);
-    
-    if (newAmount !== prevAmount) {
-      // If this is the initial mount and we have an amount, preserve HFEE
-      if (isInitialMountRef.current && newAmount > 0) {
-        console.log('Initial mount with amount:', newAmount);
-        calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, true);
+    if (!isEditMode) {
+      const newAmount = parseFloat(data.Amount || 0);
+      const prevAmount = parseFloat(amountRef.current || 0);
+
+      if (newAmount !== prevAmount) {
+        // If this is the initial mount and we have an amount, preserve HFEE
+        if (isInitialMountRef.current && newAmount > 0) {
+          console.log("Initial mount with amount:", newAmount);
+          calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, true);
+        }
+        // If amount changed from TransactionDetails (exchangeData update)
+        else if (data.exchangeData && data.exchangeData.length > 0) {
+          console.log("Amount changed from TransactionDetails:", newAmount);
+          calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, false);
+        }
+        // For other amount changes (like manual updates), preserve HFEE
+        else {
+          console.log("Amount changed from other source:", newAmount);
+          calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, true);
+        }
       }
-      // If amount changed from TransactionDetails (exchangeData update)
-      else if (data.exchangeData && data.exchangeData.length > 0) {
-        console.log('Amount changed from TransactionDetails:', newAmount);
-        calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, false);
-      }
-      // For other amount changes (like manual updates), preserve HFEE
-      else {
-        console.log('Amount changed from other source:', newAmount);
-        calculateAndUpdateTaxes(newAmount, taxData, taxSlabData, true);
-      }
+
+      // Update the ref after processing
+      amountRef.current = newAmount;
+      isInitialMountRef.current = false;
     }
-    
-    // Update the ref after processing
-    amountRef.current = newAmount;
-    isInitialMountRef.current = false;
   }, [data.Amount, data.exchangeData, taxData, taxSlabData]);
 
   // Handle amount changes from user input
@@ -836,105 +859,110 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
     // Trigger the data update which will be caught by the effect above
     onUpdate({
       ...data,
-      Amount: newAmount
+      Amount: newAmount,
     });
   };
 
   // Handle initial mount and tax data loading
   useEffect(() => {
-    const fetchTaxData = async () => {
-      try {
-        const response = await apiClient.get("/pages/Transactions/getTaxData", {
-          params: { vTrntype },
-        });
+    if (!isEditMode) {
+      const fetchTaxData = async () => {
+        try {
+          const response = await apiClient.get(
+            "/pages/Transactions/getTaxData",
+            {
+              params: { vTrntype },
+            }
+          );
 
-        const { taxes, taxSlabs } = response.data;
+          const { taxes, taxSlabs } = response.data;
 
-        // Add currentSign based on transaction type
-        let taxesWithSign = taxes.map((tax) => ({
-          ...tax,
-          currentSign:
-            vTrntype === "B" ? tax.RETAILBUYSIGN : tax.RETAILSELLSIGN,
-          amount: 0,
-          lineTotal: 0,
-        }));
-
-        // Add HFEEIGST if not present
-        if (
-          taxesWithSign.find((t) => t.CODE === "HFEE") &&
-          !taxesWithSign.find((t) => t.CODE === "HFEEIGST")
-        ) {
-          const hfeeTax = taxesWithSign.find((t) => t.CODE === "HFEE");
-          taxesWithSign.push({
-            nTaxID: Math.max(...taxesWithSign.map((t) => t.nTaxID)) + 1,
-            CODE: "HFEEIGST",
-            DESCRIPTION: "HFEE GST",
-            APPLYAS: "%",
-            VALUE: "18.0000",
-            SLABWISETAX: false,
-            currentSign: hfeeTax.currentSign,
+          // Add currentSign based on transaction type
+          let taxesWithSign = taxes.map((tax) => ({
+            ...tax,
+            currentSign:
+              vTrntype === "B" ? tax.RETAILBUYSIGN : tax.RETAILSELLSIGN,
             amount: 0,
             lineTotal: 0,
+          }));
+
+          // Add HFEEIGST if not present
+          if (
+            taxesWithSign.find((t) => t.CODE === "HFEE") &&
+            !taxesWithSign.find((t) => t.CODE === "HFEEIGST")
+          ) {
+            const hfeeTax = taxesWithSign.find((t) => t.CODE === "HFEE");
+            taxesWithSign.push({
+              nTaxID: Math.max(...taxesWithSign.map((t) => t.nTaxID)) + 1,
+              CODE: "HFEEIGST",
+              DESCRIPTION: "HFEE GST",
+              APPLYAS: "%",
+              VALUE: "18.0000",
+              SLABWISETAX: false,
+              currentSign: hfeeTax.currentSign,
+              amount: 0,
+              lineTotal: 0,
+            });
+          }
+
+          // Sort taxes in specific order: GST18%, TAXROFF, HFEE, HFEEIGST, others
+          taxesWithSign = taxesWithSign.sort((a, b) => {
+            const order = { "gst18%": 1, TAXROFF: 2, HFEE: 3, HFEEIGST: 4 };
+            return (order[a.CODE] || 5) - (order[b.CODE] || 5);
           });
+
+          // If we have existing tax data, use it
+          if (data.Taxes && data.Taxes.length > 0) {
+            taxesWithSign = taxesWithSign.map((tax) => {
+              const existingTax = data.Taxes.find((t) => t.CODE === tax.CODE);
+              if (existingTax) {
+                return {
+                  ...tax,
+                  amount: existingTax.amount,
+                  lineTotal: existingTax.lineTotal,
+                };
+              }
+              return tax;
+            });
+          }
+
+          setTaxData(taxesWithSign);
+          setOriginalTaxData(taxesWithSign);
+          setTaxSlabData(taxSlabs);
+
+          // Calculate initial tax amounts if we have an amount
+          if (data.Amount) {
+            // Preserve HFEE if we have existing tax data
+            const shouldPreserveHFEE = data.Taxes && data.Taxes.length > 0;
+            const calculatedTaxes = calculateTaxAmounts(
+              taxesWithSign,
+              taxSlabs,
+              parseFloat(data.Amount),
+              shouldPreserveHFEE
+            );
+            const total = calculatedTaxes.reduce(
+              (sum, tax) => sum + tax.lineTotal,
+              0
+            );
+
+            setTaxData(calculatedTaxes);
+            setOriginalTaxData(calculatedTaxes);
+            setTotalTaxAmount(total);
+            setAmountAfterTax(parseFloat(data.Amount) + total);
+
+            // Update parent
+            onUpdate({
+              Taxes: calculatedTaxes,
+              TaxTotalAmount: total.toFixed(2),
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching tax data:", error);
         }
+      };
 
-        // Sort taxes in specific order: GST18%, TAXROFF, HFEE, HFEEIGST, others
-        taxesWithSign = taxesWithSign.sort((a, b) => {
-          const order = { "gst18%": 1, TAXROFF: 2, HFEE: 3, HFEEIGST: 4 };
-          return (order[a.CODE] || 5) - (order[b.CODE] || 5);
-        });
-
-        // If we have existing tax data, use it
-        if (data.Taxes && data.Taxes.length > 0) {
-          taxesWithSign = taxesWithSign.map((tax) => {
-            const existingTax = data.Taxes.find((t) => t.CODE === tax.CODE);
-            if (existingTax) {
-              return {
-                ...tax,
-                amount: existingTax.amount,
-                lineTotal: existingTax.lineTotal,
-              };
-            }
-            return tax;
-          });
-        }
-
-        setTaxData(taxesWithSign);
-        setOriginalTaxData(taxesWithSign);
-        setTaxSlabData(taxSlabs);
-
-        // Calculate initial tax amounts if we have an amount
-        if (data.Amount) {
-          // Preserve HFEE if we have existing tax data
-          const shouldPreserveHFEE = data.Taxes && data.Taxes.length > 0;
-          const calculatedTaxes = calculateTaxAmounts(
-            taxesWithSign,
-            taxSlabs,
-            parseFloat(data.Amount),
-            shouldPreserveHFEE
-          );
-          const total = calculatedTaxes.reduce(
-            (sum, tax) => sum + tax.lineTotal,
-            0
-          );
-
-          setTaxData(calculatedTaxes);
-          setOriginalTaxData(calculatedTaxes);
-          setTotalTaxAmount(total);
-          setAmountAfterTax(parseFloat(data.Amount) + total);
-
-          // Update parent
-          onUpdate({
-            Taxes: calculatedTaxes,
-            TaxTotalAmount: total.toFixed(2),
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching tax data:", error);
-      }
-    };
-
-    fetchTaxData();
+      fetchTaxData();
+    }
   }, [vTrntype]); // Only run on mount and vTrntype change
 
   // Add a debug effect to track data changes
@@ -946,11 +974,11 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
   }, [data]);
 
   const handleTaxAmountChange = (taxId, value) => {
-    const tax = taxData.find(t => t.nTaxID === taxId);
+    const tax = taxData.find((t) => t.nTaxID === taxId);
     let amount = parseFloat(value) || 0;
 
     // Validate HFEE amount if this is HFEE tax
-    if (tax?.CODE === "HFEE") {
+    if (isEditMode ? tax?.code === "HFEE": tax?.CODE === "HFEE") {
       const maxHfeeValue = parseFloat(
         getSetting("HFEEMAXVALUE", "advanced", "0")
       );
@@ -963,7 +991,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       }
     }
 
-    const updatedTaxes = taxData.map(tax => {
+    const updatedTaxes = taxData.map((tax) => {
       if (tax.nTaxID === taxId) {
         return {
           ...tax,
@@ -974,7 +1002,19 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
       // If we're updating HFEE, also update HFEEIGST
       if (
         tax.CODE === "HFEEIGST" &&
-        taxId === taxData.find(t => t.CODE === "HFEE")?.nTaxID
+        taxId === taxData.find((t) => t.CODE === "HFEE")?.nTaxID
+      ) {
+        const hfeeigstAmount = parseFloat((amount * 0.18).toFixed(2));
+        return {
+          ...tax,
+          amount: hfeeigstAmount,
+          lineTotal: hfeeigstAmount * (tax.currentSign === "+" ? 1 : -1),
+        };
+      }
+      if (
+        isEditMode &&
+        tax.code === "HFEEIGST" &&
+        taxId === taxData.find((t) => t.code === "HFEE")?.nTaxID
       ) {
         const hfeeigstAmount = parseFloat((amount * 0.18).toFixed(2));
         return {
@@ -992,7 +1032,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
 
   // Handle save tax changes
   const handleSaveTaxChanges = () => {
-    const total = taxData.reduce((sum, tax) => sum + tax.lineTotal, 0);
+    const total = isEditMode ?taxData.reduce((sum, tax) => sum + tax.amount, 0): taxData.reduce((sum, tax) => sum + tax.lineTotal, 0);
     setTotalTaxAmount(total);
     setAmountAfterTax(parseFloat(data.Amount) + total);
     setOriginalTaxData([...taxData]);
@@ -1008,26 +1048,43 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
 
   // Handle discard tax changes
   const handleDiscardTaxChanges = () => {
-    // Recalculate taxes based on original data
-    const calculatedTaxes = calculateTaxAmounts(
-      originalTaxData,
-      taxSlabData,
-      parseFloat(data.Amount)
-    );
-    const total = calculatedTaxes.reduce(
-      (sum, tax) => sum + tax.lineTotal,
-      0
-    );
+    if (isEditMode) {
+      // In edit mode, simply revert to original tax data
+      setTaxData([...data.Taxes]);
+      const total = data.Taxes.reduce((sum, tax) => {
+        // Handle both lowercase and uppercase property names
+        const amount = parseFloat(tax.amount || tax.AMOUNT || 0);
+        const sign = tax.currentSign || (vTrntype === "B" ? "-" : "+");
+        return sum + (sign === "+" ? 1 : -1) * amount;
+      }, 0);
 
-    setTaxData(calculatedTaxes);
-    setTotalTaxAmount(total);
-    setAmountAfterTax(parseFloat(data.Amount) + total);
-    setHasUnsavedTaxChanges(false);
+      setTotalTaxAmount(total);
+      setAmountAfterTax(parseFloat(data.Amount) + total);
+      setHasUnsavedTaxChanges(false);
 
-    onUpdate({
-      Taxes: calculatedTaxes,
-      TaxTotalAmount: total.toFixed(2),
-    });
+      onUpdate({
+        Taxes: data.Taxes,
+        TaxTotalAmount: total.toFixed(2)
+      });
+    } else {
+      // In new mode, recalculate taxes
+      const calculatedTaxes = calculateTaxAmounts(
+        originalTaxData,
+        taxSlabData,
+        parseFloat(data.Amount)
+      );
+      const total = calculatedTaxes.reduce((sum, tax) => sum + tax.lineTotal, 0);
+
+      setTaxData(calculatedTaxes);
+      setTotalTaxAmount(total);
+      setAmountAfterTax(parseFloat(data.Amount) + total);
+      setHasUnsavedTaxChanges(false);
+
+      onUpdate({
+        Taxes: calculatedTaxes,
+        TaxTotalAmount: total.toFixed(2)
+      });
+    }
 
     setOpenTaxModal(false);
   };
@@ -1084,7 +1141,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                 color: Colortheme.text,
                 fontFamily: "Poppins",
                 fontWeight: "bold",
-                mb: 1
+                mb: 1,
               }}
             >
               Amount Breakdown:
@@ -1096,14 +1153,17 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                   fontFamily: "Poppins",
                   display: "flex",
                   justifyContent: "space-between",
-                  mb: 0.5
+                  mb: 0.5,
                 }}
               >
                 <span>Base Amount:</span>
-                <span>₹{parseFloat(data.Amount || 0).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}</span>
+                <span>
+                  ₹
+                  {parseFloat(data.Amount || 0).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </Typography>
               <Typography
                 sx={{
@@ -1111,14 +1171,19 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                   fontFamily: "Poppins",
                   display: "flex",
                   justifyContent: "space-between",
-                  mb: 0.5
+                  mb: 0.5,
                 }}
               >
                 <span>Charges:</span>
-                <span>- ₹{Math.abs(parseFloat(data.ChargesTotalAmount || 0)).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}</span>
+                <span>
+                  - ₹
+                  {Math.abs(
+                    parseFloat(data.ChargesTotalAmount || 0)
+                  ).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </Typography>
               <Typography
                 sx={{
@@ -1126,34 +1191,44 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                   fontFamily: "Poppins",
                   display: "flex",
                   justifyContent: "space-between",
-                  mb: 0.5
+                  mb: 0.5,
                 }}
               >
                 <span>Taxes:</span>
-                <span>- ₹{Math.abs(parseFloat(data.TaxTotalAmount || 0)).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}</span>
+                <span>
+                  - ₹
+                  {Math.abs(
+                    parseFloat(data.TaxTotalAmount || 0)
+                  ).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </Typography>
-              <Box sx={{ 
-                borderTop: `1px solid ${Colortheme.text}`,
-                mt: 1, 
-                pt: 1
-              }}>
+              <Box
+                sx={{
+                  borderTop: `1px solid ${Colortheme.text}`,
+                  mt: 1,
+                  pt: 1,
+                }}
+              >
                 <Typography
                   sx={{
                     color: Colortheme.text,
                     fontFamily: "Poppins",
                     display: "flex",
                     justifyContent: "space-between",
-                    fontWeight: "bold"
+                    fontWeight: "bold",
                   }}
                 >
                   <span>Net Amount:</span>
-                  <span>₹{parseFloat(netAmount || 0).toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}</span>
+                  <span>
+                    ₹
+                    {parseFloat(netAmount || 0).toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
                 </Typography>
               </Box>
             </Box>
@@ -1166,14 +1241,17 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                 justifyContent: "space-between",
                 fontWeight: "bold",
                 borderTop: `1px solid ${Colortheme.text}`,
-                pt: 1
+                pt: 1,
               }}
             >
               <span>Remaining Amount:</span>
-              <span>₹{parseFloat(remainingAmount || 0).toLocaleString("en-IN", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}</span>
+              <span>
+                ₹
+                {parseFloat(remainingAmount || 0).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
             </Typography>
           </Box>
 
@@ -1507,8 +1585,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                 fontFamily: "Poppins",
               }}
             >
-              Amount: ₹
-              {parseFloat(data.Amount || 0).toFixed(2)}
+              Amount: ₹{parseFloat(data.Amount || 0).toFixed(2)}
             </Typography>
           </Box>
 
@@ -1872,7 +1949,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                           fontFamily: "Poppins",
                         }}
                       >
-                        {tax.DESCRIPTION}
+                        {isEditMode ? tax.code : tax.DESCRIPTION}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
@@ -1914,7 +1991,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                           fontFamily: "Poppins",
                         }}
                       >
-                        ₹{tax.lineTotal.toFixed(2)}
+                        ₹{isEditMode ? tax.amount :tax.lineTotal.toFixed(2)}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1926,7 +2003,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
           <Box
             sx={{
               mt: 3,
-              mr:2,
+              mr: 2,
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-end",
@@ -1939,7 +2016,7 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                 fontFamily: "Poppins",
               }}
             >
-              Total Tax Amount: ₹{totalTaxAmount.toFixed(2)}
+              Total Tax Amount: ₹{isEditMode ?  data.TaxTotalAmount : totalTaxAmount.toFixed(2)}
             </Typography>
 
             <Typography
@@ -1949,7 +2026,9 @@ const ChargesAndRecPay = ({ data, onUpdate }) => {
                 fontFamily: "Poppins",
               }}
             >
-              Amount After Tax: ₹{amountAfterTax.toFixed(2)}
+              Amount After Tax: ₹{isEditMode 
+                ? (parseFloat(data.Amount) + (data.Taxes[0].currentSign === "+" ? 1 : -1) * parseFloat(data.TaxTotalAmount)).toFixed(2)
+                : amountAfterTax.toFixed(2)}
             </Typography>
           </Box>
         </DialogContent>

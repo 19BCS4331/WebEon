@@ -1,9 +1,10 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
 const ToastContext = createContext();
+const MAX_TOASTS = 5;
 
 export const ToastProvider = ({ children }) => {
-  const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const [toasts, setToasts] = useState([]);
 
   const [alertModal, setAlertModal] = useState({
     open: false,
@@ -24,13 +25,31 @@ export const ToastProvider = ({ children }) => {
     dialogMsg: "",
   });
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type });
-  };
+  const showToast = useCallback((message, type) => {
+    const id = Date.now();
+    const newToast = { id, message, type };
+    
+    setToasts((currentToasts) => {
+      // If we already have MAX_TOASTS, remove the oldest one
+      const updatedToasts = currentToasts.length >= MAX_TOASTS 
+        ? currentToasts.slice(1) 
+        : currentToasts;
+      return [...updatedToasts, newToast];
+    });
 
-  const hideToast = () => {
-    setToast({ show: false, message: "", type: "" });
-  };
+    // Automatically remove the toast after 3 seconds
+    setTimeout(() => {
+      setToasts((currentToasts) =>
+        currentToasts.filter((toast) => toast.id !== id)
+      );
+    }, 3000);
+  }, []);
+
+  const hideToast = useCallback((id) => {
+    setToasts((currentToasts) =>
+      currentToasts.filter((toast) => toast.id !== id)
+    );
+  }, []);
 
   const showAlertDialog = (title, dialogMsg, handleAction) => {
     setAlertModal({ open: true, title, dialogMsg, handleAction });
@@ -72,7 +91,7 @@ export const ToastProvider = ({ children }) => {
         hideInfoModal,
         showAlertDialogCurrency,
         hideAlertDialogCurrency,
-        toast,
+        toasts,
         alertModal,
         infoModal,
         alertModalCurrency,

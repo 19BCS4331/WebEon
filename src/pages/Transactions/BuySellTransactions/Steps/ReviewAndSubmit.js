@@ -126,15 +126,22 @@ const SectionHeader = ({ children, Colortheme }) => (
   </Typography>
 );
 
-const ReviewAndSubmit = ({ data, Colortheme }) => {
+const ReviewAndSubmit = ({ data, Colortheme, isEditMode }) => {
   const [openDialog, setOpenDialog] = useState(null);
-  console.log(data);
 
   const calculateNetAmount = () => {
     const chargesTotal = Math.abs(parseFloat(data.ChargesTotalAmount || 0));
     const taxTotal = Math.abs(parseFloat(data.TaxTotalAmount || 0));
     const totalDeductions = chargesTotal + taxTotal;
     return (parseFloat(data.Amount) || 0) - totalDeductions;
+  };
+
+  const handleDialogOpen = (dialogType) => {
+    setOpenDialog(dialogType);
+  };
+
+  const handleDialogClose = () => {
+    setOpenDialog(null);
   };
 
   const formatCurrency = (amount) => {
@@ -149,10 +156,6 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
     if (!date) return "";
     const d = new Date(date);
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-  };
-
-  const handleClose = () => {
-    setOpenDialog(null);
   };
 
   const renderBasicDetails = () => (
@@ -407,7 +410,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
               <Typography
                 sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
               >
-                {tax.DESCRIPTION}:
+                {isEditMode ? tax.code : tax.DESCRIPTION}:
               </Typography>
               <Typography
                 sx={{ color: Colortheme.text, fontFamily: "Poppins" }}
@@ -535,7 +538,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
     );
 
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
+    <Box sx={{ width: "95%", p: 0 }}>
       <Grid container spacing={2}>
         {/* Summary Cards */}
         <Grid item xs={12}>
@@ -581,7 +584,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
         {/* Action Buttons */}
         <Grid item xs={12} md={4}>
           <StyledButton
-            onClick={() => setOpenDialog("basic")}
+            onClick={() => handleDialogOpen("basic")}
             style={{ width: "100%", height: "120px" }}
           >
             <Box>
@@ -597,7 +600,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
 
         <Grid item xs={12} md={4}>
           <StyledButton
-            onClick={() => setOpenDialog("party")}
+            onClick={() => handleDialogOpen("party")}
             style={{ width: "100%", height: "120px" }}
           >
             <Box>
@@ -614,7 +617,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
         {data.agentCode !== "" && data.agentCode !== null && (
         <Grid item xs={12} md={4}>
           <StyledButton
-            onClick={() => setOpenDialog("agent")}
+            onClick={() => handleDialogOpen("agent")}
             style={{ width: "100%", height: "120px" }}
           >
             <Box>
@@ -631,7 +634,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
 
         <Grid item xs={12} md={4}>
           <StyledButton
-            onClick={() => setOpenDialog("transaction")}
+            onClick={() => handleDialogOpen("transaction")}
             style={{ width: "100%", height: "120px" }}
           >
             <Box>
@@ -647,7 +650,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
 
         <Grid item xs={12} md={6}>
           <StyledButton
-            onClick={() => setOpenDialog("charges")}
+            onClick={() => handleDialogOpen("charges")}
             style={{ width: "100%", height: "120px" }}
           >
             <Box>
@@ -665,7 +668,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
       {/* Dialogs */}
       <DetailDialog
         open={openDialog === "basic"}
-        onClose={handleClose}
+        onClose={handleDialogClose}
         title="Basic Details"
         Colortheme={Colortheme}
       >
@@ -674,7 +677,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
 
       <DetailDialog
         open={openDialog === "party"}
-        onClose={handleClose}
+        onClose={handleDialogClose}
         title="Party Details"
         Colortheme={Colortheme}
       >
@@ -684,7 +687,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
       {data.agentCode !== "" && data.agentCode !== null && (
         <DetailDialog
           open={openDialog === "agent"}
-          onClose={handleClose}
+          onClose={handleDialogClose}
           title="Agent Details"
           Colortheme={Colortheme}
         >
@@ -694,7 +697,7 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
 
       <DetailDialog
         open={openDialog === "transaction"}
-        onClose={handleClose}
+        onClose={handleDialogClose}
         title="Transaction Details"
         Colortheme={Colortheme}
       >
@@ -703,12 +706,22 @@ const ReviewAndSubmit = ({ data, Colortheme }) => {
 
       <DetailDialog
         open={openDialog === "charges"}
-        onClose={handleClose}
+        onClose={handleDialogClose}
         title="Charges & Payments"
         Colortheme={Colortheme}
       >
         {renderChargesAndPayments()}
       </DetailDialog>
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          mt: 4,
+          gap: 2,
+        }}
+      >
+      </Box>
     </Box>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Box, IconButton, InputAdornment } from "@mui/material";
+import { Box, IconButton, InputAdornment, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import ThemeContext from "../../../../contexts/ThemeContext";
@@ -10,7 +10,7 @@ import CustomDatePicker from "../../../../components/global/CustomDatePicker";
 import { AuthContext } from "../../../../contexts/AuthContext";
 
 const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
-  const {branch} = useContext(AuthContext);
+  const { branch } = useContext(AuthContext);
   const { Colortheme } = useContext(ThemeContext);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
           vTrntype,
           fromDate,
           toDate,
-          branchId
+          branchId,
         },
       });
       setTransactions(response.data);
@@ -44,20 +44,28 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
   };
 
   useEffect(() => {
-    fetchTransactions();
-    // setSearchText("");
-    setFromDate(
-      new Date(new Date().setMonth(new Date().getMonth() - 6))
+    const initializeDates = () => {
+      const sixMonthsAgo = new Date(new Date().setMonth(new Date().getMonth() - 6))
         .toISOString()
-        .split("T")[0]
-    );
-    setToDate(new Date().toISOString().split("T")[0]);
+        .split("T")[0];
+      const today = new Date().toISOString().split("T")[0];
+      
+      setFromDate(sixMonthsAgo);
+      setToDate(today);
+    };
+
+    // Only initialize dates when transaction type changes
+    if (vTrnwith || vTrntype) {
+      initializeDates();
+      setSearchText("");
+    }
   }, [vTrnwith, vTrntype]);
 
   useEffect(() => {
-    fetchTransactions();
-    // setSearchText("");
-  }, [vTrnwith, vTrntype, fromDate, toDate]);
+    if (fromDate && toDate && branchId) {
+      fetchTransactions();
+    }
+  }, [fromDate, toDate, branchId, vTrnwith, vTrntype]);
 
   const getColumns = () => {
     const baseColumns = [
@@ -159,22 +167,53 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
           }}
         />
       </Box>
-
-      <CustomDataGrid
-        rows={filteredTransactions}
-        columns={columns}
-        pageSize={10}
-        loading={loading}
-        getRowId={(row) => row.nTranID}
-        Colortheme={Colortheme}
-        customSx={{
-          maxHeight: {
-            xs: "calc(100vh - 500px)",
-            sm: "calc(100vh - 500px)",
-            lg: "calc(100vh - 380px)",
-          },
-        }}
-      />
+      {filteredTransactions.length > 0 ? (
+        <CustomDataGrid
+          rows={filteredTransactions}
+          columns={columns}
+          pageSize={10}
+          loading={loading}
+          getRowId={(row) => row.nTranID}
+          Colortheme={Colortheme}
+          customSx={{
+            maxHeight: {
+              xs: "calc(100vh - 500px)",
+              sm: "calc(100vh - 500px)",
+              lg: "calc(100vh - 380px)",
+            },
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%",
+            flexDirection: "column",
+            marginTop: "100px",
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+            <Typography
+              variant="h5"
+              color={Colortheme.text}
+              sx={{ textAlign: "center" }}
+              fontFamily={"Poppins"}
+            >
+              No transactions found !
+            </Typography>
+          </Box>
+          <Typography
+            variant="body1"
+            color={Colortheme.text}
+            sx={{ textAlign: "center" }}
+            fontFamily={"Poppins"}
+          >
+            Please check your filter criteria or try refreshing the page.
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

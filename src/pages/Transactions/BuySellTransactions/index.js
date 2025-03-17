@@ -27,9 +27,10 @@ import {
   TransactionProvider,
   useTransaction,
 } from "../../../contexts/TransactionContext";
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const steps = [
   {
@@ -76,13 +77,14 @@ const BuySellTransactionsContent = () => {
   const { Colortheme } = useContext(ThemeContext);
   const [paxDetails, setPaxDetails] = useState(null);
   const [showStepper, setShowStepper] = useState(true);
-  const { showToast,hideToast } = useToast();
+  const { showToast, hideToast } = useToast();
+  const { branch } = useAuth();
 
   useEffect(() => {
     // Reset form and show list when transaction parameters change
     resetForm();
     setShowList(true);
-    setEditMode(false);
+
     setActiveStep(0);
 
     // Update form with new transaction parameters
@@ -90,6 +92,7 @@ const BuySellTransactionsContent = () => {
       vTrnwith,
       vTrntype,
     });
+    setEditMode(false);
   }, [vTrnwith, vTrntype]);
 
   useEffect(() => {
@@ -135,23 +138,67 @@ const BuySellTransactionsContent = () => {
           },
         }
       );
-      
+
       if (response.data.success) {
-        const { 
+        const {
           exchangeData,
           Charges,
           Taxes,
           RecPay,
           ChargesTotalAmount,
           TaxTotalAmount,
-          RecPayTotalAmount 
+          RecPayTotalAmount,
         } = response.data.data;
+
+        // Structure taxes with proper signs and order
+        let taxesWithSign = Taxes.map((tax, index) => ({
+          ...tax,
+          nTaxID: tax.nTaxID || index + 1,
+          currentSign: vTrntype === "B" ? "-" : "+",
+          amount: tax.amount || "0.00",
+          lineTotal: tax.lineTotal || "0.00",
+          VALUE: tax.VALUE || "0",
+          APPLYAS: tax.APPLYAS || "F",
+          CODE: tax.CODE || "",
+        }));
+
+        // Add HFEEIGST if HFEE exists but HFEEIGST doesn't
+        if (
+          taxesWithSign.find((t) => t.CODE === "HFEE") &&
+          !taxesWithSign.find((t) => t.CODE === "HFEEIGST")
+        ) {
+          const hfeeTax = taxesWithSign.find((t) => t.CODE === "HFEE");
+          const maxTaxId = Math.max(...taxesWithSign.map((t) => t.nTaxID || 0));
+          taxesWithSign.push({
+            nTaxID: maxTaxId + 1,
+            CODE: "HFEEIGST",
+            DESCRIPTION: "HFEE GST",
+            APPLYAS: "%",
+            VALUE: "18.0000",
+            SLABWISETAX: false,
+            currentSign: hfeeTax.currentSign,
+            amount: "0.00",
+            lineTotal: "0.00",
+          });
+        }
+
+        // Sort taxes in specific order
+        taxesWithSign = taxesWithSign.sort((a, b) => {
+          const order = { "gst18%": 1, TAXROFF: 2, HFEE: 3, HFEEIGST: 4 };
+          return (order[a.code] || 5) - (order[b.code] || 5);
+        });
+
+        // Reassign nTaxID after sorting to ensure sequential order
+        taxesWithSign = taxesWithSign.map((tax, index) => ({
+          ...tax,
+          nTaxID: index + 1,
+        }));
 
         // Update form data with all transaction details
         updateFormData({
           exchangeData,
           Charges,
-          Taxes,
+          Taxes: taxesWithSign,
           RecPay,
           ChargesTotalAmount,
           TaxTotalAmount,
@@ -168,7 +215,7 @@ const BuySellTransactionsContent = () => {
           TDSRate: exchangeData[0]?.TDSRate || "0.00",
           TDSAmount: exchangeData[0]?.TDSAmount || "0.00",
           HoldCost: exchangeData[0]?.HoldCost || "0.00",
-          Profit: exchangeData[0]?.Profit || "0.00"
+          Profit: exchangeData[0]?.Profit || "0.00",
         });
 
         // If transaction has pax details, fetch them
@@ -204,6 +251,8 @@ const BuySellTransactionsContent = () => {
         vNo: response.data || "",
         date: new Date().toISOString().split("T")[0],
         Category: "L",
+        nBranchID: branch.nBranchID,
+        vBranchCode: branch.vBranchCode,
       });
     } catch (error) {
       console.error("Error fetching next transaction number:", error);
@@ -227,9 +276,50 @@ const BuySellTransactionsContent = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (validateStep(activeStep)) {
-      setActiveStep(activeStep + 1);
+      if (activeStep === steps.length - 1) {
+        // Submit the transaction
+        try {
+          const endpoint = isEditMode 
+            ? `/pages/Transactions/update-transaction/${formData.nTranID}`
+            : '/pages/Transactions/save-transaction';
+          
+          const method = isEditMode ? 'PUT' : 'POST';
+          
+          const response = await apiClient({
+            method,
+            url: endpoint,
+            data: {
+              ...formData,
+              date: new Date(formData.date).toISOString(),
+              exchangeData: formData.exchangeData || [],
+              Charges: formData.Charges || [],
+              Taxes: formData.Taxes || [],
+              RecPay: formData.RecPay || []
+            }
+          });
+
+          if (response.data.success) {
+            showToast(
+              `Transaction ${isEditMode ? 'updated' : 'saved'} successfully!`,
+              'success'
+            );
+            resetForm();
+            setShowList(true);
+          } else {
+            throw new Error('Failed to save transaction');
+          }
+        } catch (error) {
+          console.error('Error saving transaction:', error);
+          showToast(
+            `Error ${isEditMode ? 'updating' : 'saving'} transaction: ${error.message}`,
+            'error'
+          );
+        }
+      } else {
+        setActiveStep(activeStep + 1);
+      }
     }
   };
 
@@ -249,46 +339,49 @@ const BuySellTransactionsContent = () => {
         if (!formData.vBranchCode) return "Branch is required";
         if (!formData.date) return "Date is required";
         return "";
-      
+
       case 1:
         if (!formData.PartyID) return "Party Selection is required";
         if (!formData.PartyType) return "Party Type is required";
         if (!formData.PaxCode) return "Please Select A PAX";
         if (!formData.PaxName) return "Pax Name is required";
         return "";
-      
+
       case 2:
-        if (formData.agentCode && !formData.agentCommCN) {
-          return "Agent Commission is required when Agent is selected";
-        }
+        
         return "";
-      
+
       case 3:
         if (!formData.exchangeData || formData.exchangeData.length === 0) {
           return "At least one exchange transaction is required";
         }
-        const invalidTxn = formData.exchangeData.find(item => 
-          !item.CNCodeID || !item.ExchType || !item.Amount || !item.Rate
+        const invalidTxn = formData.exchangeData.find(
+          (item) =>
+            !item.CNCodeID || !item.ExchType || !item.Amount || !item.Rate
         );
         if (invalidTxn) {
           return "All exchange transactions must have Currency, Exchange Type, Amount, and Rate";
         }
         return "";
-      
+
       case 4:
         const netAmount = (() => {
-          const chargesTotal = Math.abs(parseFloat(formData.ChargesTotalAmount || 0));
+          const chargesTotal = Math.abs(
+            parseFloat(formData.ChargesTotalAmount || 0)
+          );
           const taxTotal = Math.abs(parseFloat(formData.TaxTotalAmount || 0));
           const totalDeductions = chargesTotal + taxTotal;
           return (parseFloat(formData.Amount) || 0) - totalDeductions;
         })();
-        const totalPayments = (formData.RecPay || [])
-          .reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
+        const totalPayments = (formData.RecPay || []).reduce(
+          (sum, payment) => sum + (parseFloat(payment.amount) || 0),
+          0
+        );
         if (totalPayments < netAmount) {
           return "Total payments must cover the net amount";
         }
         return "";
-      
+
       default:
         return "";
     }
@@ -434,18 +527,22 @@ const BuySellTransactionsContent = () => {
                     onClick={() => setShowStepper(!showStepper)}
                     sx={{
                       backgroundColor: Colortheme.secondaryBG,
-                      padding: '4px',
-                      '&:hover': {
+                      padding: "4px",
+                      "&:hover": {
                         backgroundColor: `${Colortheme.text}20`,
                       },
-                      transition: 'transform 0.3s',
-                      transform: showStepper ? 'rotate(180deg)' : 'none',
+                      transition: "transform 0.3s",
+                      transform: showStepper ? "rotate(180deg)" : "none",
                     }}
                   >
                     {showStepper ? (
-                      <KeyboardArrowUpIcon sx={{ color: Colortheme.text, fontSize: '1.2rem' }} />
+                      <KeyboardArrowUpIcon
+                        sx={{ color: Colortheme.text, fontSize: "1.2rem" }}
+                      />
                     ) : (
-                      <KeyboardArrowDownIcon sx={{ color: Colortheme.text, fontSize: '1.2rem' }} />
+                      <KeyboardArrowDownIcon
+                        sx={{ color: Colortheme.text, fontSize: "1.2rem" }}
+                      />
                     )}
                   </IconButton>
                 </Tooltip>
@@ -454,9 +551,12 @@ const BuySellTransactionsContent = () => {
                 {isEditMode && (
                   <StyledButton
                     onClick={() => {
-                      resetForm();
-                      setEditMode(false);
-                      handleNewTransaction();
+                      setActiveStep(0);  // First change the step
+                      setEditMode(false);  // Then disable edit mode
+                      setTimeout(() => {  // Then reset form after view has changed
+                        resetForm();
+                        handleNewTransaction();
+                      }, 0);
                     }}
                     style={{ width: 200 }}
                     addIcon={true}
@@ -486,10 +586,10 @@ const BuySellTransactionsContent = () => {
               {/* Collapsible Stepper */}
               <Box
                 sx={{
-                  height: showStepper ? 'auto' : 0,
-                  overflow: 'hidden',
-                  transition: 'all 0.3s ease-in-out',
-                  mb: showStepper ? 1 : 0
+                  height: showStepper ? "auto" : 0,
+                  overflow: "hidden",
+                  transition: "all 0.3s ease-in-out",
+                  mb: showStepper ? 1 : 0,
                 }}
               >
                 <CustomStepper
@@ -586,7 +686,7 @@ const BuySellTransactionsContent = () => {
                   </StyledButton>
                   <StyledButton
                     onClick={handleNext}
-                    disabled={activeStep === steps.length - 1}
+                    // disabled={activeStep === steps.length - 1}
                     style={{ width: 250 }}
                   >
                     {activeStep === steps.length - 1 ? "Submit" : "Next"}

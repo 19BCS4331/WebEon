@@ -11,6 +11,7 @@ const PartyProfileRoutes = require("./routes/pages/Master/PartyProfiles/indexRou
 const SystemSetupRoutes = require("./routes/pages/Master/SystemSetup/indexRoutesSystemSetup");
 const MasterMiscellaneousRoutes = require("./routes/pages/Master/Miscellaneous/index");
 const TransactionsRoutes = require("./routes/pages/Transactions/index");
+const DashboardRoutes = require("./routes/pages/Dashboard/index");
 const aiRoutes = require('./routes/aiRoutes');
 const { csrfMiddleware, getCsrfToken, getCsrfMetrics } = require('./middleware/csrfMiddleware');
 const rateLimitMiddleware = require('./middleware/rateLimitMiddleware');
@@ -28,6 +29,7 @@ app.use(cors({
             'http://localhost:3000',
             'http://192.168.1.107:3000',
             'http://127.0.0.1:3000',
+            'http://127.0.0.1:15101'
         ];
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -76,6 +78,7 @@ app.use("/pages/Master/PartyProfiles", PartyProfileRoutes);
 app.use("/pages/Master/SystemSetup", SystemSetupRoutes);
 app.use("/pages/Master/Miscellaneous", MasterMiscellaneousRoutes);
 app.use("/pages/Transactions", TransactionsRoutes);
+app.use("/api/dashboard", DashboardRoutes);
 
 app.use(rateLimitMiddleware);
 
