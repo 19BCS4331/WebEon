@@ -1,7 +1,4 @@
 const { BaseModel, DatabaseError } = require("../../base/BaseModel");
-//TODO : Fix the saveTrn function.
-// TODO 1. Add correct validation for all fields.
-// TODO 2. check for the problem with duplicate vNo and UniqID when creating new transaction
 
 class TransactionModel extends BaseModel {
   // Get transactions based on type and filters
@@ -41,143 +38,212 @@ class TransactionModel extends BaseModel {
   }
 
   // Get next transaction number
-  static async getNextTransactionNumber(vTrnwith, vTrntype) {
+  static async getNextTransactionNumber(vTrnwith, vTrntype, nBranchID = null) {
     try {
-      const query = `
+      console.log(`Getting next transaction number for vTrnwith=${vTrnwith}, vTrntype=${vTrntype}, nBranchID=${nBranchID}`);
+      
+      // First, get the maximum vNo across ALL transactions to ensure global uniqueness
+      const globalMaxQuery = `
+        SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
+        FROM "Transact"
+      `;
+      const globalMaxResult = await this.executeQuery(globalMaxQuery);
+      let nextNo = globalMaxResult[0]?.nextNo || 1;
+      
+      // Then, get the maximum for the specific parameters
+      let specificQuery = `
         SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
         FROM "Transact"
         WHERE "vTrnwith" = $1 AND "vTrntype" = $2
       `;
-      const result = await this.executeQuery(query, [vTrnwith, vTrntype]);
-      return result[0]?.nextNo || 1;
+      
+      const queryParams = [vTrnwith, vTrntype];
+      
+      // Add branch filter if provided
+      if (nBranchID) {
+        specificQuery = `
+          SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
+          FROM "Transact"
+          WHERE "vTrnwith" = $1 AND "vTrntype" = $2 AND "nBranchID" = $3
+        `;
+        queryParams.push(nBranchID);
+      }
+      
+      const specificResult = await this.executeQuery(specificQuery, queryParams);
+      const specificNextNo = specificResult[0]?.nextNo || 1;
+      
+      // Use the maximum of the two to ensure both global and specific uniqueness
+      nextNo = Math.max(nextNo, specificNextNo);
+      
+      // Verify the generated number is unique across ALL transactions
+      const checkQuery = `
+        SELECT COUNT(*) as count
+        FROM "Transact"
+        WHERE "vNo" = $1
+      `;
+      
+      const checkResult = await this.executeQuery(checkQuery, [nextNo.toString()]);
+      
+      // If the number already exists anywhere, increment it and check again
+      if (checkResult[0]?.count > 0) {
+        console.log(`Transaction number ${nextNo} already exists globally, incrementing...`);
+        // Get the next available number by incrementing and checking again
+        return this.findNextAvailableNumber(nextNo);
+      }
+      
+      console.log(`Generated next transaction number: ${nextNo}`);
+      return nextNo;
     } catch (error) {
+      console.error("Failed to get next transaction number:", error);
       throw new DatabaseError("Failed to get next transaction number", error);
     }
   }
-
-  // Validate transaction before save
-  static async validateTransaction(data) {
-    try {
-      // Basic validation checks
-      const validations = [];
-
-      // Check if party exists
-      if (data.PartyID) {
-        const partyQuery = `
-          SELECT "PartyID" FROM "PartyMaster"
-          WHERE "PartyID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
-        `;
-        const partyResult = await this.executeQuery(partyQuery, [data.PartyID]);
-        if (!partyResult.length) {
-          validations.push("Invalid Party selected");
-        }
-      }
-
-      // Check if Purpose and SubPurpose exist and are valid
-      if (data.Purpose) {
-        const purposeQuery = `
-          SELECT "nPurposeID" FROM "MstPurpose"
-          WHERE "nPurposeID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
-        `;
-        const purposeResult = await this.executeQuery(purposeQuery, [
-          data.Purpose,
-        ]);
-        if (!purposeResult.length) {
-          validations.push("Invalid Purpose selected");
-        }
-      }
-
-      if (data.SubPurpose) {
-        const subPurposeQuery = `
-          SELECT "SubPurposeID" FROM "SubPurpose"
-          WHERE "SubPurposeID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
-        `;
-        const subPurposeResult = await this.executeQuery(subPurposeQuery, [
-          data.SubPurpose,
-        ]);
-        if (!subPurposeResult.length) {
-          validations.push("Invalid Sub Purpose selected");
-        }
-      }
-
-      // Amount validations
-      const amount = parseFloat(data.Amount) || 0;
-      const netamt = parseFloat(data.Netamt) || 0;
-      const byCash = parseFloat(data.byCash) || 0;
-      const byChq = parseFloat(data.byChq) || 0;
-      const byCard = parseFloat(data.byCard) || 0;
-      const byTransfer = parseFloat(data.byTransfer) || 0;
-      const byOth = parseFloat(data.byOth) || 0;
-
-      // Check if payment methods sum up to net amount
-      const totalPayment = byCash + byChq + byCard + byTransfer + byOth;
-      if (Math.abs(totalPayment - netamt) > 0.01) {
-        validations.push("Total payment methods do not match net amount");
-      }
-
-      return {
-        isValid: validations.length === 0,
-        errors: validations,
-      };
-    } catch (error) {
-      throw new DatabaseError("Failed to validate transaction", error);
-    }
-  }
-
-  // Create new transaction
-  static async createTransaction(data) {
-    try {
-      // First validate the transaction
-      const validation = await this.validateTransaction(data);
-      if (!validation.isValid) {
-        throw new Error(validation.errors.join(", "));
-      }
-
-      // Get next transaction number
-      const nextNo = await this.getNextTransactionNumber(
-        data.vTrnwith,
-        data.vTrntype
-      );
-
-      const query = `
-        INSERT INTO "Transact" (
-          "vTrnwith", "vTrntype", "vNo", "date", "counterID", "ShiftID",
-          "Purpose", "SubPurpose", "PartyType", "PartyID", "Amount", "TaxAmt",
-          "Netamt", "byCash", "byChq", "byCard", "byTransfer", "byOth",
-          "userID", "tdate", "bIsDeleted"
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-          $13, $14, $15, $16, $17, $18, $19, CURRENT_TIMESTAMP, false
-        ) RETURNING *
+  
+  // Helper method to find the next available transaction number
+  static async findNextAvailableNumber(startingNumber) {
+    let candidate = startingNumber;
+    let isUnique = false;
+    
+    while (!isUnique) {
+      candidate++;
+      const checkQuery = `
+        SELECT COUNT(*) as count
+        FROM "Transact"
+        WHERE "vNo" = $1
       `;
-
-      const values = [
-        data.vTrnwith,
-        data.vTrntype,
-        nextNo,
-        data.date,
-        data.counterID,
-        data.ShiftID,
-        data.Purpose,
-        data.SubPurpose,
-        data.PartyType,
-        data.PartyID,
-        data.Amount,
-        data.TaxAmt,
-        data.Netamt,
-        data.byCash,
-        data.byChq,
-        data.byCard,
-        data.byTransfer,
-        data.byOth,
-        data.userID,
-      ];
-
-      return await this.executeQuery(query, values);
-    } catch (error) {
-      throw new DatabaseError("Failed to create transaction", error);
+      
+      const checkResult = await this.executeQuery(checkQuery, [candidate.toString()]);
+      isUnique = checkResult[0]?.count === 0;
     }
+    
+    console.log(`Found next available transaction number: ${candidate}`);
+    return candidate;
   }
+
+  // // Validate transaction before save
+  // static async validateTransaction(data) {
+  //   try {
+  //     // Basic validation checks
+  //     const validations = [];
+
+  //     // Check if party exists
+  //     if (data.PartyID) {
+  //       const partyQuery = `
+  //         SELECT "PartyID" FROM "PartyMaster"
+  //         WHERE "PartyID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
+  //       `;
+  //       const partyResult = await this.executeQuery(partyQuery, [data.PartyID]);
+  //       if (!partyResult.length) {
+  //         validations.push("Invalid Party selected");
+  //       }
+  //     }
+
+  //     // Check if Purpose and SubPurpose exist and are valid
+  //     if (data.Purpose) {
+  //       const purposeQuery = `
+  //         SELECT "nPurposeID" FROM "MstPurpose"
+  //         WHERE "nPurposeID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
+  //       `;
+  //       const purposeResult = await this.executeQuery(purposeQuery, [
+  //         data.Purpose,
+  //       ]);
+  //       if (!purposeResult.length) {
+  //         validations.push("Invalid Purpose selected");
+  //       }
+  //     }
+
+  //     if (data.SubPurpose) {
+  //       const subPurposeQuery = `
+  //         SELECT "SubPurposeID" FROM "SubPurpose"
+  //         WHERE "SubPurposeID" = $1 AND ("bIsDeleted" = false OR "bIsDeleted" IS NULL)
+  //       `;
+  //       const subPurposeResult = await this.executeQuery(subPurposeQuery, [
+  //         data.SubPurpose,
+  //       ]);
+  //       if (!subPurposeResult.length) {
+  //         validations.push("Invalid Sub Purpose selected");
+  //       }
+  //     }
+
+  //     // Amount validations
+  //     const amount = parseFloat(data.Amount) || 0;
+  //     const netamt = parseFloat(data.Netamt) || 0;
+  //     const byCash = parseFloat(data.byCash) || 0;
+  //     const byChq = parseFloat(data.byChq) || 0;
+  //     const byCard = parseFloat(data.byCard) || 0;
+  //     const byTransfer = parseFloat(data.byTransfer) || 0;
+  //     const byOth = parseFloat(data.byOth) || 0;
+
+  //     // Check if payment methods sum up to net amount
+  //     const totalPayment = byCash + byChq + byCard + byTransfer + byOth;
+  //     if (Math.abs(totalPayment - netamt) > 0.01) {
+  //       validations.push("Total payment methods do not match net amount");
+  //     }
+
+  //     return {
+  //       isValid: validations.length === 0,
+  //       errors: validations,
+  //     };
+  //   } catch (error) {
+  //     throw new DatabaseError("Failed to validate transaction", error);
+  //   }
+  // }
+
+  // // Create new transaction
+  // static async createTransaction(data) {
+  //   try {
+  //     // First validate the transaction
+  //     const validation = await this.validateTransaction(data);
+  //     if (!validation.isValid) {
+  //       throw new Error(validation.errors.join(", "));
+  //     }
+
+  //     // Get next transaction number
+  //     const nextNo = await this.getNextTransactionNumber(
+  //       data.vTrnwith,
+  //       data.vTrntype,
+  //       data.nBranchID
+  //     );
+
+  //     const query = `
+  //       INSERT INTO "Transact" (
+  //         "vTrnwith", "vTrntype", "vNo", "date", "counterID", "ShiftID",
+  //         "Purpose", "SubPurpose", "PartyType", "PartyID", "Amount", "TaxAmt",
+  //         "Netamt", "byCash", "byChq", "byCard", "byTransfer", "byOth",
+  //         "userID", "tdate", "bIsDeleted"
+  //       ) VALUES (
+  //         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+  //         $13, $14, $15, $16, $17, $18, $19, CURRENT_TIMESTAMP, false
+  //       ) RETURNING *
+  //     `;
+
+  //     const values = [
+  //       data.vTrnwith,
+  //       data.vTrntype,
+  //       nextNo,
+  //       data.date,
+  //       data.counterID,
+  //       data.ShiftID,
+  //       data.Purpose,
+  //       data.SubPurpose,
+  //       data.PartyType,
+  //       data.PartyID,
+  //       data.Amount,
+  //       data.TaxAmt,
+  //       data.Netamt,
+  //       data.byCash,
+  //       data.byChq,
+  //       data.byCard,
+  //       data.byTransfer,
+  //       data.byOth,
+  //       data.userID,
+  //     ];
+
+  //     return await this.executeQuery(query, values);
+  //   } catch (error) {
+  //     throw new DatabaseError("Failed to create transaction", error);
+  //   }
+  // } ---- OBSELETE (saveTransaction Function is used at the end)
 
   static async getPurposeOptions(vTrnWith, vTrnType, TrnSubType) {
     try {
@@ -228,21 +294,57 @@ class TransactionModel extends BaseModel {
   }
 
   // Get Party Type Options based on Entity Type
-  static async getPartyTypeOptions(entityType) {
+  static async getPartyTypeOptions(entityType, vTrnwith) {
     try {
-      const query = `
+      // Determine vType based on vTrnwith
+      let vType = 'CC'; // Default value
+      
+      if (vTrnwith) {
+        switch (vTrnwith) {
+          case 'F':
+            vType = 'FF,AD'; // Foreign Exchange or Advance
+            break;
+          case 'R':
+            vType = 'RM'; // Remittance
+            break;
+          case 'C':
+            vType = 'FR'; // Foreign Receipt
+            break;
+          case 'I':
+            vType = 'EX'; // Foreign Receipt
+            break;
+          case 'H':
+            vType = 'NF'; // Foreign Receipt
+            break;
+          case 'K':
+            vType = 'BK'; // Foreign Receipt
+            break;
+          default:
+            vType = 'CC'; // Default Customer Code
+        }
+      }
+      
+      let query = `
         SELECT 
           "nCodesID" as value,
           "vName" as label,
           "vCode"
         FROM "mstCODES" 
         WHERE "bIND" = $1 
-        AND "vType" = 'CC' 
+        AND "vType" IN (${vType.split(',').map((_, i) => `$${i + 2}`).join(',')})
         AND "bIsDeleted" = false 
         AND "bActive" = true
         ORDER BY "vName"
       `;
-      const result = await this.executeQuery(query, [entityType === "I"]);
+      
+      const queryParams = [entityType === "I"];
+      
+      // Add vType parameters
+      vType.split(',').forEach(type => {
+        queryParams.push(type.trim());
+      });
+      
+      const result = await this.executeQuery(query, queryParams);
       return result;
     } catch (error) {
       throw error;
@@ -1334,12 +1436,12 @@ ORDER BY "vCode"
           data.date, // $5
           data.counterID || "1", // $6
           data.ShiftID || "0", // $7
-          data.Purpose, // $8
+          data.Purpose || null, // $8
           data.SubPurpose || null, // $9
           "CC", // $10 PartyType
           data.PartyID || null, // $11
           data.PersonRef || "INDIVIDUAL", // $12
-          data.PaxCode, // $13
+          data.PaxCode || null, // $13
           data.SenderBRNID || data.PartyID || null, // $14
           data.SenderUniqID || 0, // $15
           data.SenderNo || null, // $16
@@ -1394,7 +1496,7 @@ ORDER BY "vCode"
           data.nRejectedBy || null, // $65
           data.dRejectedDate || null, // $66
           data.vRejectedRemark || null, // $67
-          data.TRNWITHIC || "I", // $68
+          data.TRNWITHIC || null, // $68
           data.Category || "L", // $69 RiskCateg
           data.InvVendor || null, // $70
           false, // $71 bIsDeleted
@@ -2035,7 +2137,7 @@ ORDER BY "vCode"
               data.vTrntype, // $3
               data.vNo, // $4
               tax.currentSign || "-", // $5
-              tax.CODE || tax.code, // $6 sTaxCode
+              tax.CODE || tax.CODE, // $6 sTaxCode
               tax.APPLYAS || "F", // $7
               tax.VALUE || tax.taxValue || 0, // $8
               taxAmount, // $9

@@ -121,17 +121,17 @@ const PartyDetails = ({
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    if (isEditMode && propPaxDetails) {
+    if (isEditMode && propPaxDetails && data.vTrnwith === "P") {
       setLocalPaxDetails(propPaxDetails);
       setSelectedPartyType(propPaxDetails.vCodeID || "");
     }
-  }, [isEditMode, propPaxDetails]);
+  }, [isEditMode, propPaxDetails, data.vTrnwith]);
 
   useEffect(() => {
-    if (isSearchView && !isEditMode && localPaxDetails.vCodeID) {
+    if (isSearchView && !isEditMode && localPaxDetails.vCodeID && data.vTrnwith === "P") {
       fetchPaxList();
     }
-  }, [isSearchView, localPaxDetails.vCodeID]);
+  }, [isSearchView, localPaxDetails, data.vTrnwith]);
 
   useEffect(() => {
     if (data?.PartyID) {
@@ -141,13 +141,13 @@ const PartyDetails = ({
         fetchPaxDetails(data.PaxCode);
       }
     }
-  }, [data?.PartyID, data?.PaxCode]);
+  }, [data]);
 
   useEffect(() => {
-    if (isSearchView && selectedPartyType) {
+    if (isSearchView && selectedPartyType && data.vTrnwith === "P") {
       fetchPaxList();
     }
-  }, [isSearchView, selectedPartyType]);
+  }, [isSearchView, selectedPartyType, data.vTrnwith]);
 
   const fetchPaxList = async () => {
     try {
@@ -265,8 +265,15 @@ const PartyDetails = ({
   const fetchAllOptions = async (signal) => {
     try {
       // Fetch party type options based on entity type
+      let partyTypeUrl = `/pages/Transactions/party-type-options/${data.TRNWITHIC || "C"}`;
+      
+      // If vTrnwith is not 'P', include it as a query parameter
+      if (data.vTrnwith && data.vTrnwith !== 'P') {
+        partyTypeUrl += `?vTrnwith=${data.vTrnwith}`;
+      }
+      
       const partyTypeResponse = await apiClient.get(
-        `/pages/Transactions/party-type-options/${data.TRNWITHIC || "C"}`,
+        partyTypeUrl,
         { signal }
       );
 
@@ -493,10 +500,10 @@ const PartyDetails = ({
             label="Party Type"
             required
             styleTF={{ width: "100%" }}
-            disabled={isEditMode}
+            // disabled={isEditMode}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        {data.vTrnwith === "P" && (<Grid item xs={12} md={3}>
           <Tooltip title={isEditMode ? "View PAX Details" : "Select PAX"}>
             <Box height={"100%"}>
               <CustomBoxButton
@@ -508,19 +515,19 @@ const PartyDetails = ({
               </CustomBoxButton>
             </Box>
           </Tooltip>
-        </Grid>
+        </Grid>)}
 
-        <Grid item xs={12} md={3}>
+         {data.vTrnwith === "P" && (<Grid item xs={12} md={3}>
           <CustomTextField
             label={"On Behalf of"}
             value={data?.OnBehalfClient}
             onChange={(e) => onUpdate({ OnBehalfClient: e.target.value })}
             style={{ width: "100%" }}
           />
-        </Grid>
+        </Grid>)}
       </Grid>
 
-      <Dialog
+      { data.vTrnwith === "P" && (<Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         maxWidth="xl"
@@ -1200,7 +1207,7 @@ const PartyDetails = ({
             </>
           )}
         </DialogActions>
-      </Dialog>
+      </Dialog>)}
     </>
   );
 };

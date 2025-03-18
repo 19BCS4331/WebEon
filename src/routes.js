@@ -272,54 +272,6 @@ const BuySellTransactionsComp = lazy(() =>
   import("./pages/Transactions/BuySellTransactions/index")
 );
 
-const BuyFromIndiviOrCorp = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromIndiviOrCorp")
-);
-
-const BuyFromBank = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromBank")
-);
-
-const BuyFromFFMCS = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromFFMCS")
-);
-
-const BuyFromForeignCorrespondent = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromForeignCorrespondent")
-);
-
-const BuyFromFranchisee = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromFranchisee")
-);
-
-const BuyFromNonFranchisee = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromNonFranchisee")
-);
-
-const BuyFromRMCS = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/BuyFromRMCS")
-);
-
-const FakeCurrency = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/FakeCurrency")
-);
-
-const SaleToFFMC = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/SaleToFFMC")
-);
-
-const SaleToForeignCorrespondent = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/SaleToForeignCorrespondent")
-);
-
-const SaleToIndividual = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/SaleToIndividual")
-);
-
-const SellToBank = lazy(() =>
-  import("./pages/Transactions/BuySellTransactions/SellToBank")
-);
-
 // Buying/Selling Transactions End ---------------------------------------------
 
 // Stock Transactions ---------------------------------------------
@@ -981,78 +933,6 @@ const routes = [
     element: <BuySellTransactionsComp />,
     protected: true,
 },
-
-  {
-    path: "/transactions/buying-selling/buy-from-individuals",
-    element: <BuyFromIndiviOrCorp />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/buy-from-ffmcs",
-    element: <BuyFromFFMCS />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/buy-from-rmc",
-    element: <BuyFromRMCS />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/buy-from-franchisee",
-    element: <BuyFromFranchisee />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/sell-to-individuals",
-    element: <SaleToIndividual />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/sell-to-ffmc",
-    element: <SaleToFFMC />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/sell-to-foreign-correspondent",
-    element: <SaleToForeignCorrespondent />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/buy-from-foreign-correspondent",
-    element: <BuyFromForeignCorrespondent />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/buy-from-non-franchisee",
-    element: <BuyFromNonFranchisee />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/fake-currency",
-    element: <FakeCurrency />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/buy-from-bank",
-    element: <BuyFromBank />,
-    protected: true,
-  },
-
-  {
-    path: "/transactions/buying-selling/sell-to-bank",
-    element: <SellToBank />,
-    protected: true,
-  },
 
   //  ---------------------Buying/Selling Transactions End-------------------------
 

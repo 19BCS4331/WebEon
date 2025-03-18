@@ -22,21 +22,21 @@ router.get("/transactions", authMiddleware, async (req, res) => {
 });
 
 // Create new transaction
-router.post("/transactions", authMiddleware, async (req, res) => {
-  try {
-    const result = await TransactionModel.createTransaction(req.body);
-    res.json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message || "Error creating transaction" });
-  }
-});
+// router.post("/transactions", authMiddleware, async (req, res) => {
+//   try {
+//     const result = await TransactionModel.createTransaction(req.body);
+//     res.json(result);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: error.message || "Error creating transaction" });
+//   }
+// }); --- OBSELETE (save-transaction route is used at the end)
 
 // Get next transaction number
 router.get("/transactions/nextNumber", authMiddleware, async (req, res) => {
   try {
-    const { vTrnwith, vTrntype } = req.query;
-    const result = await TransactionModel.getNextTransactionNumber(vTrnwith, vTrntype);
+    const { vTrnwith, vTrntype, nBranchID } = req.query;
+    const result = await TransactionModel.getNextTransactionNumber(vTrnwith, vTrntype, nBranchID);
     res.json(result);
   } catch (error) {
     console.error('Error getting next transaction number:', error);
@@ -78,10 +78,12 @@ router.get('/party-type-options',authMiddleware,async (req, res) => {
   }
 });
 
+// Get Party Type Options Based On EntityType
 router.get('/party-type-options/:entityType', authMiddleware,async (req, res) => {
   try {
     const { entityType } = req.params;
-    const options = await TransactionModel.getPartyTypeOptions(entityType);
+    const { vTrnwith } = req.query;
+    const options = await TransactionModel.getPartyTypeOptions(entityType, vTrnwith);
     res.json({ success: true, data: options });
   } catch (error) {
     console.error('Error fetching party type options:', error);
@@ -161,6 +163,8 @@ router.get('/transaction/:id', authMiddleware,async (req, res) => {
   }
 });
 
+// PAX ROUTES START
+
 // PAX Management Routes
 router.get('/pax-list', authMiddleware,async (req, res) => {
   try {
@@ -238,6 +242,8 @@ router.post('/save-pax', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to save PAX details' });
   }
 });
+
+// PAX ROUTES END
 
 // Get agents
 router.get("/agents", authMiddleware, async (req, res) => {

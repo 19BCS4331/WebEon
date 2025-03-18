@@ -241,6 +241,7 @@ const BuySellTransactionsContent = () => {
           params: {
             vTrnwith: vTrnwith,
             vTrntype: vTrntype,
+            nBranchID: branch.nBranchID,
           },
         }
       );
@@ -332,9 +333,9 @@ const BuySellTransactionsContent = () => {
   const getValidationMessage = (step) => {
     switch (step) {
       case 0:
-        if (!formData.TRNWITHIC) return "Entity Type is required";
+        if (vTrnwith === "P" && !formData.TRNWITHIC) return "Entity Type is required";
         if (!formData.vNo) return "Transaction Number is required";
-        if (!formData.Purpose) return "Purpose is required";
+        if (vTrnwith === "P" && !formData.Purpose) return "Purpose is required";
         if (!formData.Category) return "Category is required";
         if (!formData.vBranchCode) return "Branch is required";
         if (!formData.date) return "Date is required";
@@ -343,8 +344,8 @@ const BuySellTransactionsContent = () => {
       case 1:
         if (!formData.PartyID) return "Party Selection is required";
         if (!formData.PartyType) return "Party Type is required";
-        if (!formData.PaxCode) return "Please Select A PAX";
-        if (!formData.PaxName) return "Pax Name is required";
+        if (vTrnwith === "P" &&!formData.PaxCode) return "Please Select A PAX";
+        if (vTrnwith === "P" &&!formData.PaxName) return "Pax Name is required";
         return "";
 
       case 2:
@@ -445,6 +446,7 @@ const BuySellTransactionsContent = () => {
           H: "NON-FRANCHISEE",
           K: "BANK",
           E: "FOREIGN CORRESPONDENT",
+          D: "FAKE CURRENCY"
         }[formData.vTrnwith] || ""
       }`}
     >

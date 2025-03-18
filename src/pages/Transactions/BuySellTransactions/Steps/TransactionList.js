@@ -94,7 +94,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
     }
 
     baseColumns.push(
-      { field: "Amount", headerName: "Amount", width: 120 },
+      { field: "Netamt", headerName: "Net Amount", width: 120 },
       { field: "vBranchCode", headerName: "Branch", width: 150 },
       {
         field: "actions",

@@ -680,15 +680,17 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
   };
 
   useEffect(() => {
-    if(isEditMode){
+    if (isEditMode) {
       setTaxData(data.Taxes);
     }
-  },[isEditMode])
+  }, [isEditMode]);
 
   // Function to calculate tax amounts
   const calculateTaxAmounts = (taxes, slabs, amount, preserveHFEE = false) => {
     // First calculate GST18% without rounding
-    const gst18Tax = isEditMode ? taxes.find((t) => t.code === "GST18%") :taxes.find((t) => t.CODE === "gst18%");
+    const gst18Tax = isEditMode
+      ? taxes.find((t) => t.code === "GST18%")
+      : taxes.find((t) => t.CODE === "gst18%");
     let gst18Amount = 0;
     let roundOffAmount = 0;
 
@@ -718,7 +720,7 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
     return taxes.map((tax) => {
       let taxAmount = 0;
 
-      if (isEditMode ? tax.code ==="GST18%": tax.CODE === "gst18%") {
+      if (isEditMode ? tax.code === "GST18%" : tax.CODE === "gst18%") {
         taxAmount = gst18Amount;
       } else if (tax.CODE === "TAXROFF") {
         taxAmount = roundOffAmount;
@@ -815,8 +817,8 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
       setAmountAfterTax(parseFloat(amount) + total);
 
       onUpdate({
-        Taxes: calculatedTaxes,
-        TaxTotalAmount: total.toFixed(2),
+        Taxes: data.vTrnwith === "P" ? calculatedTaxes : null,
+        TaxTotalAmount: data.vTrnwith === "P" ? total.toFixed(2) : 0,
       });
 
       return calculatedTaxes;
@@ -952,8 +954,8 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
 
             // Update parent
             onUpdate({
-              Taxes: calculatedTaxes,
-              TaxTotalAmount: total.toFixed(2),
+              Taxes: data.vTrnwith === "P" ? calculatedTaxes : null,
+              TaxTotalAmount: data.vTrnwith === "P" ? total.toFixed(2) : 0,
             });
           }
         } catch (error) {
@@ -978,7 +980,7 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
     let amount = parseFloat(value) || 0;
 
     // Validate HFEE amount if this is HFEE tax
-    if (isEditMode ? tax?.code === "HFEE": tax?.CODE === "HFEE") {
+    if (isEditMode ? tax?.code === "HFEE" : tax?.CODE === "HFEE") {
       const maxHfeeValue = parseFloat(
         getSetting("HFEEMAXVALUE", "advanced", "0")
       );
@@ -1032,15 +1034,17 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
 
   // Handle save tax changes
   const handleSaveTaxChanges = () => {
-    const total = isEditMode ?taxData.reduce((sum, tax) => sum + tax.amount, 0): taxData.reduce((sum, tax) => sum + tax.lineTotal, 0);
+    const total = isEditMode
+      ? taxData.reduce((sum, tax) => sum + tax.amount, 0)
+      : taxData.reduce((sum, tax) => sum + tax.lineTotal, 0);
     setTotalTaxAmount(total);
     setAmountAfterTax(parseFloat(data.Amount) + total);
     setOriginalTaxData([...taxData]);
     setHasUnsavedTaxChanges(false);
 
     onUpdate({
-      Taxes: taxData,
-      TaxTotalAmount: total.toFixed(2),
+      Taxes: data.vTrnwith === "P" ? taxData : null,
+      TaxTotalAmount: data.vTrnwith === "P" ? total.toFixed(2) : 0,
     });
 
     setOpenTaxModal(false);
@@ -1063,8 +1067,8 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
       setHasUnsavedTaxChanges(false);
 
       onUpdate({
-        Taxes: data.Taxes,
-        TaxTotalAmount: total.toFixed(2)
+        Taxes: data.vTrnwith === "P" ? data.Taxes : null,
+        TaxTotalAmount: data.vTrnwith === "P" ? total.toFixed(2) : 0,
       });
     } else {
       // In new mode, recalculate taxes
@@ -1073,7 +1077,10 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
         taxSlabData,
         parseFloat(data.Amount)
       );
-      const total = calculatedTaxes.reduce((sum, tax) => sum + tax.lineTotal, 0);
+      const total = calculatedTaxes.reduce(
+        (sum, tax) => sum + tax.lineTotal,
+        0
+      );
 
       setTaxData(calculatedTaxes);
       setTotalTaxAmount(total);
@@ -1081,8 +1088,8 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
       setHasUnsavedTaxChanges(false);
 
       onUpdate({
-        Taxes: calculatedTaxes,
-        TaxTotalAmount: total.toFixed(2)
+        Taxes: data.vTrnwith === "P" ? calculatedTaxes : null,
+        TaxTotalAmount: data.vTrnwith === "P" ? total.toFixed(2) : 0,
       });
     }
 
@@ -1516,13 +1523,15 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
           Charges
         </CustomBoxButton>
 
-        <CustomBoxButton
-          onClick={() => setOpenTaxModal(true)}
-          icon={null}
-          Colortheme={Colortheme}
-        >
-          Tax
-        </CustomBoxButton>
+        {data.vTrnwith === "P" && (
+          <CustomBoxButton
+            onClick={() => setOpenTaxModal(true)}
+            icon={null}
+            Colortheme={Colortheme}
+          >
+            Tax
+          </CustomBoxButton>
+        )}
 
         <CustomBoxButton
           label="Rec/Pay"
@@ -1850,129 +1859,130 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
         </DialogActions>
       </Dialog>
       {renderRecPayModal()}
-      <Dialog
-        open={openTaxModal}
-        onClose={() => setOpenTaxModal(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          style: {
-            backgroundColor: Colortheme.background,
-            width: "90%",
-            maxWidth: "none",
-            borderRadius: "20px",
-            padding: 5,
-            border: `1px solid ${Colortheme.text}`,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            backgroundColor: Colortheme.background,
-            p: 2,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+      {data.vTrnwith === "P" && (
+        <Dialog
+          open={openTaxModal}
+          onClose={() => setOpenTaxModal(false)}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{
+            style: {
+              backgroundColor: Colortheme.background,
+              width: "90%",
+              maxWidth: "none",
+              borderRadius: "20px",
+              padding: 5,
+              border: `1px solid ${Colortheme.text}`,
+            },
           }}
         >
-          <Typography
-            variant="h6"
+          <DialogTitle
             sx={{
-              color: Colortheme.text,
-              fontFamily: "Poppins",
+              backgroundColor: Colortheme.background,
+              p: 2,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            Tax
-          </Typography>
-          <IconButton
-            onClick={() => setOpenTaxModal(false)}
-            sx={{ color: Colortheme.text }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ backgroundColor: Colortheme.background }}>
-          <Box sx={{ mb: 3, mt: 2 }}>
             <Typography
+              variant="h6"
               sx={{
                 color: Colortheme.text,
                 fontFamily: "Poppins",
               }}
             >
-              Amount: ₹{parseFloat(data.Amount || 0).toFixed(2)}
+              Tax
             </Typography>
-          </Box>
+            <IconButton
+              onClick={() => setOpenTaxModal(false)}
+              sx={{ color: Colortheme.text }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
 
-          <TableContainer
-            component={Paper}
-            sx={{
-              backgroundColor: Colortheme.secondaryBG,
-              "& .MuiTableCell-root": {
-                color: Colortheme.background,
-                borderColor: `${Colortheme.text}`,
-              },
-              "& .MuiTableHead-root .MuiTableCell-root": {
-                backgroundColor: Colortheme.text,
-                borderColor: `${Colortheme.text}`,
-                fontWeight: "bold",
-              },
-            }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: "200px", fontFamily: "Poppins" }}>
-                    Tax Name
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ width: "150px", fontFamily: "Poppins" }}
-                  >
-                    Amount
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ width: "150px", fontFamily: "Poppins" }}
-                  >
-                    Tax Amount
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {taxData.map((tax, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Typography
-                        sx={{
-                          color: Colortheme.text,
-                          fontFamily: "Poppins",
-                        }}
-                      >
-                        {isEditMode ? tax.code : tax.DESCRIPTION}
-                      </Typography>
+          <DialogContent sx={{ backgroundColor: Colortheme.background }}>
+            <Box sx={{ mb: 3, mt: 2 }}>
+              <Typography
+                sx={{
+                  color: Colortheme.text,
+                  fontFamily: "Poppins",
+                }}
+              >
+                Amount: ₹{parseFloat(data.Amount || 0).toFixed(2)}
+              </Typography>
+            </Box>
+
+            <TableContainer
+              component={Paper}
+              sx={{
+                backgroundColor: Colortheme.secondaryBG,
+                "& .MuiTableCell-root": {
+                  color: Colortheme.background,
+                  borderColor: `${Colortheme.text}`,
+                },
+                "& .MuiTableHead-root .MuiTableCell-root": {
+                  backgroundColor: Colortheme.text,
+                  borderColor: `${Colortheme.text}`,
+                  fontWeight: "bold",
+                },
+              }}
+            >
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: "200px", fontFamily: "Poppins" }}>
+                      Tax Name
                     </TableCell>
-                    <TableCell align="center">
-                      {/* {tax.APPLYAS === "F" ? ( */}
-                      <CustomTextField
-                        type="number"
-                        value={tax.amount || ""}
-                        onChange={(e) =>
-                          handleTaxAmountChange(tax.nTaxID, e.target.value)
-                        }
-                        disabled={
-                          tax.CODE === "TAXROFF" ||
-                          tax.CODE === "HFEEIGST" ||
-                          tax.CODE === "gst18%"
-                        }
-                        sx={{
-                          width: "100%",
-                          "& .MuiInputBase-input.Mui-disabled": {
-                            WebkitTextFillColor: "gray  ",
-                          },
-                        }}
-                      />
-                      {/* ) : (
+                    <TableCell
+                      align="center"
+                      sx={{ width: "150px", fontFamily: "Poppins" }}
+                    >
+                      Amount
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ width: "150px", fontFamily: "Poppins" }}
+                    >
+                      Tax Amount
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {taxData.map((tax, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Typography
+                          sx={{
+                            color: Colortheme.text,
+                            fontFamily: "Poppins",
+                          }}
+                        >
+                          {isEditMode ? tax.code : tax.DESCRIPTION}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        {/* {tax.APPLYAS === "F" ? ( */}
+                        <CustomTextField
+                          type="number"
+                          value={tax.amount || ""}
+                          onChange={(e) =>
+                            handleTaxAmountChange(tax.nTaxID, e.target.value)
+                          }
+                          disabled={
+                            tax.CODE === "TAXROFF" ||
+                            tax.CODE === "HFEEIGST" ||
+                            tax.CODE === "gst18%"
+                          }
+                          sx={{
+                            width: "100%",
+                            "& .MuiInputBase-input.Mui-disabled": {
+                              WebkitTextFillColor: "gray  ",
+                            },
+                          }}
+                        />
+                        {/* ) : (
                         <Typography
                           variant="body2"
                           sx={{
@@ -1983,88 +1993,95 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
                           {tax.amount}
                         </Typography>
                       )} */}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Typography
-                        sx={{
-                          color: Colortheme.text,
-                          fontFamily: "Poppins",
-                        }}
-                      >
-                        ₹{isEditMode ? tax.amount :tax.lineTotal.toFixed(2)}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography
+                          sx={{
+                            color: Colortheme.text,
+                            fontFamily: "Poppins",
+                          }}
+                        >
+                          ₹{isEditMode ? tax.amount : tax.lineTotal.toFixed(2)}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-          <Box
+            <Box
+              sx={{
+                mt: 3,
+                mr: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  color: Colortheme.text,
+                  fontFamily: "Poppins",
+                }}
+              >
+                Total Tax Amount: ₹
+                {isEditMode ? data.TaxTotalAmount : totalTaxAmount.toFixed(2)}
+              </Typography>
+
+              <Typography
+                variant="h6"
+                sx={{
+                  color: Colortheme.text,
+                  fontFamily: "Poppins",
+                }}
+              >
+                Amount After Tax: ₹
+                {isEditMode
+                  ? (
+                      parseFloat(data.Amount) +
+                      (data.Taxes[0].currentSign === "+" ? 1 : -1) *
+                        parseFloat(data.TaxTotalAmount)
+                    ).toFixed(2)
+                  : amountAfterTax.toFixed(2)}
+              </Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions
             sx={{
-              mt: 3,
-              mr: 2,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
+              p: 2,
+              backgroundColor: Colortheme.background,
+              justifyContent: "center",
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{
-                color: Colortheme.text,
-                fontFamily: "Poppins",
-              }}
-            >
-              Total Tax Amount: ₹{isEditMode ?  data.TaxTotalAmount : totalTaxAmount.toFixed(2)}
-            </Typography>
-
-            <Typography
-              variant="h6"
-              sx={{
-                color: Colortheme.text,
-                fontFamily: "Poppins",
-              }}
-            >
-              Amount After Tax: ₹{isEditMode 
-                ? (parseFloat(data.Amount) + (data.Taxes[0].currentSign === "+" ? 1 : -1) * parseFloat(data.TaxTotalAmount)).toFixed(2)
-                : amountAfterTax.toFixed(2)}
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            p: 2,
-            backgroundColor: Colortheme.background,
-            justifyContent: "center",
-          }}
-        >
-          {hasUnsavedTaxChanges ? (
-            <>
+            {hasUnsavedTaxChanges ? (
+              <>
+                <StyledButton
+                  onClick={handleSaveTaxChanges}
+                  Colortheme={Colortheme}
+                >
+                  Save & Close
+                </StyledButton>
+                <StyledButton
+                  onClick={handleDiscardTaxChanges}
+                  Colortheme={Colortheme}
+                  sx={{ ml: 1 }}
+                >
+                  Discard Changes
+                </StyledButton>
+              </>
+            ) : (
               <StyledButton
-                onClick={handleSaveTaxChanges}
+                onClick={() => setOpenTaxModal(false)}
                 Colortheme={Colortheme}
               >
-                Save & Close
+                Close
               </StyledButton>
-              <StyledButton
-                onClick={handleDiscardTaxChanges}
-                Colortheme={Colortheme}
-                sx={{ ml: 1 }}
-              >
-                Discard Changes
-              </StyledButton>
-            </>
-          ) : (
-            <StyledButton
-              onClick={() => setOpenTaxModal(false)}
-              Colortheme={Colortheme}
-            >
-              Close
-            </StyledButton>
-          )}
-        </DialogActions>
-      </Dialog>
+            )}
+          </DialogActions>
+        </Dialog>
+      )}
     </Box>
   );
 };
