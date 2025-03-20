@@ -258,10 +258,6 @@ const BuySellTransactionsContent = () => {
       if (activeStep === steps.length - 1) {
         // Submit the transaction
         try {
-          const endpoint = isEditMode 
-            ? `/pages/Transactions/update-transaction/${formData.nTranID}`
-            : '/pages/Transactions/save-transaction';
-          
           const method = isEditMode ? 'PUT' : 'POST';
           
           const response = await transactionsApi.submitTransaction({
