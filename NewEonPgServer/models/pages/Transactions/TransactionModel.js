@@ -2137,11 +2137,11 @@ ORDER BY "vCode"
               data.vTrntype, // $3
               data.vNo, // $4
               tax.currentSign || "-", // $5
-              tax.CODE || tax.CODE, // $6 sTaxCode
-              tax.APPLYAS || "F", // $7
+              tax.code || tax.CODE, // $6 sTaxCode
+              tax.applyAs || "F", // $7
               tax.VALUE || tax.taxValue || 0, // $8
               taxAmount, // $9
-              tax.sACCode || "SGST/UGST", // $10
+              tax.components.accountCode || "SGST/UGST", // $10
               tax.nTaxID || 0, // $11
               tax.SACCID || 0, // $12
               data.nBranchID, // $13

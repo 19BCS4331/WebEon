@@ -909,7 +909,7 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
 
           // Sort taxes in specific order: GST18%, TAXROFF, HFEE, HFEEIGST, others
           taxesWithSign = taxesWithSign.sort((a, b) => {
-            const order = { "gst18%": 1, TAXROFF: 2, HFEE: 3, HFEEIGST: 4 };
+            const order = { "gst18%": 1, "GST18%": 1, TAXROFF: 2, HFEE: 3, HFEEIGST: 4 };
             return (order[a.CODE] || 5) - (order[b.CODE] || 5);
           });
 
@@ -1973,7 +1973,11 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
                           disabled={
                             tax.CODE === "TAXROFF" ||
                             tax.CODE === "HFEEIGST" ||
-                            tax.CODE === "gst18%"
+                            tax.CODE === "gst18%" ||
+                            tax.code === "gst18%" ||
+                            tax.CODE === "GST18%"||
+                            tax.code === "TAXROFF" ||
+                            tax.code === "HFEEIGST" 
                           }
                           sx={{
                             width: "100%",

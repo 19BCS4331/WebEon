@@ -3,7 +3,7 @@ import { Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/global/ProtectedRoute";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const LoginNew = lazy(() => import("./pages/LoginNew"));
+const LoginNew = lazy(() => import("./pages/Login"));
 
 // -----------------------------------------------MASTERS-------------------------------------------
 
@@ -58,10 +58,6 @@ const AdvSettings = lazy(() =>
 const BranchSettings = lazy(() =>
   import("./pages/Master/SystemSetup/BranchSettings")
 );
-
-// const UserGroup = lazy(() => import("./pages/Master/SystemSetup/UserGroup"));
-
-// const UserProfile = lazy(() => import("./pages/Master/SystemSetup/UserGroup"));
 
 const UserComp = lazy(() =>
   import("./pages/Master/SystemSetup/UserProfileIndex")

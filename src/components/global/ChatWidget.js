@@ -289,6 +289,7 @@ const ChatWidget = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionData, setCurrentSessionData] = useState(null);
   const messagesEndRef = useRef(null);
   const messageListRef = useRef(null);
   const location = useLocation();
@@ -370,6 +371,7 @@ const ChatWidget = () => {
     try {
       let messageText;
       let actions = [];
+      let sessionData = null;
 
       // Try to parse the response if it's a string
       if (typeof response === 'string') {
@@ -379,6 +381,7 @@ const ChatWidget = () => {
           const data = JSON.parse(jsonMatch[1]);
           messageText = data.message;
           actions = data.actions || [];
+          sessionData = data.sessionData || null;
         } else {
           messageText = response;
         }
@@ -386,13 +389,20 @@ const ChatWidget = () => {
         // Response is already an object
         messageText = response.message;
         actions = response.actions || [];
+        sessionData = response.sessionData || null;
+      }
+
+      // Store the session data in state
+      if (sessionData) {
+        setCurrentSessionData(sessionData);
       }
 
       // Add the message to chat history
       setMessages(prev => [...prev, {
         text: messageText,
         sender: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        sessionData: sessionData
       }]);
       
       // Process any actions
@@ -444,6 +454,7 @@ const ChatWidget = () => {
       const response = await apiClient.post('/api/ai/chat', {
         message: input,
         context: context,
+        sessionData: currentSessionData,
         history: messages.slice(-5) // Send last 5 messages for context
       });
 
@@ -458,7 +469,7 @@ const ChatWidget = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [input, messages, location.pathname, handleChatResponse]);
+  }, [input, messages, location.pathname, handleChatResponse, currentSessionData]);
 
   // Don't render on login page
   if (location.pathname === '/login' || location.pathname === '/') {

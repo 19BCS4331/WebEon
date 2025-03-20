@@ -4,10 +4,6 @@ import {
   Box,
   Paper,
   Typography,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
   IconButton,
   Tooltip,
 } from "@mui/material";
@@ -21,7 +17,7 @@ import TransactionDetails from "./Steps/TransactionDetails";
 import ChargesAndRecPay from "./Steps/ChargesAndRecPay";
 import TransactionList from "./Steps/TransactionList";
 import ReviewAndSubmit from "./Steps/ReviewAndSubmit";
-import { apiClient } from "../../../services/apiClient";
+import { transactionsApi } from "../../../apis";
 import StyledButton from "../../../components/global/StyledButton";
 import {
   TransactionProvider,
@@ -109,9 +105,7 @@ const BuySellTransactionsContent = () => {
 
   const fetchPaxDetails = async (paxCode) => {
     try {
-      const response = await apiClient.get(
-        `/pages/Transactions/pax-details/${paxCode}`
-      );
+      const response = await transactionsApi.getPaxDetails(paxCode);
       if (response.data.data) {
         const paxData = response.data.data;
         setPaxDetails(paxData);
@@ -128,16 +122,7 @@ const BuySellTransactionsContent = () => {
 
   const fetchExchangeData = async (vNo) => {
     try {
-      const response = await apiClient.get(
-        "/pages/Transactions/getExchangeData",
-        {
-          params: {
-            vNo,
-            vTrnwith,
-            vTrntype,
-          },
-        }
-      );
+      const response = await transactionsApi.getExchangeData(vNo, vTrnwith, vTrntype);
 
       if (response.data.success) {
         const {
@@ -235,16 +220,7 @@ const BuySellTransactionsContent = () => {
 
   const handleNewTransaction = async () => {
     try {
-      const response = await apiClient.get(
-        "/pages/Transactions/transactions/nextNumber",
-        {
-          params: {
-            vTrnwith: vTrnwith,
-            vTrntype: vTrntype,
-            nBranchID: branch.nBranchID,
-          },
-        }
-      );
+      const response = await transactionsApi.getNextTransactionNumber(vTrnwith, vTrntype, branch.nBranchID);
 
       initializeTransaction({
         vTrnwith,
@@ -288,9 +264,8 @@ const BuySellTransactionsContent = () => {
           
           const method = isEditMode ? 'PUT' : 'POST';
           
-          const response = await apiClient({
+          const response = await transactionsApi.submitTransaction({
             method,
-            url: endpoint,
             data: {
               ...formData,
               date: new Date(formData.date).toISOString(),

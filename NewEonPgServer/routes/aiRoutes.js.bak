@@ -1,0 +1,209 @@
+// Handle AI chat request
+router.post("/chat", async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    // Use default values if session data is not available
+    const userId = req.session?.userId || req.user?.id || 1;
+    const branchId = req.session?.branchId || req.user?.branchId || 1;
+    
+    console.log("Received message:", message);
+    console.log("Context:", context);
+
+    // Check if this is a transaction intent
+    const isTransactionIntent = await detectTransactionIntent(message);
+    console.log("Transaction intent detection:", isTransactionIntent);
+
+    // If this is a transaction intent, extract details and handle accordingly
+    if (isTransactionIntent.isTransactionIntent) {
+      console.log("Detected transaction intent, extracting details...");
+      const transactionDetails = await extractTransactionDetails(message, userId, branchId);
+      console.log("Extracted transaction details:", transactionDetails);
+
+      if (transactionDetails) {
+        // Check if we have all required information
+        if (transactionDetails.missingFields && transactionDetails.missingFields.length > 0) {
+          // We're missing some information, ask the user for it
+          const missingFieldsText = transactionDetails.missingFields.join(", ");
+          
+          const response = {
+            message: `I need a bit more information to create this transaction. Could you please provide the following details: ${missingFieldsText}?`,
+            actions: []
+          };
+          
+          return res.json(response);
+        }
+        
+        try {
+          // Check if we need to create a new party
+          let partyCode = null;
+          if (transactionDetails.partyName) {
+            // Try to find existing party by name
+            const paxList = await TransactionModel.getPaxList();
+            
+            if (paxList.success) {
+              const existingParty = paxList.data.find(
+                party => party.vPaxname.toLowerCase() === transactionDetails.partyName.toLowerCase()
+              );
+              
+              if (existingParty) {
+                partyCode = existingParty.nPaxcode;
+              } else {
+                // Create new party
+                const newParty = await TransactionModel.createPax({
+                  vPaxname: transactionDetails.partyName,
+                  vPartyType: transactionDetails.partyType || 'CUSTOMER'
+                });
+                
+                if (newParty.success) {
+                  partyCode = newParty.data.nPaxcode;
+                }
+              }
+            }
+          }
+          
+          // Prepare transaction data
+          const today = new Date().toISOString().split('T')[0];
+          
+          // Determine transaction type and with values
+          const vTrntype = transactionDetails.transactionType === 'buy' ? 'P' : 'S';
+          const vTrnwith = 'P'; // Default to P (Party)
+          
+          // Get next transaction number
+          const nextTransactionNumber = await TransactionModel.getNextTransactionNumber(
+            vTrnwith,
+            vTrntype,
+            branchId
+          );
+          
+          const transactionData = {
+            vTrnwith: vTrnwith,
+            vTrntype: vTrntype,
+            vNo: nextTransactionNumber.toString(),
+            date: today,
+            PaxCode: partyCode,
+            Purpose: transactionDetails.purpose || '',
+            nBranchID: branchId,
+            exchangeData: [
+              {
+                Currency: transactionDetails.currency,
+                Amount: transactionDetails.amount,
+                Rate: transactionDetails.rate || 1.00,
+                FEAmount: transactionDetails.amount,
+                Per: 1
+              }
+            ]
+          };
+          
+          // Save transaction
+          const result = await TransactionModel.saveTransaction(transactionData);
+          
+          if (result.success) {
+            // Transaction created successfully
+            const response = {
+              message: `I've created a ${transactionDetails.transactionType} transaction for ${transactionDetails.amount} ${transactionDetails.currency} ${transactionDetails.partyName ? `for ${transactionDetails.partyName}` : ''}. Transaction number: ${transactionData.vNo}.`,
+              actions: [
+                {
+                  type: "transaction",
+                  data: {
+                    transactionId: result.data.nTranID,
+                    transactionNumber: transactionData.vNo,
+                    transactionType: transactionDetails.transactionType,
+                    currency: transactionDetails.currency,
+                    amount: transactionDetails.amount,
+                    partyName: transactionDetails.partyName
+                  }
+                }
+              ]
+            };
+            
+            return res.json(response);
+          } else {
+            throw new Error("Failed to save transaction: " + (result.message || "Unknown error"));
+          }
+        } catch (error) {
+          console.error("Error processing transaction:", error);
+          return res.json({
+            message: `I'm sorry, I couldn't create the transaction. Error: ${error.message}`,
+            actions: []
+          });
+        }
+      }
+    }
+
+    // If not a transaction intent or transaction handling failed, proceed with normal chat
+    const systemMessage = await getSystemMessage(context);
+    const userMessage = { role: "user", content: message };
+    const messages = [systemMessage, userMessage];
+
+    // Check for navigation intent
+    const navigationResponse = await handleNavigationIntent(message, context);
+    if (navigationResponse) {
+      return res.json(navigationResponse);
+    }
+
+    // Generate AI response
+    validateGeminiSetup();
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: message }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 800,
+      },
+    });
+
+    const response = result.response;
+    const text = response.text();
+
+    return res.json({
+      message: text,
+      actions: []
+    });
+  } catch (error) {
+    console.error("Error in AI chat endpoint:", error);
+    return res.status(500).json({
+      message: "Sorry, I encountered an error processing your request.",
+      error: error.message
+    });
+  }
+});
+
+// Transaction Analysis endpoint
+router.post('/transaction-analysis', authMiddleware, async (req, res) => {
+    try {
+        // Validate Gemini setup
+        validateGeminiSetup();
+
+        const { transaction, historicalContext } = req.body;
+
+        const systemMessage = `Analyze this financial transaction for potential issues or insights:
+        ${JSON.stringify(transaction)}
+        
+        Consider:
+        - Unusual patterns
+        - Compliance risks
+        - Optimization opportunities
+        - Similar historical transactions`;
+
+        // Create a Gemini model instance
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        
+        // Generate content
+        const result = await model.generateContent(systemMessage);
+        const analysis = result.response.text();
+
+        res.json({ 
+            analysis: analysis,
+            riskLevel: calculateRiskLevel(transaction)
+        });
+    } catch (error) {
+        console.error('Transaction Analysis Error:', error);
+        res.status(500).json({
+            error: 'Failed to analyze transaction',
+            errorCode: 'ANALYSIS_ERROR',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// Rest of the code remains the same
