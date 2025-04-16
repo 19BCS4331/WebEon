@@ -57,7 +57,7 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "http://localhost:3000", "http://192.168.1.107:3000", "http://127.0.0.1:3000"],
+            connectSrc: ["'self'", "http://localhost:3000", "http://192.168.1.107:3000", "http://127.0.0.1:3000","https://web-eon.vercel.app"],
         }
     },
     crossOriginEmbedderPolicy: false,
