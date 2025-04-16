@@ -24,11 +24,13 @@ import { useToast } from "../../../../contexts/ToastContext";
 const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   const { Type: vTrntype } = useParams();
   const { showToast, hideToast, showInfoModal } = useToast();
-  const { branch } = useContext(AuthContext);
+  const { branch, counter } = useContext(AuthContext);
   const { setError, clearError } = useTransaction();
   const [currencyOptions, setCurrencyOptions] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
   const [issuers, setIssuers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [balanceInfo, setBalanceInfo] = useState(null);
   const [rows, setRows] = useState([]);
   const [currentRow, setCurrentRow] = useState({
     currencyCode: "",
@@ -54,6 +56,67 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     fetchCurrencies();
     fetchProductTypes();
   }, []);
+
+  useEffect(() => {
+    // Fetch balance whenever currency code or type changes
+    if (currentRow.currencyCode?.value && currentRow.type && vTrntype === "S") {
+      fetchBalance();
+    }
+  }, [currentRow.currencyCode, currentRow.type]);
+
+  const fetchBalance = async () => {
+    if (!currentRow.currencyCode?.value || !currentRow.type) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiClient.get(
+        "/pages/Transactions/check-balance",
+        {
+          params: {
+            cncode: currentRow.currencyCode.value,
+            exchtype: currentRow.type,
+            counter: counter.nCounterID.toString(),
+            vBranchCode: branch.vBranchCode,
+          },
+        }
+      );
+      console.log("Balance API response:", response.data);
+      setBalanceInfo(response.data);
+      
+      // Show balance information as a toast
+      if (response.data.success) {
+        const balanceAmount = response.data.balance.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        showToast(
+          `FE Balance: ${currentRow.currencyCode.value} (${currentRow.type}) = ${balanceAmount}`,
+          "info",
+          6000 // Show balance info for 6 seconds
+        );
+      } else {
+        showToast(
+          `Unable to fetch balance for ${currentRow.currencyCode.value} (${currentRow.type})`,
+          "warning",
+          5000 // Show warning for 5 seconds
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+      setBalanceInfo({
+        success: false,
+        message: "Failed to fetch balance",
+      });
+      showToast(
+        `Error fetching balance for ${currentRow.currencyCode.value}`,
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCurrencies = async () => {
     try {
@@ -175,29 +238,6 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     }
   }, [data.exchangeData]);
 
-  // const updateExchangeData = (updatedRows) => {
-  //   const exchangeFormat = updatedRows.map((row) => ({
-  //     CNCodeID: row.currencyCode,
-  //     ExchType: row.type,
-  //     ISSCodeID: row.issuer || "",
-  //     FEAmount: parseFloat(row.feAmount).toFixed(5),
-  //     Rate: parseFloat(row.rate).toFixed(6),
-  //     Per: "1",
-  //     Amount: parseFloat(row.amount).toFixed(2),
-  //     Round: parseFloat(row.roundOff).toFixed(2),
-  //     CommType: row.commissionType || "F",
-  //     CommRate: (parseFloat(row.commissionValue) || 0).toFixed(2),
-  //     CommAmt: (parseFloat(row.commissionAmount) || 0).toFixed(2),
-  //   }));
-  //   onUpdate({
-  //     exchangeData: exchangeFormat,
-  //     exchangeTotalAmount: exchangeFormat?.reduce(
-  //       (sum, row) => sum + parseFloat(row.Amount || 0),
-  //       0
-  //     ),
-  //   });
-  // };
-
   const updateExchangeData = (updatedRows) => {
     const exchangeFormat = updatedRows.map((row) => ({
       CNCodeID: row.currencyCode,
@@ -224,7 +264,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
 
     onUpdate({
       exchangeData: exchangeFormat,
-      Amount: totalAmount, // Changed from exchangeTotalAmount to Amount
+      Amount: totalAmount,
       agentCommCN: agentCommAmount,
     });
   };
@@ -260,9 +300,35 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
         // fetchRate(value);
       }
 
+      // Handle product type change
       if (field === "type") {
         fetchIssuers(value);
         updated.issuer = "";
+      }
+
+      if (field === "feAmount" && vTrntype === "S") {
+        console.log(updated)
+        const numValue = parseFloat(value) || 0;
+        const availableBalance = parseFloat(balanceInfo?.balance) || 0;
+
+        if (balanceInfo?.success && numValue > availableBalance) {
+          showToast(
+            `Amount can't exceed available balance of ${availableBalance.toFixed(
+              2
+            )} ${currentRow.currencyCode?.value || ""}`,
+            "warning"
+          );
+          updated.feAmount = balanceInfo?.balance;
+          updated.amount = calculateAmount(updated.feAmount, updated.rate);
+          updated.roundOff = calculateRoundOff(updated.feAmount, updated.rate);
+          updated.commissionAmount = calculateCommissionAmount(
+            updated.feAmount,
+            updated.rate,
+            updated.commissionType,
+            updated.commissionValue
+          );
+          return updated; // Return here to prevent the next block from recalculating
+        }
       }
 
       // Recalculate dependent fields
@@ -551,7 +617,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   };
 
   return (
-    <Box sx={{ width: "100%", mt: 2 }}>
+    <Box sx={{ width: "100%", mt: 2, position: "relative" }}>
       <Grid
         container
         sx={{
@@ -690,7 +756,12 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
           )}
 
         <Grid item xs={12} md={2}>
-          <CustomTextField label="Amount" value={currentRow.amount} disabled />
+          <CustomTextField
+            label="Amount"
+            value={currentRow.amount}
+            onChange={(e) => handleInputChange("amount", e.target.value)}
+            disabled
+          />
         </Grid>
         <Grid item xs={12} md={2}>
           <CustomTextField

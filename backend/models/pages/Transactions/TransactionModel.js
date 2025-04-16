@@ -1,4 +1,5 @@
 const { BaseModel, DatabaseError } = require("../../base/BaseModel");
+const AdvancedSettingsUtil = require("../../../utils/advancedSettings");
 
 class TransactionModel extends BaseModel {
   // Get transactions based on type and filters
@@ -8,6 +9,7 @@ class TransactionModel extends BaseModel {
     fromDate,
     toDate,
     branchId,
+    counterID,
     ...filters
   }) {
     try {
@@ -27,10 +29,18 @@ class TransactionModel extends BaseModel {
         AND (t."bIsDeleted" = false OR t."bIsDeleted" IS NULL)
         AND t."date" BETWEEN $3 AND $4
         AND t."nBranchID" = $5
+        AND t."counterID" = $6
         ORDER BY t."date" DESC, t."vNo" DESC
       `;
 
-      const values = [vTrnwith, vTrntype, fromDate, toDate, branchId];
+      const values = [
+        vTrnwith,
+        vTrntype,
+        fromDate,
+        toDate,
+        branchId,
+        counterID,
+      ];
       return await this.executeQuery(query, values);
     } catch (error) {
       throw new DatabaseError("Failed to fetch transactions", error);
@@ -40,8 +50,10 @@ class TransactionModel extends BaseModel {
   // Get next transaction number
   static async getNextTransactionNumber(vTrnwith, vTrntype, nBranchID = null) {
     try {
-      console.log(`Getting next transaction number for vTrnwith=${vTrnwith}, vTrntype=${vTrntype}, nBranchID=${nBranchID}`);
-      
+      console.log(
+        `Getting next transaction number for vTrnwith=${vTrnwith}, vTrntype=${vTrntype}, nBranchID=${nBranchID}`
+      );
+
       // First, get the maximum vNo across ALL transactions to ensure global uniqueness
       const globalMaxQuery = `
         SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
@@ -49,16 +61,16 @@ class TransactionModel extends BaseModel {
       `;
       const globalMaxResult = await this.executeQuery(globalMaxQuery);
       let nextNo = globalMaxResult[0]?.nextNo || 1;
-      
+
       // Then, get the maximum for the specific parameters
       let specificQuery = `
         SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
         FROM "Transact"
         WHERE "vTrnwith" = $1 AND "vTrntype" = $2
       `;
-      
+
       const queryParams = [vTrnwith, vTrntype];
-      
+
       // Add branch filter if provided
       if (nBranchID) {
         specificQuery = `
@@ -68,42 +80,48 @@ class TransactionModel extends BaseModel {
         `;
         queryParams.push(nBranchID);
       }
-      
-      const specificResult = await this.executeQuery(specificQuery, queryParams);
+
+      const specificResult = await this.executeQuery(
+        specificQuery,
+        queryParams
+      );
       const specificNextNo = specificResult[0]?.nextNo || 1;
-      
+
       // Use the maximum of the two to ensure both global and specific uniqueness
       nextNo = Math.max(nextNo, specificNextNo);
-      
+
       // Verify the generated number is unique across ALL transactions
       const checkQuery = `
         SELECT COUNT(*) as count
         FROM "Transact"
         WHERE "vNo" = $1
       `;
-      
-      const checkResult = await this.executeQuery(checkQuery, [nextNo.toString()]);
-      
+
+      const checkResult = await this.executeQuery(checkQuery, [
+        nextNo.toString(),
+      ]);
+
       // If the number already exists anywhere, increment it and check again
       if (checkResult[0]?.count > 0) {
-        console.log(`Transaction number ${nextNo} already exists globally, incrementing...`);
+        console.log(
+          `Transaction number ${nextNo} already exists globally, incrementing...`
+        );
         // Get the next available number by incrementing and checking again
         return this.findNextAvailableNumber(nextNo);
       }
-      
+
       console.log(`Generated next transaction number: ${nextNo}`);
       return nextNo;
     } catch (error) {
-      console.error("Failed to get next transaction number:", error);
       throw new DatabaseError("Failed to get next transaction number", error);
     }
   }
-  
+
   // Helper method to find the next available transaction number
   static async findNextAvailableNumber(startingNumber) {
     let candidate = startingNumber;
     let isUnique = false;
-    
+
     while (!isUnique) {
       candidate++;
       const checkQuery = `
@@ -111,16 +129,18 @@ class TransactionModel extends BaseModel {
         FROM "Transact"
         WHERE "vNo" = $1
       `;
-      
-      const checkResult = await this.executeQuery(checkQuery, [candidate.toString()]);
+
+      const checkResult = await this.executeQuery(checkQuery, [
+        candidate.toString(),
+      ]);
       isUnique = checkResult[0]?.count === 0;
     }
-    
+
     console.log(`Found next available transaction number: ${candidate}`);
     return candidate;
   }
 
-  // // Validate transaction before save
+  // Validate transaction before save
   // static async validateTransaction(data) {
   //   try {
   //     // Basic validation checks
@@ -189,7 +209,7 @@ class TransactionModel extends BaseModel {
   //   }
   // }
 
-  // // Create new transaction
+  // Create new transaction
   // static async createTransaction(data) {
   //   try {
   //     // First validate the transaction
@@ -297,33 +317,33 @@ class TransactionModel extends BaseModel {
   static async getPartyTypeOptions(entityType, vTrnwith) {
     try {
       // Determine vType based on vTrnwith
-      let vType = 'CC'; // Default value
-      
+      let vType = "CC"; // Default value
+
       if (vTrnwith) {
         switch (vTrnwith) {
-          case 'F':
-            vType = 'FF,AD'; // Foreign Exchange or Advance
+          case "F":
+            vType = "FF,AD"; // Foreign Exchange or Advance
             break;
-          case 'R':
-            vType = 'RM'; // Remittance
+          case "R":
+            vType = "RM"; // Remittance
             break;
-          case 'C':
-            vType = 'FR'; // Foreign Receipt
+          case "C":
+            vType = "FR"; // Foreign Receipt
             break;
-          case 'I':
-            vType = 'EX'; // Foreign Receipt
+          case "I":
+            vType = "EX"; // Foreign Receipt
             break;
-          case 'H':
-            vType = 'NF'; // Foreign Receipt
+          case "H":
+            vType = "NF"; // Foreign Receipt
             break;
-          case 'K':
-            vType = 'BK'; // Foreign Receipt
+          case "K":
+            vType = "BK"; // Foreign Receipt
             break;
           default:
-            vType = 'CC'; // Default Customer Code
+            vType = "CC"; // Default Customer Code
         }
       }
-      
+
       let query = `
         SELECT 
           "nCodesID" as value,
@@ -331,19 +351,22 @@ class TransactionModel extends BaseModel {
           "vCode"
         FROM "mstCODES" 
         WHERE "bIND" = $1 
-        AND "vType" IN (${vType.split(',').map((_, i) => `$${i + 2}`).join(',')})
+        AND "vType" IN (${vType
+          .split(",")
+          .map((_, i) => `$${i + 2}`)
+          .join(",")})
         AND "bIsDeleted" = false 
         AND "bActive" = true
         ORDER BY "vName"
       `;
-      
+
       const queryParams = [entityType === "I"];
-      
+
       // Add vType parameters
-      vType.split(',').forEach(type => {
+      vType.split(",").forEach((type) => {
         queryParams.push(type.trim());
       });
-      
+
       const result = await this.executeQuery(query, queryParams);
       return result;
     } catch (error) {
@@ -1097,15 +1120,15 @@ ORDER BY "PRODUCTCODE" ASC
             const sgstValue = parseFloat(charge.othSGST || 0) || 0;
             const cgstValue = parseFloat(charge.othCGST || 0) || 0;
             const igstValue = parseFloat(charge.othIGST || 0) || 0;
-            
+
             // Calculate the total for this charge (base + GST values)
             const gstTotal = sgstValue + cgstValue + igstValue;
             const chargeTotal = baseValue + gstTotal;
-            
+
             // Apply the operation (+ or -) to determine how it affects the total
             const signMultiplier = charge.operation === "-" ? -1 : 1;
-            
-            return total + (chargeTotal * signMultiplier);
+
+            return total + chargeTotal * signMultiplier;
           }, 0)
           .toFixed(2);
 
@@ -1268,12 +1291,134 @@ ORDER BY "vCode"
     }
   }
 
+  static async checkBalance(cncode, exchtype, counter, vBranchCode) {
+    try {
+      // Build query to check balance in balcntc table - fetch the latest record for the parameters
+      const query = `
+        SELECT "clbal" 
+        FROM "balcntc" 
+        WHERE "cncode" = $1 
+        AND "exchtype" = $2 
+        AND "counter" = $3 
+        AND "vBranchCode" = $4
+        ORDER BY "nbalcntcId" DESC
+        LIMIT 1
+      `;
+
+      console.log("Checking balance with params:", {
+        cncode,
+        exchtype,
+        counter,
+        vBranchCode,
+      });
+      console.log("Executing query:", query);
+
+      const params = [cncode, exchtype, counter, vBranchCode];
+      const result = await this.executeQuery(query, params);
+
+      console.log("Query result:", result);
+
+      // Check if result or result.rows is undefined
+      if (!result) {
+        // No balance record found
+        console.log("No balance record found for params:", {
+          cncode,
+          exchtype,
+          counter,
+          vBranchCode,
+        });
+        return {
+          success: false,
+          message: `No balance record found for currency ${cncode} with exchange type ${exchtype}`,
+          balance: 0,
+        };
+      }
+
+      // Return the current balance
+      const balance = parseFloat(result[0].clbal) || 0;
+      console.log(
+        `Balance found: ${balance} for currency ${cncode}, exchtype ${exchtype}`
+      );
+
+      return {
+        success: true,
+        balance: balance,
+      };
+    } catch (error) {
+      console.error("Error in checkBalance:", error);
+      // Return a structured error response instead of throwing
+      return {
+        success: false,
+        message: `Error checking balance: ${error.message}`,
+        balance: 0,
+      };
+    }
+  }
+
   // Save complete transaction with all related data
   static async saveTransaction(data) {
     try {
       return await this.executeTransactionQuery(async (client) => {
         console.log("\n=== Starting Transaction Save ===");
         console.log("Incoming Data:", JSON.stringify(data, null, 2));
+
+        // Check balance for each row in exchangeData array (for sell transactions)
+        if (
+          data.vTrntype === "S" &&
+          data.exchangeData &&
+          Array.isArray(data.exchangeData)
+        ) {
+          // Group by currency and exchange type to sum up FE amounts
+          const currencyGroups = {};
+
+          for (const exchange of data.exchangeData) {
+            const key = `${exchange.CNCodeID}_${exchange.ExchType}`;
+            if (!currencyGroups[key]) {
+              currencyGroups[key] = {
+                currencyCode: exchange.CNCodeID,
+                exchType: exchange.ExchType,
+                totalFEAmount: 0,
+              };
+            }
+            currencyGroups[key].totalFEAmount += parseFloat(exchange.FEAmount);
+          }
+
+          // Check balance for each currency group
+          for (const key in currencyGroups) {
+            const group = currencyGroups[key];
+            const balanceCheck = await this.checkBalance(
+              group.currencyCode,
+              group.exchType,
+              data.CounterID.nCounterID,
+              data.vBranchCode
+            );
+
+            if (!balanceCheck.success) {
+              console.error(
+                `Error checking balance for ${group.currencyCode} (${group.exchType}):`,
+                balanceCheck.message
+              );
+              return {
+                success: false,
+                message: `Error checking balance for ${group.currencyCode} (${group.exchType}): ${balanceCheck.message}`,
+              };
+            }
+
+            if (balanceCheck.balance < group.totalFEAmount) {
+              console.error(
+                `Insufficient balance for ${group.currencyCode} (${group.exchType})`
+              );
+              return {
+                success: false,
+                message: `Insufficient balance for ${group.currencyCode} (${
+                  group.exchType
+                }). Available: ${
+                  balanceCheck.balance
+                }, Required: ${group.totalFEAmount.toFixed(2)}`,
+              };
+            }
+          }
+        }
 
         // Calculate other charges from data.Charges
         let otherCharges = {
@@ -1296,7 +1441,7 @@ ORDER BY "vCode"
               if (index < 5) {
                 // We only have 5 other charge fields
                 const fieldNum = index + 1;
-                
+
                 // Ensure charge is an object
                 if (!charge || typeof charge !== "object") {
                   console.warn(`Invalid charge at index ${index}:`, charge);
@@ -1309,21 +1454,25 @@ ORDER BY "vCode"
                 const gstAmount = [
                   parseFloat(charge.othCGST || 0),
                   parseFloat(charge.othSGST || 0),
-                  parseFloat(charge.othIGST || 0)
+                  parseFloat(charge.othIGST || 0),
                 ].reduce((sum, val) => {
                   return sum + (isNaN(val) ? 0 : val);
                 }, 0);
 
                 const baseAmount = parseFloat(charge.value || 0);
                 if (isNaN(baseAmount)) {
-                  console.warn(`Invalid base amount for charge ${index}:`, charge.value);
+                  console.warn(
+                    `Invalid base amount for charge ${index}:`,
+                    charge.value
+                  );
                   return;
                 }
 
                 const totalAmount = gstAmount + baseAmount;
 
                 // Apply operation (+ or -) to the total amount
-                const finalAmount = charge.operation === "-" ? -totalAmount : totalAmount;
+                const finalAmount =
+                  charge.operation === "-" ? -totalAmount : totalAmount;
 
                 otherCharges[`OthChgID${fieldNum}`] = chargeId;
                 otherCharges[`OthAmt${fieldNum}`] = finalAmount;
@@ -1333,11 +1482,14 @@ ORDER BY "vCode"
                   gstAmount,
                   baseAmount,
                   totalAmount,
-                  finalAmount
+                  finalAmount,
                 });
               }
             } catch (error) {
-              console.error(`Error processing charge at index ${index}:`, error);
+              console.error(
+                `Error processing charge at index ${index}:`,
+                error
+              );
               // Continue processing other charges
             }
           });
@@ -1365,7 +1517,10 @@ ORDER BY "vCode"
 
               const amount = parseFloat(payment.amount || 0);
               if (isNaN(amount)) {
-                console.warn(`Invalid amount for payment ${index}:`, payment.amount);
+                console.warn(
+                  `Invalid amount for payment ${index}:`,
+                  payment.amount
+                );
                 return;
               }
 
@@ -1374,7 +1529,7 @@ ORDER BY "vCode"
               } else if (payment.chequeNo) {
                 totalCheque += amount;
               }
-              
+
               console.log(`Processed payment ${index + 1}:`, {
                 code: payment.code,
                 chequeNo: payment.chequeNo,
@@ -1383,7 +1538,10 @@ ORDER BY "vCode"
                 runningTotalCheque: totalCheque,
               });
             } catch (error) {
-              console.error(`Error processing payment at index ${index}:`, error);
+              console.error(
+                `Error processing payment at index ${index}:`,
+                error
+              );
               // Continue processing other payments
             }
           });
@@ -1399,7 +1557,7 @@ ORDER BY "vCode"
             "PartyID", "PersonRef", "PaxCode", "SenderBRNID", "SenderUniqID",
             "SenderNo", "senderTxnDate", "notMyTxn", "EEFCSale", "EEFCAsOS",
             "EEFCSettled", "EEFCSettledWithBrnID", "Amount", "OthChgID1", "OthAmt1",
-            "OthChgID2", "OthAmt2", "OthAmtMore", "TaxAmt", "round",
+            "OthAmtMore", "TaxAmt", "round",
             "Netamt", "CancTaxAmt", "agentCode", "agentCommCN", "agentCommOth",
             "TDSRate", "TDSAmount", "byCash", "byChq", "byCard",
             "byTransfer", "byOth", "ManualBillRef", "WebDealRef", "MRKTREF",
@@ -1411,8 +1569,8 @@ ORDER BY "vCode"
             "bIsDeleted", "dDeletedDate", "nDeleedBY", "nDeliveryPersonID", "PRETCSAMT",
             "TCSAMT", "TCSPER", "TOTOLDBILLTOT", "TOTOLDTCSCOLLECTED", "TCSPERON",
             "TCSFixed", "TCSPenalty", "CardPaymentAmount", "CardPaymentPer", "CardPaymentCGST",
-            "CardPaymentSGST", "OrgBranchId", "OrgVno", "OthChgID3", "OthAmt3",
-            "OthChgID4", "OthAmt4", "OthChgID5", "OthAmt5", "DealNo",
+            "CardPaymentSGST", "OrgBranchId", "OrgVno", "OthChgID2", "OthAmt2",
+            "OthChgID3", "OthAmt3", "OthChgID4", "OthAmt4", "OthChgID5", "OthAmt5", "DealNo",
             "nBranchID", "vBranchCode"
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
@@ -1434,7 +1592,7 @@ ORDER BY "vCode"
           data.vTrntype, // $3
           data.vNo, // $4
           data.date, // $5
-          data.counterID || "1", // $6
+          data.CounterID.nCounterID || "1", // $6
           data.ShiftID || "0", // $7
           data.Purpose || null, // $8
           data.SubPurpose || null, // $9
@@ -1454,69 +1612,69 @@ ORDER BY "vCode"
           data.Amount, // $23
           otherCharges.OthChgID1, // $24
           otherCharges.OthAmt1, // $25
-          otherCharges.OthChgID2, // $26
-          otherCharges.OthAmt2, // $27
-          data.OthAmtMore || 0, // $28
-          data.TaxTotalAmount || 0, // $29
-          data.round || 0, // $30
-          netAmount || data.Amount, // $31
-          data.CancTaxAmt || null, // $32
-          data.agentCode || null, // $33
-          data.agentCommCN || 0, // $34
-          data.agentCommOth || 0, // $35
-          data.TDSRate || 5, // $36
-          data.TDSAmount || 0, // $37
-          totalCash, // $38 byCash
-          totalCheque, // $39 byChq
-          data.byCard || 0, // $40
-          data.byTransfer || 0, // $41
-          data.byOth || 0, // $42
-          data.ManualBillRef || null, // $43
-          data.WebDealRef || null, // $44
-          data.MRKTREF || null, // $45
-          data.OthRef || "", // $46
-          data.OnBehalfClient || null, // $47
-          data.settFromDate || null, // $48
-          data.settTillDate || null, // $49
-          data.NoOfPrints || 0, // $50
-          data.ExchReleased || false, // $51
-          data.usdIBR || 0, // $52
-          data.userID || 1, // $53
-          new Date(), // $54 tdate
-          data.OthSWRefence1 || null, // $55
-          data.OthSWRefence2 || null, // $56
-          data.CancelLinkID || null, // $57
-          data.OnBehalfBRNID || null, // $58
-          data.Remark || "", // $59
-          data.bAuthorized || false, // $60
-          data.nAuthorizedBy || null, // $61
-          data.dAuthorizedDate || null, // $62
-          data.vAuthorizeRemark || null, // $63
-          data.bRejected || false, // $64
-          data.nRejectedBy || null, // $65
-          data.dRejectedDate || null, // $66
-          data.vRejectedRemark || null, // $67
-          data.TRNWITHIC || null, // $68
-          data.Category || "L", // $69 RiskCateg
-          data.InvVendor || null, // $70
-          false, // $71 bIsDeleted
-          null, // $72 dDeletedDate
-          null, // $73 nDeleedBY
-          data.nDeliveryPersonID || null, // $74
-          data.PRETCSAMT || data.Amount, // $75
-          data.TCSAMT || 0, // $76
-          data.TCSPER || null, // $77
-          data.TOTOLDBILLTOT || 0, // $78
-          data.TOTOLDTCSCOLLECTED || 0, // $79
-          data.TCSPERON || null, // $80
-          data.TCSFixed || 0, // $81
-          data.TCSPenalty || 0, // $82
-          data.CardPaymentAmount || 0, // $83
-          data.CardPaymentPer || 0, // $84
-          data.CardPaymentCGST || 0, // $85
-          data.CardPaymentSGST || 0, // $86
-          data.OrgBranchId || null, // $87
-          data.OrgVno || null, // $88
+          data.OthAmtMore || 0, // $26
+          data.TaxTotalAmount || 0, // $27
+          data.round || 0, // $28
+          netAmount || data.Amount, // $29
+          data.CancTaxAmt || null, // $30
+          data.agentCode || null, // $31
+          data.agentCommCN || 0, // $32
+          data.agentCommOth || 0, // $33
+          data.TDSRate || 5, // $34
+          data.TDSAmount || 0, // $35
+          totalCash, // $36 byCash
+          totalCheque, // $37 byChq
+          data.byCard || 0, // $38
+          data.byTransfer || 0, // $39
+          data.byOth || 0, // $40
+          data.ManualBillRef || null, // $41
+          data.WebDealRef || null, // $42
+          data.MRKTREF || null, // $43
+          data.OthRef || "", // $44
+          data.OnBehalfClient || null, // $45
+          data.settFromDate || null, // $46
+          data.settTillDate || null, // $47
+          data.NoOfPrints || 0, // $48
+          data.ExchReleased || false, // $49
+          data.usdIBR || 0, // $50
+          data.userID || 1, // $51
+          new Date(), // $52 tdate
+          data.OthSWRefence1 || null, // $53
+          data.OthSWRefence2 || null, // $54
+          data.CancelLinkID || null, // $55
+          data.OnBehalfBRNID || null, // $56
+          data.Remark || "", // $57
+          data.bAuthorized || false, // $58
+          data.nAuthorizedBy || null, // $59
+          data.dAuthorizedDate || null, // $60
+          data.vAuthorizeRemark || null, // $61
+          data.bRejected || false, // $62
+          data.nRejectedBy || null, // $63
+          data.dRejectedDate || null, // $64
+          data.vRejectedRemark || null, // $65
+          data.TRNWITHIC || null, // $66
+          data.Category || "L", // $67 RiskCateg
+          data.InvVendor || null, // $68
+          false, // $69 bIsDeleted
+          null, // $70 dDeletedDate
+          null, // $71 nDeleedBY
+          data.nDeliveryPersonID || null, // $72
+          data.PRETCSAMT || data.Amount, // $73
+          data.TCSAMT || 0, // $74
+          data.TCSPER || null, // $75
+          data.TOTOLDBILLTOT || 0, // $76
+          data.TOTOLDTCSCOLLECTED || 0, // $77
+          data.TCSPERON || null, // $78
+          data.TCSFixed || 0, // $79
+          data.TCSPenalty || 0, // $80
+          data.CardPaymentAmount || 0, // $81
+          data.CardPaymentPer || 0, // $82
+          data.CardPaymentCGST || 0, // $83
+          data.CardPaymentSGST || 0, // $84
+          data.OrgBranchId || null, // $85
+          data.OrgVno || null, // $86
+          otherCharges.OthChgID2, // $87
+          otherCharges.OthAmt2, // $88
           otherCharges.OthChgID3, // $89
           otherCharges.OthAmt3, // $90
           otherCharges.OthChgID4, // $91
@@ -1786,7 +1944,236 @@ ORDER BY "vCode"
           }
         }
 
+        // Handle Changes in balcntc table wrt the TrnType
+        // Handle Changes in balcntc table
+        console.log("\n--- balcntc Update for Transaction ---");
+
+        // Helper function to determine column names based on transaction type and with
+        const getColumnNames = (trnType, trnWith) => {
+          // Default to purpub/salpub
+          let purColumn = "purpub";
+          let salColumn = "salpub";
+
+          // Map trnWith values to column suffixes
+          const columnMap = {
+            P: "pub", // Foreign Exchange
+            F: "FFMC", // Remittance
+            C: "Franchisee", // Foreign Receipt
+            I: "Import", // Import
+            H: "Branch", // Branch
+            K: "Counter", // Counter
+          };
+
+          // Get the appropriate column suffix based on trnWith
+          const columnSuffix = columnMap[trnWith] || "pub";
+
+          // Construct column names
+          purColumn = `pur${columnSuffix}`;
+          salColumn = `sal${columnSuffix}`;
+
+          return {
+            // For Buy transactions, we update the purchase column
+            // For Sell transactions, we update the sale column
+            updateColumn: trnType === "B" ? purColumn : salColumn,
+            // Column for INR amount
+            updateColumnRs:
+              trnType === "B" ? `${purColumn}rs` : `${salColumn}rs`,
+            // For Buy, we add to clbal; for Sell, we subtract
+            operator: trnType === "B" ? "+" : "-",
+          };
+        };
+
+        // For each currency in exchangeData, update the balcntc table
+        if (data.exchangeData && Array.isArray(data.exchangeData)) {
+          for (const exchange of data.exchangeData) {
+            // Get column names based on transaction type and with
+            const { updateColumn, updateColumnRs, operator } = getColumnNames(
+              data.vTrntype,
+              data.vTrnwith
+            );
+
+            console.log(
+              `Transaction type: ${data.vTrntype}, with: ${data.vTrnwith}`
+            );
+            console.log(
+              `Using columns: ${updateColumn}, ${updateColumnRs}, operator: ${operator}`
+            );
+
+            // Check if a record exists for today
+            const checkQuery = `
+      SELECT "nbalcntcId" 
+      FROM "balcntc" 
+      WHERE "date" = CURRENT_DATE 
+      AND "counter" = $1 
+      AND "cncode" = $2 
+      AND "exchtype" = $3
+      AND "vBranchCode" = $4
+    `;
+
+            const checkResult = await client.query(checkQuery, [
+              data.CounterID.nCounterID,
+              exchange.CNCodeID,
+              exchange.ExchType,
+              data.vBranchCode,
+            ]);
+
+            if (checkResult.rows.length > 0) {
+              // Update existing record
+              // Use dynamic column names and operator in the query
+              const updateQuery = `
+        UPDATE "balcntc" 
+        SET "${updateColumn}" = COALESCE("${updateColumn}", 0) + $1,
+            "${updateColumnRs}" = COALESCE("${updateColumnRs}", 0) + $2,
+            "clbal" = COALESCE("clbal", 0) ${operator} $1,
+            "clbalrs" = COALESCE("clbalrs", 0) ${operator} $2
+        WHERE "nbalcntcId" = $3
+      `;
+
+              await client.query(updateQuery, [
+                parseFloat(exchange.FEAmount),
+                parseFloat(exchange.Amount),
+                checkResult.rows[0].nbalcntcId,
+              ]);
+
+              console.log(
+                `Updated balcntc for ${data.vTrntype}: ${exchange.CNCodeID} (${exchange.ExchType}), Amount: ${exchange.FEAmount}`
+              );
+            } else {
+              // Get the last record for this currency to get the opening balance
+              const lastRecordQuery = `
+        SELECT "clbal", "clbalrs" 
+        FROM "balcntc" 
+        WHERE "cncode" = $1 
+        AND "exchtype" = $2 
+        AND "counter" = $3 
+        AND "vBranchCode" = $4
+        ORDER BY "date" DESC 
+        LIMIT 1
+      `;
+
+              const lastRecord = await client.query(lastRecordQuery, [
+                exchange.CNCodeID,
+                exchange.ExchType,
+                data.CounterID.nCounterID,
+                data.vBranchCode,
+              ]);
+
+              console.log("lastRecord", lastRecord);
+
+              const opbal =
+                lastRecord.rows.length > 0
+                  ? parseFloat(lastRecord.rows[0].clbal)
+                  : 0;
+              const opbalrs =
+                lastRecord.rows.length > 0
+                  ? parseFloat(lastRecord.rows[0].clbalrs)
+                  : 0;
+
+              // Calculate closing balance based on operator
+              const clbal =
+                operator === "+"
+                  ? opbal + parseFloat(exchange.FEAmount)
+                  : opbal - parseFloat(exchange.FEAmount);
+
+              const clbalrs =
+                operator === "+"
+                  ? opbalrs + parseFloat(exchange.Amount)
+                  : opbalrs - parseFloat(exchange.Amount);
+
+              // Create dynamic column list for insert
+              const columns = [
+                '"date"',
+                '"counter"',
+                '"shiftID"',
+                '"cncode"',
+                '"exchtype"',
+                '"opbal"',
+                '"opbalrs"',
+                `"${updateColumn}"`,
+                `"${updateColumnRs}"`,
+                '"clbal"',
+                '"clbalrs"',
+                '"nBranchID"',
+                '"vBranchCode"',
+              ];
+
+              // Create values placeholders correctly
+              const valuePlaceholders = ["CURRENT_DATE"];
+              for (let i = 1; i <= 12; i++) {
+                valuePlaceholders.push(`$${i}`);
+              }
+
+              // Insert new record with dynamic columns
+              const insertQuery = `
+  INSERT INTO "balcntc" (${columns.join(", ")})
+  VALUES (${valuePlaceholders.join(", ")})
+  RETURNING "nbalcntcId"
+`;
+
+              console.log("insertQuery", insertQuery);
+
+              // Create an object with all values set to 0 or null
+              const insertValues = {
+                counter: data.CounterID.nCounterID,
+                shiftID: 1,
+                cncode: exchange.CNCodeID,
+                exchtype: exchange.ExchType,
+                opbal: opbal,
+                opbalrs: opbalrs,
+
+                clbal: clbal,
+                clbalrs: clbalrs,
+                nBranchID: data.nBranchID,
+                vBranchCode: data.vBranchCode,
+              };
+
+              console.log("insertValues", insertValues);
+
+              // Set the specific update column value
+              insertValues[updateColumn] = parseFloat(exchange.FEAmount);
+              insertValues[updateColumnRs] = parseFloat(exchange.Amount);
+
+              // Convert to array in the right order
+              const insertValuesArray = [
+                insertValues.counter,
+                insertValues.shiftID,
+                insertValues.cncode,
+                insertValues.exchtype,
+                insertValues.opbal,
+                insertValues.opbalrs,
+                insertValues[updateColumn],
+                insertValues[updateColumnRs],
+                insertValues.clbal,
+                insertValues.clbalrs,
+                insertValues.nBranchID,
+                insertValues.vBranchCode,
+              ];
+
+              console.log("insertValuesArray", insertValuesArray);
+
+              const insertResult = await client.query(
+                insertQuery,
+                insertValuesArray
+              );
+
+              console.log(
+                `Created new balcntc for ${data.vTrntype}: ${exchange.CNCodeID} (${exchange.ExchType}), ID: ${insertResult.rows[0].nbalcntcId}`
+              );
+            }
+          }
+        }
+
         console.log("\n=== Transaction Save Completed ===\n");
+
+        // Post accounting entries using the same transaction context
+        await this.postAccountingEntries(
+          {
+            ...data,
+            vNo: transactId,
+          },
+          client
+        );
+
         return { success: true, transactId };
       });
     } catch (error) {
@@ -1803,20 +2190,26 @@ ORDER BY "vCode"
 
         // Calculate other charges from data.Charges
         let otherCharges = {
-          OthChgID1: "0", OthAmt1: 0,
-          OthChgID2: "0", OthAmt2: 0,
-          OthChgID3: "0", OthAmt3: 0,
-          OthChgID4: "0", OthAmt4: 0,
-          OthChgID5: "0", OthAmt5: 0
+          OthChgID1: "0",
+          OthAmt1: 0,
+          OthChgID2: "0",
+          OthAmt2: 0,
+          OthChgID3: "0",
+          OthAmt3: 0,
+          OthChgID4: "0",
+          OthAmt4: 0,
+          OthChgID5: "0",
+          OthAmt5: 0,
         };
 
         // Ensure data.Charges is an array before processing
         if (Array.isArray(data.Charges) && data.Charges.length > 0) {
           data.Charges.forEach((charge, index) => {
             try {
-              if (index < 5) { // We only have 5 other charge fields
+              if (index < 5) {
+                // We only have 5 other charge fields
                 const fieldNum = index + 1;
-                
+
                 // Ensure charge is an object
                 if (!charge || typeof charge !== "object") {
                   console.warn(`Invalid charge at index ${index}:`, charge);
@@ -1829,21 +2222,25 @@ ORDER BY "vCode"
                 const gstAmount = [
                   parseFloat(charge.othCGST || 0),
                   parseFloat(charge.othSGST || 0),
-                  parseFloat(charge.othIGST || 0)
+                  parseFloat(charge.othIGST || 0),
                 ].reduce((sum, val) => {
                   return sum + (isNaN(val) ? 0 : val);
                 }, 0);
 
                 const baseAmount = parseFloat(charge.value || 0);
                 if (isNaN(baseAmount)) {
-                  console.warn(`Invalid base amount for charge ${index}:`, charge.value);
+                  console.warn(
+                    `Invalid base amount for charge ${index}:`,
+                    charge.value
+                  );
                   return;
                 }
 
                 const totalAmount = gstAmount + baseAmount;
 
                 // Apply operation (+ or -) to the total amount
-                const finalAmount = charge.operation === "-" ? -totalAmount : totalAmount;
+                const finalAmount =
+                  charge.operation === "-" ? -totalAmount : totalAmount;
 
                 otherCharges[`OthChgID${fieldNum}`] = chargeId;
                 otherCharges[`OthAmt${fieldNum}`] = finalAmount;
@@ -1853,11 +2250,14 @@ ORDER BY "vCode"
                   gstAmount,
                   baseAmount,
                   totalAmount,
-                  finalAmount
+                  finalAmount,
                 });
               }
             } catch (error) {
-              console.error(`Error processing charge at index ${index}:`, error);
+              console.error(
+                `Error processing charge at index ${index}:`,
+                error
+              );
               // Continue processing other charges
             }
           });
@@ -1885,7 +2285,10 @@ ORDER BY "vCode"
 
               const amount = parseFloat(payment.amount || 0);
               if (isNaN(amount)) {
-                console.warn(`Invalid amount for payment ${index}:`, payment.amount);
+                console.warn(
+                  `Invalid amount for payment ${index}:`,
+                  payment.amount
+                );
                 return;
               }
 
@@ -1894,7 +2297,7 @@ ORDER BY "vCode"
               } else if (payment.chequeNo) {
                 totalCheque += amount;
               }
-              
+
               console.log(`Processed payment ${index + 1}:`, {
                 code: payment.code,
                 chequeNo: payment.chequeNo,
@@ -1903,7 +2306,10 @@ ORDER BY "vCode"
                 runningTotalCheque: totalCheque,
               });
             } catch (error) {
-              console.error(`Error processing payment at index ${index}:`, error);
+              console.error(
+                `Error processing payment at index ${index}:`,
+                error
+              );
               // Continue processing other payments
             }
           });
@@ -1967,15 +2373,17 @@ ORDER BY "vCode"
           totalCash,
           totalCheque,
           data.userID || 1,
-          id
+          id,
         ]);
 
         console.log("Main transaction updated successfully");
 
         // 2. Handle exchange data
-        await client.query('DELETE FROM "Exchange" WHERE "UniqID" = $1 AND "vTrnwith" = $2 AND "vTrntype" = $3', 
-          [data.vNo, data.vTrnwith, data.vTrntype]);
-          
+        await client.query(
+          'DELETE FROM "Exchange" WHERE "UniqID" = $1 AND "vTrnwith" = $2 AND "vTrntype" = $3',
+          [data.vNo, data.vTrnwith, data.vTrntype]
+        );
+
         if (data.exchangeData && data.exchangeData.length > 0) {
           console.log("\n--- Exchange Data Insert ---");
           console.log("Number of exchange records:", data.exchangeData.length);
@@ -2005,7 +2413,7 @@ ORDER BY "vCode"
               `\nProcessing exchange record ${i + 1}:`,
               JSON.stringify(exchange, null, 2)
             );
-            
+
             const profit = exchange.Rate * 0.001 || 0; // Example profit calculation, adjust as needed
             console.log("Calculated profit:", profit);
 
@@ -2046,9 +2454,11 @@ ORDER BY "vCode"
         }
 
         // 3. Handle charges
-        await client.query('DELETE FROM "FXTRANSOTHERCHARG" WHERE "vNo" = $1 AND "vTrntype" = $2', 
-          [data.vNo, data.vTrntype]);
-          
+        await client.query(
+          'DELETE FROM "FXTRANSOTHERCHARG" WHERE "vNo" = $1 AND "vTrntype" = $2',
+          [data.vNo, data.vTrntype]
+        );
+
         if (data.Charges && data.Charges.length > 0) {
           console.log("\n--- Charges Insert ---");
           console.log("Number of charges:", data.Charges.length);
@@ -2071,7 +2481,7 @@ ORDER BY "vCode"
               `\nProcessing charge record ${i + 1}:`,
               JSON.stringify(charge, null, 2)
             );
-            
+
             const chargeValues = [
               data.vNo, // $1
               data.vTrntype, // $2
@@ -2103,9 +2513,11 @@ ORDER BY "vCode"
         }
 
         // 4. Handle taxes
-        await client.query('DELETE FROM "TaxT" WHERE "UniqID" = $1 AND "vTrnwith" = $2 AND "vTrntype" = $3', 
-          [data.vNo, data.vTrnwith, data.vTrntype]);
-          
+        await client.query(
+          'DELETE FROM "TaxT" WHERE "UniqID" = $1 AND "vTrnwith" = $2 AND "vTrntype" = $3',
+          [data.vNo, data.vTrnwith, data.vTrntype]
+        );
+
         if (data.Taxes && data.Taxes.length > 0) {
           console.log("\n--- Taxes Insert ---");
           console.log("Number of taxes:", data.Taxes.length);
@@ -2127,10 +2539,12 @@ ORDER BY "vCode"
               "\nProcessing tax record:",
               JSON.stringify(tax, null, 2)
             );
-            
+
             // Ensure tax amount is always positive
-            const taxAmount = Math.abs(parseFloat(tax.amount || tax.lineTotal || 0));
-            
+            const taxAmount = Math.abs(
+              parseFloat(tax.amount || tax.lineTotal || 0)
+            );
+
             const taxValues = [
               data.vNo, // $1 UniqID
               data.vTrnwith, // $2
@@ -2159,9 +2573,11 @@ ORDER BY "vCode"
         }
 
         // 5. Handle RecPay
-        await client.query('DELETE FROM "RECPAY" WHERE "UNIQID" = $1 AND "vTrnwith" = $2 AND "vTrntype" = $3', 
-          [data.vNo, data.vTrnwith, data.vTrntype]);
-          
+        await client.query(
+          'DELETE FROM "RECPAY" WHERE "UNIQID" = $1 AND "vTrnwith" = $2 AND "vTrntype" = $3',
+          [data.vNo, data.vTrnwith, data.vTrntype]
+        );
+
         if (data.RecPay && data.RecPay.length > 0) {
           console.log("\n--- RecPay Insert ---");
           console.log("Number of RecPay records:", data.RecPay.length);
@@ -2188,7 +2604,7 @@ ORDER BY "vCode"
               "\nProcessing RecPay record:",
               JSON.stringify(payment, null, 2)
             );
-            
+
             const recPayValues = [
               data.vTrnwith, // $1
               data.vTrntype, // $2
@@ -2238,6 +2654,1133 @@ ORDER BY "vCode"
       });
     } catch (error) {
       throw new DatabaseError("Failed to update transaction", error);
+    }
+  }
+
+  /**
+   * Posts accounting entries for a transaction
+   * @param {Object} transactionData - Transaction data containing all necessary information
+   * @param {Object} client - Optional database client for transaction context
+   * @returns {Promise<Object>} - Result of the operation
+   */
+  static async postAccountingEntries(transactionData, client = null) {
+    // TODO: MAKE CHANGES FOR CODE ID, AND SLCODEID, RNOID FOR OTHER THAN ADVSETTINGS
+    try {
+      // If client is provided, use it (for transaction context)
+      // Otherwise, create a new transaction
+      const executeQuery = async (callback) => {
+        if (client) {
+          return await callback(client);
+        } else {
+          return await this.executeTransactionQuery(callback);
+        }
+      };
+
+      return await executeQuery(async (dbClient) => {
+        console.log("\n=== Starting Account Posting ===");
+
+        // Extract required data
+        const {
+          vNo,
+          vTrntype,
+          vTrnwith,
+          CounterID,
+          uniqID,
+          date,
+          nBranchID,
+          vBranchCode,
+          exchangeData,
+          Taxes: taxData, // Map Taxes to taxData for consistency
+          gstData,
+          PartyID,
+          PartyType,
+          UserID,
+          RecPay: paymentData, // Map RecPay to paymentData for consistency
+          DirectRemi = false, // Default to false if not provided
+          TCSAMT = 0,
+          TaxTotalAmount = 0,
+          Charges = [], // Get the Charges array
+          OthAmt1 = 0,
+          OthAmt2 = 0,
+          OthAmt3 = 0,
+          OthAmt4 = 0,
+          OthAmt5 = 0,
+          OthChgID1 = "",
+          OthChgID2 = "",
+          OthChgID3 = "",
+          OthChgID4 = "",
+          OthChgID5 = "",
+        } = transactionData;
+
+        // Create a temporary array to hold all accounting entries
+        const accountingEntries = [];
+
+        // Get the appropriate settlement account based on transaction type and party
+        const settlementAccount =
+          await AdvancedSettingsUtil.getSettlementAccount(
+            vTrntype,
+            PartyType || "INDIVIDUAL",
+            nBranchID
+          );
+        // Use both the code and ID
+        const AdvSett = settlementAccount.code;
+
+        const PartyCode = await AdvancedSettingsUtil.getPartyCodeById(PartyID);
+        // Delete existing entries if any (do this first to avoid conflicts)
+        const deleteQuery = `
+        DELETE FROM "INTUPDTD" 
+        WHERE "type" = $1 AND "Vno" = $2 AND "vBranchCode" = $3
+      `;
+
+        await dbClient.query(deleteQuery, [
+          vTrnwith + vTrntype,
+          vNo,
+          vBranchCode,
+        ]);
+
+        // Process Currency (CN) entries
+        if (exchangeData && Array.isArray(exchangeData)) {
+          // Group exchanges by type for profit calculation
+          const exchangesByType = {};
+
+          // First pass - group exchanges and get product details
+          for (const exchange of exchangeData) {
+            const exchType = exchange.ExchType;
+            if (!exchangesByType[exchType]) {
+              exchangesByType[exchType] = [];
+            }
+            exchangesByType[exchType].push(exchange);
+          }
+
+          // Second pass - process each exchange
+          for (const exchange of exchangeData) {
+            // Get product details for account codes
+            const productDetails = await AdvancedSettingsUtil.getProductDetails(
+              exchange.ExchType
+            );
+
+            if (exchange.ExchType === "CN") {
+              // Calculate cost amount
+              const costAmountSell =
+                (parseFloat(exchange.FEAmount) *
+                  parseFloat(exchange.HoldCost)) /
+                parseFloat(exchange.Per);
+              const costAmountPurchase = parseFloat(exchange.Amount);
+
+              const costAmount =
+                vTrntype === "S" ? costAmountSell : costAmountPurchase;
+
+              // Sale/Purchase CN entry (Credit/Debit based on transaction type)
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: date,
+                code:
+                  vTrntype === "S"
+                    ? productDetails?.vSaleAccountCode || "SALCN"
+                    : productDetails?.vPurchaseAccountCode || "PURCN",
+                slcode: "",
+                anacode: "XXX",
+                sign: vTrntype === "S" ? "C" : "D",
+                amount: costAmount.toFixed(2),
+                vno: vNo,
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  vTrntype === "S"
+                    ? productDetails?.vSaleAccountCode || "SALCN"
+                    : productDetails?.vPurchaseAccountCode || "PURCN"
+                ),
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+              });
+
+              // Check if CN is a settlement product
+              const isCNSettlement = productDetails?.isSettlement || false;
+
+              // Only add profit entry for specific transaction types based on settlement status
+              // For non-settlement products: Add profit in SELL transactions only
+              // For settlement products: Add profit in BUY transactions only
+              if (
+                (isCNSettlement && vTrntype === "B") ||
+                (!isCNSettlement && vTrntype === "S")
+              ) {
+                // Calculate profit amount
+                const profitAmount = parseFloat(exchange.Amount) - costAmount;
+
+                if (profitAmount !== 0) {
+                  // Determine profit account code based on bulk or regular
+                  const profitCode =
+                    vTrnwith === "F"
+                      ? productDetails?.vBulkProfitAccountCode || `PROCN`
+                      : productDetails?.vProfitAccountCode || "PROCN";
+
+                  // Determine sign based on settlement status and transaction type
+                  const profitSign = isCNSettlement ? "D" : "C";
+
+                  accountingEntries.push({
+                    counter: CounterID.nCounterID,
+                    shift: "1",
+                    type: vTrnwith + vTrntype,
+                    uniqid: uniqID,
+                    date: date,
+                    code: profitCode,
+                    slcode: "",
+                    anacode: "XXX",
+                    sign: profitSign,
+                    amount: Math.abs(profitAmount).toFixed(2),
+                    vno: vNo,
+                    nBranchID: nBranchID,
+                    vBranchCode: vBranchCode,
+                    CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                      profitCode
+                    ),
+                  });
+                }
+              }
+            } else {
+              // Non-CN entries
+              // Get settlement status from product details or exchange data
+              const isSettlement =
+                productDetails?.isSettlement ||
+                exchange.IsSettlement === true ||
+                exchange.IsSettlement === 1 ||
+                exchange.IsSettlement === "1";
+
+              // For non-settlement products
+              if (!isSettlement) {
+                // Issuer entry
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code:
+                    productDetails?.vIssuerAccountCode ||
+                    exchange.IssuerAccountCode ||
+                    `ISS${exchange.ExchType}`,
+                  slcode: exchange.ISSCodeID || "",
+                  anacode: "XXX",
+                  sign: vTrntype === "B" ? "D" : "C",
+                  amount:
+                    vTrntype === "B"
+                      ? parseFloat(exchange.Amount).toFixed(2)
+                      : (
+                          (parseFloat(exchange.FEAmount) *
+                            parseFloat(exchange.HoldCost)) /
+                          parseFloat(exchange.Per)
+                        ).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    productDetails?.vIssuerAccountCode ||
+                      exchange.IssuerAccountCode ||
+                      `ISS${exchange.ExchType}`
+                  ),
+                  SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    exchange.ISSCodeID || "0"
+                  ),
+                });
+
+                // Closing entry
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code:
+                    productDetails?.vClosingAccountCode ||
+                    exchange.ClosingAccountCode ||
+                    `CLO${exchange.ExchType}`,
+                  slcode: "",
+                  anacode: "XXX",
+                  sign: vTrntype === "B" ? "C" : "D",
+                  amount:
+                    vTrntype === "B"
+                      ? parseFloat(exchange.Amount).toFixed(2)
+                      : (
+                          (parseFloat(exchange.FEAmount) *
+                            parseFloat(exchange.HoldCost)) /
+                          parseFloat(exchange.Per)
+                        ).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    productDetails?.vClosingAccountCode ||
+                      exchange.ClosingAccountCode ||
+                      `CLO${exchange.ExchType}`
+                  ),
+                });
+
+                // Add profit/loss entry for sell transactions (non-settlement)
+                if (vTrntype === "S") {
+                  // Calculate profit amount
+                  const costAmount =
+                    (parseFloat(exchange.FEAmount) *
+                      parseFloat(exchange.HoldCost)) /
+                    parseFloat(exchange.Per);
+                  const profitAmount = parseFloat(exchange.Amount) - costAmount;
+
+                  if (profitAmount !== 0) {
+                    // Determine profit account code based on bulk or regular
+                    const profitCode =
+                      vTrnwith === "F"
+                        ? productDetails?.vBulkProfitAccountCode ||
+                          `PROB${exchange.ExchType}`
+                        : productDetails?.vProfitAccountCode ||
+                          `PRO${exchange.ExchType}`;
+
+                    accountingEntries.push({
+                      counter: CounterID.nCounterID,
+                      shift: "1",
+                      type: vTrnwith + vTrntype,
+                      uniqid: uniqID,
+                      date: date,
+                      code: profitCode,
+                      slcode: "",
+                      anacode: "XXX",
+                      sign: "C", // Credit for profit in sell transactions
+                      amount: Math.abs(profitAmount).toFixed(2),
+                      vno: vNo,
+                      nBranchID: nBranchID,
+                      vBranchCode: vBranchCode,
+                      CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                        profitCode
+                      ),
+                    });
+                  }
+                }
+              } else {
+                // For settlement products
+                // Issuer entry
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code:
+                    productDetails?.vIssuerAccountCode ||
+                    exchange.IssuerAccountCode ||
+                    `ISS${exchange.ExchType}`,
+                  slcode: exchange.ISSCodeID || "",
+                  anacode: "XXX",
+                  sign: vTrntype === "B" ? "D" : "C",
+                  amount:
+                    vTrntype === "S"
+                      ? parseFloat(exchange.Amount).toFixed(2)
+                      : (
+                          (parseFloat(exchange.FEAmount) *
+                            parseFloat(exchange.HoldCost)) /
+                          parseFloat(exchange.Per)
+                        ).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    productDetails?.vIssuerAccountCode ||
+                      exchange.IssuerAccountCode ||
+                      `ISS${exchange.ExchType}`
+                  ),
+                });
+
+                // Closing entry
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code:
+                    productDetails?.vClosingAccountCode ||
+                    exchange.ClosingAccountCode ||
+                    `CLO${exchange.ExchType}`,
+                  slcode: "",
+                  anacode: "XXX",
+                  sign: vTrntype === "B" ? "C" : "D",
+                  amount:
+                    vTrntype === "S"
+                      ? parseFloat(exchange.Amount).toFixed(2)
+                      : (
+                          (parseFloat(exchange.FEAmount) *
+                            parseFloat(exchange.HoldCost)) /
+                          parseFloat(exchange.Per)
+                        ).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    productDetails?.vClosingAccountCode ||
+                      exchange.ClosingAccountCode ||
+                      `CLO${exchange.ExchType}`
+                  ),
+                });
+
+                // Add profit/loss entry for buy transactions (settlement)
+                if (vTrntype === "B") {
+                  // Calculate profit amount
+                  const costAmount =
+                    (parseFloat(exchange.FEAmount) *
+                      parseFloat(exchange.HoldCost)) /
+                    parseFloat(exchange.Per);
+                  const profitAmount = parseFloat(exchange.Amount) - costAmount;
+
+                  if (profitAmount !== 0) {
+                    // Determine profit account code based on bulk or regular
+                    const profitCode =
+                      vTrnwith === "F"
+                        ? productDetails?.vBulkProfitAccountCode ||
+                          `PROB${exchange.ExchType}`
+                        : productDetails?.vProfitAccountCode ||
+                          `PRO${exchange.ExchType}`;
+
+                    accountingEntries.push({
+                      counter: CounterID.nCounterID,
+                      shift: "1",
+                      type: vTrnwith + vTrntype,
+                      uniqid: uniqID,
+                      date: date,
+                      code: profitCode,
+                      slcode: "",
+                      anacode: "XXX",
+                      sign: "D", // Debit for profit in buy transactions for settlement products
+                      amount: Math.abs(profitAmount).toFixed(2),
+                      vno: vNo,
+                      nBranchID: nBranchID,
+                      vBranchCode: vBranchCode,
+                      CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                        profitCode
+                      ),
+                    });
+                  }
+                }
+              }
+
+              // Purchase/Sale entry based on transaction type
+              const purchaseSaleCode = (() => {
+                if (vTrntype === "B") {
+                  return vTrnwith === "F"
+                    ? productDetails?.vBulkPurchaseAccountCode ||
+                        `PURB${exchange.ExchType}`
+                    : productDetails?.vPurchaseAccountCode ||
+                        `PUR${exchange.ExchType}`;
+                } else {
+                  // 'S'
+                  return vTrnwith === "F"
+                    ? productDetails?.vBulkSaleAccountCode ||
+                        `SALB${exchange.ExchType}`
+                    : productDetails?.vSaleAccountCode ||
+                        `SAL${exchange.ExchType}`;
+                }
+              })();
+
+              // Purchase/Sale amount calculation
+              const purchaseSaleAmount =
+                vTrntype === "B"
+                  ? parseFloat(exchange.Amount)
+                  : (parseFloat(exchange.FEAmount) *
+                      parseFloat(exchange.HoldCost)) /
+                    parseFloat(exchange.Per);
+
+              if (purchaseSaleAmount !== 0) {
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code: purchaseSaleCode,
+                  slcode: "",
+                  anacode: "XXX",
+                  sign: vTrntype === "B" ? "D" : "C",
+                  amount: Math.abs(purchaseSaleAmount).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    purchaseSaleCode
+                  ),
+                });
+              }
+            }
+            // Debtors control entry - common for both settlement and non-settlement
+            accountingEntries.push({
+              counter: CounterID.nCounterID,
+              shift: "1",
+              type: vTrnwith + vTrntype,
+              uniqid: uniqID,
+              date: date,
+              code: AdvSett,
+              slcode: PartyCode.vCode || "",
+              anacode: "XXX",
+              sign: vTrntype === "S" ? "D" : "C",
+              amount: parseFloat(exchange.Amount).toFixed(2),
+              vno: vNo,
+              nBranchID: nBranchID,
+              vBranchCode: vBranchCode,
+              SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                PartyCode?.vCode || "0",
+                "mstCODES"
+              ),
+              CodeId: await AdvancedSettingsUtil.getAccountIdByCode(AdvSett),
+            });
+          }
+        }
+
+        // Process tax entries
+        if (taxData && Array.isArray(taxData)) {
+          // First calculate total tax amount for the balancing entry
+          let totalTaxAmount = parseFloat(TaxTotalAmount) || 0;
+          let totalGstAmount = 0;
+
+          // Process non-GST taxes
+          for (const tax of taxData) {
+            if (tax.CODE.toLowerCase() !== "gst18%") {
+              // Skip GST entries as they're handled separately
+              const taxAmount = parseFloat(tax.amount || tax.lineTotal || 0);
+
+              // Get the tax account code from mstTax and AccountsProfile tables
+              // This will first try to get nAccID from mstTax and then get vCode from AccountsProfile
+              // If not found, it will fall back to advanced settings or the tax code itself
+              if (taxAmount !== 0) {
+                const taxCode = await AdvancedSettingsUtil.getTaxAccountCode(
+                  tax.CODE,
+                  nBranchID
+                );
+
+                // Individual tax entry
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code: taxCode || tax.CODE, // Use the tax code itself as fallback
+                  slcode: "",
+                  anacode: "TAX",
+                  sign:
+                    vTrntype === "S"
+                      ? tax.currentSign === "+"
+                        ? "C"
+                        : "D"
+                      : tax.currentSign === "+"
+                      ? "D"
+                      : "C",
+                  amount: Math.abs(taxAmount).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    taxCode || tax.CODE
+                  ),
+                });
+              }
+            } else {
+              // Track GST amount for later processing
+              const gstAmount = parseFloat(tax.amount || tax.lineTotal || 0);
+              if (gstAmount !== 0) {
+                totalGstAmount += gstAmount;
+              }
+            }
+          }
+
+          // Process GST entries separately
+          if (Math.abs(totalGstAmount) > 0) {
+            try {
+              // Get the state code from mstCompany table for the branch
+              const stateCodeQuery = `
+              SELECT "STDCode" 
+              FROM "mstCompany" 
+              WHERE "vBranchCode" = $1
+              LIMIT 1
+            `;
+
+              const stateCodeResult = await BaseModel.executeQuery(
+                stateCodeQuery,
+                [vBranchCode]
+              );
+              const stateCode =
+                stateCodeResult && stateCodeResult.length > 0
+                  ? stateCodeResult[0].STDCode
+                  : "";
+
+              const stateCodeIDQuery = `
+              SELECT "nCodesID" 
+              FROM "mstCODES" 
+              WHERE "vCode" = $1
+              LIMIT 1
+            `;
+
+              const stateCodeIDResult = await BaseModel.executeQuery(
+                stateCodeIDQuery,
+                [stateCode]
+              );
+
+              // Get GST account code using the same method as non-GST taxes
+              const gstCode = await AdvancedSettingsUtil.getTaxAccountCode(
+                "gst18%",
+                nBranchID
+              );
+
+              // GST entry - IGST
+              if (totalGstAmount !== 0) {
+                accountingEntries.push({
+                  counter: CounterID.nCounterID,
+                  shift: "1",
+                  type: vTrnwith + vTrntype,
+                  uniqid: uniqID,
+                  date: date,
+                  code: gstCode || "IGST", // Use the GST account code from AccountsProfile
+                  slcode: stateCode,
+                  anacode: "TAX",
+                  sign: vTrntype === "S" ? "D" : "C",
+                  amount: Math.abs(totalGstAmount).toFixed(2),
+                  vno: vNo,
+                  nBranchID: nBranchID,
+                  vBranchCode: vBranchCode,
+                  rno: stateCode,
+                  rnoId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    stateCode || "0"
+                  ),
+                  SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    stateCode || "0"
+                  ),
+                  CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                    gstCode || "IGST"
+                  ),
+                });
+              }
+            } catch (error) {
+              console.error("Error processing GST entries:", error);
+            }
+          }
+
+          // Balancing entry for all taxes combined
+          if (totalTaxAmount !== 0) {
+            accountingEntries.push({
+              counter: CounterID.nCounterID,
+              shift: "1",
+              type: vTrnwith + vTrntype,
+              uniqid: uniqID,
+              date: date,
+              code: AdvSett,
+              slcode: PartyCode?.vCode || "",
+              anacode: "TAX",
+              sign: vTrntype === "B" ? "D" : "C",
+              amount: Math.abs(totalTaxAmount).toFixed(2),
+              vno: vNo,
+              nBranchID: nBranchID,
+              vBranchCode: vBranchCode,
+              SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                PartyCode?.vCode || "0",
+                "mstCODES"
+              ),
+              CodeId: await AdvancedSettingsUtil.getAccountIdByCode(AdvSett),
+            });
+          }
+        }
+
+        // Process payment entries
+        if (paymentData && Array.isArray(paymentData)) {
+          for (const payment of paymentData) {
+            // Determine payment direction based on transaction type
+            // For Buy transactions, money goes out (Payment)
+            // For Sell transactions, money comes in (Receipt)
+            const rnoId = await AdvancedSettingsUtil.getAccountIdByCode(
+              payment.code
+            );
+            const paymentDirection = vTrntype === "B" ? "P" : "R";
+
+            if (DirectRemi) {
+              // Direct remittance entries
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: payment.chequeDate || date,
+                code: "DRDEBCTR",
+                slcode: "DIRREMIT",
+                anacode: "XXX",
+                sign: paymentDirection === "R" ? "C" : "D",
+                amount: parseFloat(payment.amount).toFixed(2),
+                rno: payment.code || "",
+                rnoId: rnoId,
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  "DIRREMIT"
+                ),
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  "DRDEBCTR"
+                ),
+              });
+
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: payment.chequeDate || date,
+                code: "DIRREMIT",
+                slcode: "DRDEBCTR",
+                anacode: "",
+                sign: paymentDirection === "R" ? "D" : "C",
+                amount: parseFloat(payment.amount).toFixed(2),
+                rno: "",
+                rnoId: rnoId,
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  "DRDEBCTR"
+                ),
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  "DIRREMIT"
+                ),
+              });
+            } else {
+              // Regular payment entries
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: payment.chequeDate || date,
+                code: AdvSett,
+                slcode: PartyCode?.vCode || "",
+                anacode: "XXX",
+                sign: paymentDirection === "R" ? "C" : "D",
+                amount: parseFloat(payment.amount).toFixed(2),
+                rno: payment.code || "",
+                rnoId: rnoId,
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  PartyCode?.vCode || "0",
+                  "mstCODES"
+                ),
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(AdvSett),
+              });
+
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: payment.chequeDate || date,
+                code: payment.code || "",
+                slcode: "",
+                anacode: "",
+                sign: paymentDirection === "R" ? "D" : "C",
+                amount: parseFloat(payment.amount).toFixed(2),
+                rno: payment.code !== "CASH" ? payment.chequeNo : "",
+                rnoId: payment.code !== "CASH" ? await AdvancedSettingsUtil.getAccountIdByCode(payment.chequeNo || "") : "0",
+                vno: vNo,
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  payment.code || ""
+                ),
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+              });
+            }
+          }
+        }
+
+        // Process charges from the Charges array if present
+        if (Charges && Array.isArray(Charges) && Charges.length > 0) {
+          // Process each charge from the Charges array
+          for (const charge of Charges) {
+            if (charge.value && parseFloat(charge.value) !== 0) {
+              const chargeAmount = parseFloat(charge.value);
+              const absAmount = Math.abs(chargeAmount);
+              const operation = charge.operation || "+"; // Default to addition if not specified
+
+              // Use the charge code directly as it's already the account code
+              const accountCode = charge.account?.code || "";
+
+              // Determine sign based on transaction type and operation
+              let chargeSign;
+              if (vTrntype === "B") {
+                chargeSign = operation === "+" ? "D" : "C";
+              } else {
+                // 'S'
+                chargeSign = operation === "+" ? "C" : "D";
+              }
+
+              // First entry - Charge account
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: date,
+                code: accountCode,
+                slcode: "",
+                anacode: "XXX",
+                sign: chargeSign,
+                amount: absAmount.toFixed(2),
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  accountCode
+                ),
+              });
+
+              // Corresponding entry for the party - opposite sign
+              let balanceSign;
+              if (vTrntype === "B") {
+                balanceSign = operation === "+" ? "C" : "D";
+              } else {
+                // 'S'
+                balanceSign = operation === "+" ? "D" : "C";
+              }
+
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: date,
+                code: AdvSett, // Use the settlement account from settings
+                slcode: PartyCode?.vCode || "",
+                anacode: "XXX",
+                sign: balanceSign,
+                amount: absAmount.toFixed(2),
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  PartyCode?.vCode || "0",
+                  "mstCODES"
+                ),
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(AdvSett),
+              });
+
+              // Process GST on other charges if applicable
+              if (charge.OtherChargeGST) {
+                // CGST entry
+                if (charge.othCGST && parseFloat(charge.othCGST) !== 0) {
+                  const cgstAmount = parseFloat(charge.othCGST);
+                  accountingEntries.push({
+                    counter: CounterID.nCounterID,
+                    shift: "1",
+                    type: vTrnwith + vTrntype,
+                    uniqid: uniqID,
+                    date: date,
+                    code: "CGST",
+                    slcode: "",
+                    anacode: "TAX",
+                    sign: vTrntype === "S" ? "C" : "D",
+                    amount: Math.abs(cgstAmount).toFixed(2),
+                    vno: vNo,
+                    nBranchID: nBranchID,
+                    vBranchCode: vBranchCode,
+                    CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                      "CGST"
+                    ),
+                  });
+                }
+
+                // SGST entry
+                if (charge.othSGST && parseFloat(charge.othSGST) !== 0) {
+                  const sgstAmount = parseFloat(charge.othSGST);
+                  accountingEntries.push({
+                    counter: CounterID.nCounterID,
+                    shift: "1",
+                    type: vTrnwith + vTrntype,
+                    uniqid: uniqID,
+                    date: date,
+                    code: "SGST",
+                    slcode: "",
+                    anacode: "TAX",
+                    sign: vTrntype === "S" ? "C" : "D",
+                    amount: Math.abs(sgstAmount).toFixed(2),
+                    vno: vNo,
+                    nBranchID: nBranchID,
+                    vBranchCode: vBranchCode,
+                    CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                      "SGST"
+                    ),
+                  });
+                }
+
+                // IGST entry
+                if (charge.othIGST && parseFloat(charge.othIGST) !== 0) {
+                  const igstAmount = parseFloat(charge.othIGST);
+                  accountingEntries.push({
+                    counter: CounterID.nCounterID,
+                    shift: "1",
+                    type: vTrnwith + vTrntype,
+                    uniqid: uniqID,
+                    date: date,
+                    code: "IGST",
+                    slcode: "",
+                    anacode: "TAX",
+                    sign: vTrntype === "S" ? "C" : "D",
+                    amount: Math.abs(igstAmount).toFixed(2),
+                    vno: vNo,
+                    nBranchID: nBranchID,
+                    vBranchCode: vBranchCode,
+                    CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                      "IGST"
+                    ),
+                  });
+                }
+
+                // GST balancing entry
+                const totalGstAmount =
+                  (parseFloat(charge.othCGST) || 0) +
+                  (parseFloat(charge.othSGST) || 0) +
+                  (parseFloat(charge.othIGST) || 0);
+
+                if (totalGstAmount !== 0) {
+                  accountingEntries.push({
+                    counter: CounterID.nCounterID,
+                    shift: "1",
+                    type: vTrnwith + vTrntype,
+                    uniqid: uniqID,
+                    date: date,
+                    code: "DEBCTR",
+                    slcode: PartyCode?.vCode || "",
+                    anacode: "TAX",
+                    sign: vTrntype === "S" ? "D" : "C",
+                    amount: Math.abs(totalGstAmount).toFixed(2),
+                    vno: vNo,
+                    nBranchID: nBranchID,
+                    vBranchCode: vBranchCode,
+                    SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                      PartyCode?.vCode || "0",
+                      "mstCODES"
+                    ),
+                    CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                      "DEBCTR"
+                    ),
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        // Process legacy other charges if present (for backward compatibility)
+        if (OthAmt1 || OthAmt2 || OthAmt3 || OthAmt4 || OthAmt5) {
+          // Process each charge that has a value
+          const legacyCharges = [
+            { amount: OthAmt1, accountId: OthChgID1 },
+            { amount: OthAmt2, accountId: OthChgID2 },
+            { amount: OthAmt3, accountId: OthChgID3 },
+            { amount: OthAmt4, accountId: OthChgID4 },
+            { amount: OthAmt5, accountId: OthChgID5 },
+          ];
+
+          // Process each charge
+          for (const charge of legacyCharges) {
+            if (
+              charge.amount &&
+              parseFloat(charge.amount) !== 0 &&
+              charge.accountId
+            ) {
+              const chargeAmount = parseFloat(charge.amount);
+              const absAmount = Math.abs(chargeAmount);
+
+              // Get the account code from AccountsProfile table
+              const accountDetails = await AdvancedSettingsUtil.getAccountById(
+                charge.accountId
+              );
+              const accountCode = accountDetails.vCode || charge.accountId;
+
+              // Determine sign based on transaction type and amount sign
+              // Following the old implementation's logic
+              let chargeSign;
+              if (vTrntype === "B") {
+                chargeSign = chargeAmount >= 0 ? "D" : "C";
+              } else {
+                // 'S'
+                chargeSign = chargeAmount >= 0 ? "C" : "D";
+              }
+
+              // First entry - Charge account
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: date,
+                code: accountCode,
+                slcode: "",
+                anacode: "XXX",
+                sign: chargeSign,
+                amount: absAmount.toFixed(2),
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  accountCode
+                ),
+              });
+
+              // Corresponding entry for the party - opposite sign
+              // Determine opposite sign for the balancing entry
+              let balanceSign;
+              if (vTrntype === "B") {
+                balanceSign = chargeAmount >= 0 ? "C" : "D";
+              } else {
+                // 'S'
+                balanceSign = chargeAmount >= 0 ? "D" : "C";
+              }
+
+              accountingEntries.push({
+                counter: CounterID.nCounterID,
+                shift: "1",
+                type: vTrnwith + vTrntype,
+                uniqid: uniqID,
+                date: date,
+                code: AdvSett, // Use the settlement account from settings
+                slcode: PartyCode?.vCode || "",
+                anacode: "XXX",
+                sign: balanceSign,
+                amount: absAmount.toFixed(2),
+                vno: vNo,
+                nBranchID: nBranchID,
+                vBranchCode: vBranchCode,
+                SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+                  PartyCode?.vCode || "0",
+                  "mstCODES"
+                ),
+                CodeId: await AdvancedSettingsUtil.getAccountIdByCode(AdvSett),
+              });
+            }
+          }
+        }
+
+        // Process TCS if applicable
+        if (TCSAMT && parseFloat(TCSAMT) !== 0) {
+          accountingEntries.push({
+            counter: CounterID.nCounterID,
+            shift: "1",
+            type: vTrnwith + vTrntype,
+            uniqid: uniqID,
+            date: date,
+            code: "TCS",
+            slcode: PartyCode?.vCode || "",
+            anacode: "XXX",
+            sign: vTrntype === "S" ? "C" : "D",
+            amount: Math.abs(parseFloat(TCSAMT)).toFixed(2),
+            vno: vNo,
+            nBranchID: nBranchID,
+            vBranchCode: vBranchCode,
+            SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+              PartyCode?.vCode || "0",
+              "mstCODES"
+            ),
+            CodeId: await AdvancedSettingsUtil.getAccountIdByCode("TCS"),
+          });
+
+          // Corresponding entry for the party
+          accountingEntries.push({
+            counter: CounterID.nCounterID,
+            shift: "1",
+            type: vTrnwith + vTrntype,
+            uniqid: uniqID,
+            date: date,
+            code: "DEBCTR",
+            slcode: PartyCode?.vCode || "",
+            anacode: "XXX",
+            sign: vTrntype === "S" ? "D" : "C",
+            amount: Math.abs(parseFloat(TCSAMT)).toFixed(2),
+            vno: vNo,
+            nBranchID: nBranchID,
+            vBranchCode: vBranchCode,
+            SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
+              PartyCode?.vCode || "0",
+              "mstCODES"
+            ),
+            CodeId: await AdvancedSettingsUtil.getAccountIdByCode("DEBCTR"),
+          });
+        }
+
+        // Insert new entries
+        if (accountingEntries.length > 0) {
+          const insertQuery = `
+          INSERT INTO "INTUPDTD" (
+            "counter", "shift", "type", "uniqid", "date", 
+            "code", "slcode", "anacode", "sign", "amount", 
+            "rno", "bnktag", "Vno", "CodeId", "SlCodeId", 
+            "AnaCodeId", "rnoId", "Userid", "Tdate", "nBranchID", "vBranchCode"
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+          )
+        `;
+
+          // Use a batch insert approach for better performance
+          const batchSize = 100;
+          for (let i = 0; i < accountingEntries.length; i += batchSize) {
+            const batch = accountingEntries.slice(i, i + batchSize);
+
+            // Create a transaction for each batch
+            await dbClient.query("BEGIN");
+
+            try {
+              for (const entry of batch) {
+                await dbClient.query(insertQuery, [
+                  entry.counter,
+                  entry.shift,
+                  entry.type,
+                  entry.uniqid,
+                  entry.date,
+                  entry.code,
+                  entry.slcode,
+                  entry.anacode,
+                  entry.sign,
+                  entry.amount,
+                  entry.rno || "",
+                  entry.bnktag || "",
+                  entry.vno,
+                  entry.CodeId || "0",
+                  entry.SlCodeId || "0",
+                  entry.AnaCodeId || "0",
+                  entry.rnoId || "0",
+                  UserID || "0",
+                  new Date(),
+                  entry.nBranchID,
+                  entry.vBranchCode,
+                ]);
+              }
+
+              await dbClient.query("COMMIT");
+            } catch (error) {
+              await dbClient.query("ROLLBACK");
+              throw error;
+            }
+          }
+
+          console.log(
+            `Posted ${accountingEntries.length} accounting entries for transaction ${vNo}`
+          );
+        } else {
+          console.log("No accounting entries to post");
+        }
+
+        console.log("\n=== Account Posting Completed ===\n");
+
+        return {
+          success: true,
+          entriesCount: accountingEntries.length,
+          message: `Successfully posted ${accountingEntries.length} accounting entries`,
+        };
+      });
+    } catch (error) {
+      console.error("Error posting accounting entries:", error);
+      throw new DatabaseError("Failed to post accounting entries", error);
     }
   }
 

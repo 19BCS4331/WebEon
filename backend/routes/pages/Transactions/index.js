@@ -6,13 +6,14 @@ const TransactionModel = require("../../../models/pages/Transactions/Transaction
 // Get transactions
 router.get("/transactions", authMiddleware, async (req, res) => {
   try {
-    const { vTrnwith, vTrntype, fromDate, toDate, branchId } = req.query;
+    const { vTrnwith, vTrntype, fromDate, toDate, branchId,counterID } = req.query;
     const result = await TransactionModel.getTransactions({
       vTrnwith,
       vTrntype,
       fromDate,
       toDate,
       branchId,
+      counterID
     });
     res.json(result);
   } catch (error) {
@@ -441,6 +442,37 @@ router.get('/cheque-options/:bankCode', async (req, res) => {
       success: false,
       message: 'Error fetching cheque options',
       error: error.message
+    });
+  }
+});
+
+// Check balance for a currency
+router.get("/check-balance", authMiddleware, async (req, res) => {
+  try {
+    const { cncode, exchtype, counter, vBranchCode } = req.query;
+    
+    // Validate required parameters
+    if (!cncode || !exchtype || !counter || !vBranchCode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required parameters: cncode, exchtype, counter, and vBranchCode are required" 
+      });
+    }
+    
+    const result = await TransactionModel.checkBalance(
+      cncode, 
+      exchtype, 
+      counter, 
+      vBranchCode
+    );
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error checking balance:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to check balance",
+      error: error.message 
     });
   }
 });

@@ -16,9 +16,16 @@ import { useNavigate } from "react-router-dom";
 import CustomDatePicker from "../CustomDatePicker";
 import { apiClient } from "../../../services/apiClient";
 import CustomDataGrid from "../CustomDataGrid";
+import ButtonGrid from "../ButtonGrid";
 
-const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
-  const { token, branch } = useContext(AuthContext);
+const MainFormComponent = ({ 
+  formConfig, 
+  formDataID, 
+  editFieldTitle, 
+  actionButtons,
+  onRefresh
+}) => {
+  const { token, branch,counter } = useContext(AuthContext);
   const theme = useTheme();
   const { Colortheme } = useContext(ThemeContext);
   const { showAlertDialog, hideAlertDialog, showToast, hideToast } = useToast();
@@ -28,7 +35,7 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   const [rows, setRows] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectionModel, setSelectionModel] = useState([]);
-  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [isFormVisible, setIsFormVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState({});
   const [selectAPIOptions, setSelectAPIOptions] = useState({});
@@ -90,10 +97,25 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
 
       // Handle enableWhen conditions
       if (field.enableWhen) {
-        const { field: controllingField, value: requiredValue } =
+        const { field: controllingField, value: requiredValue, operator } =
           field.enableWhen;
         const controllingValue = initialFormData[controllingField];
-        initialDisabledFields[field.name] = controllingValue !== requiredValue;
+        if (operator === "=") {
+          initialDisabledFields[field.name] = controllingValue !== requiredValue;
+        } else if (operator === "!=") {
+          initialDisabledFields[field.name] = controllingValue === requiredValue;
+        } else if (operator === ">") {
+          initialDisabledFields[field.name] = controllingValue <= requiredValue;
+        } else if (operator === ">=") {
+          initialDisabledFields[field.name] = controllingValue < requiredValue;
+        } else if (operator === "<") {
+          initialDisabledFields[field.name] = controllingValue >= requiredValue;
+        } else if (operator === "<=") {
+          initialDisabledFields[field.name] = controllingValue > requiredValue;
+        }
+        else{
+          initialDisabledFields[field.name] = controllingValue !== requiredValue;
+        }
       }
     });
 
@@ -128,11 +150,16 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       formConfig.fields.forEach((field) => {
         if (field.enableWhen) {
           // Handle enableWhen conditions
-          const { field: controllingField, value: requiredValue } =
+          const { field: controllingField, value: requiredValue, operator } =
             field.enableWhen;
           const controllingValue = formData[controllingField];
           updatedDisabledFields[field.name] =
-            controllingValue !== requiredValue;
+            operator === "==" ? controllingValue !== requiredValue :
+            operator === "!=" ? controllingValue === requiredValue :
+            operator === ">" ? controllingValue < requiredValue :
+            operator === ">=" ? controllingValue <= requiredValue :
+            operator === "<" ? controllingValue > requiredValue :
+            operator === "<=" ? controllingValue >= requiredValue : controllingValue === requiredValue;
         } else if (field.dependsOn) {
           // Handle dependsOn conditions
           const parentValue = formData[field.dependsOn];
@@ -172,7 +199,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       if (response.status < 200 || response.status >= 300) {
         const errorMessage = `Error ${response.status}: ${response.statusText}`;
         console.error(errorMessage);
-        // showToast(errorMessage, "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
@@ -210,7 +236,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       const errorMessage = error.response?.status
         ? `Error ${error.response.status}: ${error.response.statusText}`
         : "Network error or server unreachable";
-      // showToast(errorMessage, "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -218,13 +243,31 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   };
 
   const fetchIndependantOptions = async (field) => {
+    let response;
     try {
-      const response = await apiClient.get(field.fetchOptions);
+      if (field.fetchMethod === "GET" || field.fetchMethod === undefined || !field.fetchMethod) {
+        response = await apiClient.get(field.fetchOptions);
+      } else {
+        // Create a dynamic request body that includes context data
+        const dynamicBody = {
+          ...(field.fetchBody || {}),
+          // Include branch and counter data from AuthContext if available
+          branch: branch ? {
+            vBranchCode: branch.vBranchCode,
+            nBranchID: branch.nBranchID
+          } : undefined,
+          counter: counter ? {
+            nCounterID: counter.nCounterID,
+            vCounterID: counter.vCounterID
+          } : undefined
+        };
+        
+        response = await apiClient.post(field.fetchOptions, dynamicBody);
+      }
 
       if (response.status < 200 || response.status >= 300) {
         const errorMessage = `Error ${response.status}: ${response.statusText}`;
         console.error(errorMessage);
-        // showToast(errorMessage, "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
@@ -250,7 +293,58 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       const errorMessage = error.response?.status
         ? `Error ${error.response.status}: ${error.response.statusText}`
         : "Network error or server unreachable";
-      // showToast(errorMessage, "fail");
+      setTimeout(() => {
+        hideToast();
+      }, 2000);
+    }
+  };
+
+  const fetchOptions = async (field, value) => {
+    try {
+      const url = field.dependent && value && field.fetchOptions;
+
+      const response = await apiClient.post(url, { [field.dependsOn]: value });
+
+      // Axios does not have an 'ok' property, so we check the status code
+      if (response.status < 200 || response.status >= 300) {
+        const errorMessage = `Error ${response.status}: ${response.statusText}`;
+        console.error(errorMessage);
+        setTimeout(() => {
+          hideToast();
+        }, 2000);
+        return;
+      }
+
+      const result = await response.data;
+      if (Array.isArray(result)) {
+        // Create default option
+        const defaultOption = {
+          value: "",
+          label: `Select ${field.label}`, // or just field.label if you prefer
+        };
+
+        // Combine default option with API results
+        const optionsWithDefault = [
+          defaultOption,
+          ...result.map((item) => ({
+            value: item.value,
+            label: item.label,
+          })),
+        ];
+
+        setSelectAPIOptions((prevOptions) => ({
+        ...prevOptions,
+          [field.name]: optionsWithDefault,
+      }));
+      } else {
+        console.error("API response is not in the expected format:", result);
+        showToast("Invalid data format received from server", "fail");
+      }
+    } catch (error) {
+      console.error("Error fetching options:", error);
+      const errorMessage = error.response?.status
+        ? `Error ${error.response.status}: ${error.response.statusText}`
+        : "Network error or server unreachable";
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -292,55 +386,13 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
         ];
 
         setSelectAPIOptions((prevOptions) => ({
-          ...prevOptions,
+        ...prevOptions,
           [field.name]: optionsWithDefault,
-        }));
+      }));
       } else {
         console.error("API response is not in the expected format:", result);
         showToast("Invalid data format received from server", "fail");
       }
-    } catch (error) {
-      console.error("Error fetching options:", error);
-      const errorMessage = error.response?.status
-        ? `Error ${error.response.status}: ${error.response.statusText}`
-        : "Network error or server unreachable";
-      // showToast(errorMessage, "fail");
-      setTimeout(() => {
-        hideToast();
-      }, 2000);
-    }
-  };
-
-  const fetchOptions = async (field, value) => {
-    try {
-      const url = field.dependent && value && field.fetchOptions;
-
-      const response = await apiClient.post(url, { [field.dependsOn]: value });
-
-      // Axios does not have an 'ok' property, so we check the status code
-      if (response.status < 200 || response.status >= 300) {
-        const errorMessage = `Error ${response.status}: ${response.statusText}`;
-        console.error(errorMessage);
-        // showToast(errorMessage, "fail");
-        setTimeout(() => {
-          hideToast();
-        }, 2000);
-        return;
-      }
-
-      const result = await response.data;
-
-      // Ensure options are in { value, label } format
-      const formattedOptions = result.map((item) =>
-        typeof item === "object" && item.value && item.label
-          ? item
-          : { value: item, label: item }
-      );
-
-      setOptions((prevOptions) => ({
-        ...prevOptions,
-        [field.name]: formattedOptions,
-      }));
     } catch (error) {
       console.error("Error fetching options:", error);
       const errorMessage = error.response?.status
@@ -359,6 +411,34 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       ...prevData,
       [field.name]: value,
     }));
+
+    // Handle calculations for fields that depend on this field
+    const calculatedFields = formConfig.fields.filter(
+      (f) => f.calculated && f.dependsOn && f.dependsOn.includes(field.name)
+    );
+
+    if (calculatedFields.length > 0) {
+      // Get the latest form data with the current field's new value
+      const updatedFormData = { ...formData, [field.name]: value };
+      
+      // Update all calculated fields
+      calculatedFields.forEach((calcField) => {
+        if (typeof calcField.formula === 'function') {
+          try {
+            // Calculate the new value using the formula
+            const calculatedValue = calcField.formula(updatedFormData);
+            
+            // Update the form data with the calculated value
+            setFormData((prevData) => ({
+              ...prevData,
+              [calcField.name]: calculatedValue,
+            }));
+          } catch (error) {
+            console.error(`Error calculating field ${calcField.name}:`, error);
+          }
+        }
+      });
+    }
 
     // Handle dependencies
     const dependentFields = formConfig.fields.filter(
@@ -415,11 +495,42 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       if (formField.enableWhen) {
         // Handle single condition
         if (!Array.isArray(formField.enableWhen.conditions)) {
+          // Only process fields that depend on the currently changed field
           if (formField.enableWhen.field === field.name) {
-            setDisabledFields((prev) => ({
-              ...prev,
-              [formField.name]: value !== formField.enableWhen.value,
-            }));
+            // Check which operator to use
+            const operator = formField.enableWhen.operator || "=";
+            
+            if (operator === "=" || !operator) {
+              setDisabledFields((prev) => ({
+                ...prev,
+                [formField.name]: value !== formField.enableWhen.value,
+              }));
+            } else if (operator === "!=") {
+              setDisabledFields((prev) => ({
+                ...prev,
+                [formField.name]: value === formField.enableWhen.value,
+              }));
+            } else if (operator === ">") {
+              setDisabledFields((prev) => ({
+                ...prev,
+                [formField.name]: value <= formField.enableWhen.value,
+              }));
+            } else if (operator === ">=") {
+              setDisabledFields((prev) => ({
+                ...prev,
+                [formField.name]: value < formField.enableWhen.value,
+              }));
+            } else if (operator === "<") {
+              setDisabledFields((prev) => ({
+                ...prev,
+                [formField.name]: value >= formField.enableWhen.value,
+              }));
+            } else if (operator === "<=") {
+              setDisabledFields((prev) => ({
+                ...prev,
+                [formField.name]: value > formField.enableWhen.value,
+              }));
+            }
           }
         }
         // Handle multiple conditions
@@ -466,7 +577,6 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
-      // showToast("Error Occurred!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
@@ -477,6 +587,12 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
   useEffect(() => {
     fetchData();
   }, [token]);
+
+  useEffect(() => {
+    if (onRefresh && typeof onRefresh === 'function') {
+      onRefresh(fetchData);
+    }
+  }, [onRefresh]);
 
   const handleSubmit = async (e) => {
     setIsLoading(true);
@@ -496,6 +612,8 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
     // Add branch code and ID from auth context
     if (branch?.vBranchCode) {
       enabledFormData.vBranchCode = branch.vBranchCode;
+      enabledFormData.nBranchID = branch.nBranchID;
+      enabledFormData.nCounterID = counter.nCounterID;
     }
 
     try {
@@ -532,19 +650,19 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
         }, 2000);
       } else {
         console.error(result.error);
-        showToast("Error Occurred!", "fail");
         setTimeout(() => {
           hideToast();
         }, 2000);
         setIsLoading(false);
+        showToast("Error Occurred!", "fail");
       }
     } catch (error) {
       console.error("Error:", error);
-      showToast("Error Occurred!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
       setIsLoading(false);
+      showToast("Error Occurred!", "fail");
     }
   };
 
@@ -562,11 +680,11 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
       setIsLoading(false);
     } catch (error) {
       console.error("Error:", error);
-      showToast("Error Occurred!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
       setIsLoading(false);
+      showToast("Error Occurred!", "fail");
     }
   };
 
@@ -1012,6 +1130,22 @@ const MainFormComponent = ({ formConfig, formDataID, editFieldTitle }) => {
                   width: isMobile ? "80%" : "50%",
                 }}
               />
+              
+              {/* Action Buttons Grid */}
+              {actionButtons && actionButtons.length > 0 && (
+                <ButtonGrid 
+                  buttons={actionButtons}
+                  columns={Math.min(actionButtons.length, 3)}
+                  minWidth="180px"
+                  autoSize={true}
+                  gap="1rem"
+                  style={{
+                    // padding: '1rem', 
+                    marginBottom: '20px'
+                  }}
+                />
+              )}
+              
               <CustomDataGrid
                 rows={filteredRows}
                 columns={columns}

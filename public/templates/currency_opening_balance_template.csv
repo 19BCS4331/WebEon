@@ -1,0 +1,3 @@
+counter,cncode,exchtype,isscode,date,series,series_,transit,FESETTLED,IBRRATE,feamount,amount,no_from,no_to,denominat,brate,nBranchID,vBranchCode
+1,USD,CASH,,2025-03-25,,,false,0,0,100,8500,,,0,85,1,BR001
+2,EUR,CASH,,2025-03-25,,,false,0,0,200,18000,,,0,90,1,BR001

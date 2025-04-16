@@ -52,7 +52,7 @@ The project is organized into two main directories:
 ### Root Directory
 ```
 /
-├── NewEonPgServer/      # Backend server code
+├── backend/      # Backend server code
 ├── src/                 # Frontend React application
 ├── public/              # Static assets
 ├── PythonScripts/       # Python utility scripts
@@ -196,7 +196,7 @@ The backend is built with Node.js and Express, following a modular architecture 
 
 ### Server Setup
 
-The main server configuration is in `NewEonPgServer/server.js`, which sets up Express, middleware, and routes.
+The main server configuration is in `backend/server.js`, which sets up Express, middleware, and routes.
 
 ```javascript
 // Server setup
@@ -221,7 +221,7 @@ app.use("/pages/Transactions", TransactionsRoutes);
 
 ### Database Integration
 
-The application uses PostgreSQL as its database, configured in `NewEonPgServer/config/db.js`:
+The application uses PostgreSQL as its database, configured in `backend/config/db.js`:
 
 ```javascript
 const pool = new Pool({
@@ -235,7 +235,7 @@ const pool = new Pool({
 
 ### Models
 
-Models are organized in the `NewEonPgServer/models` directory, with a base model that provides common database operations:
+Models are organized in the `backend/models` directory, with a base model that provides common database operations:
 
 ```
 models/
@@ -270,7 +270,7 @@ static async getTransactions(params) {
 
 ### Routes
 
-Routes are organized by domain in the `NewEonPgServer/routes` directory:
+Routes are organized by domain in the `backend/routes` directory:
 
 ```
 routes/

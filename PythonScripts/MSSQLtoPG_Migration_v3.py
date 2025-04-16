@@ -35,7 +35,7 @@ postgres_params = {
     'password': 'J1c2m@raekat',
     'host': 'localhost',
     'port': 5432,
-    'database': 'mil'
+    'database': 'mil_UAT'
 }
 
 def get_column_info(mssql_engine, table_name):
@@ -614,7 +614,7 @@ def main():
         
         # Or specify specific tables to migrate
         tables = [
-            'FXTRANSOTHERCHARG'
+            'INTUPDTD'
             # Add more tables here
         ]
         

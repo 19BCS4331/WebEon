@@ -1,4 +1,4 @@
-import { Box, Grid, Paper, Typography, useMediaQuery, useTheme, CircularProgress } from "@mui/material";
+import { Box, Grid, Paper, Typography,CircularProgress } from "@mui/material";
 import React, { useContext, useEffect, useState } from "react";
 import "../css/pages/Dashboard.css";
 import Marquee from "react-fast-marquee";
@@ -6,16 +6,13 @@ import MainContainerCompilation from "../components/global/MainContainerCompilat
 import ThemeContext from "../contexts/ThemeContext";
 import { useToast } from "../contexts/ToastContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { AttachMoney, TrendingUp, AccountBalance, SwapHoriz, CurrencyRupee } from '@mui/icons-material';
-import axios from 'axios';
+import { TrendingUp, AccountBalance, SwapHoriz, CurrencyRupee } from '@mui/icons-material';
 import { apiClient } from "../services/apiClient";
 import {useAuth } from "../contexts/AuthContext";
 
 const Dashboard = () => {
   const { Colortheme } = useContext(ThemeContext);
   const {branch} = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -294,6 +291,7 @@ const Dashboard = () => {
                   fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
+                  legendType="circle"
                 >
                   {dashboardData.todayTransactions.map((entry, index) => (
                     <Cell 
@@ -302,6 +300,7 @@ const Dashboard = () => {
                         '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A4DE6C'
                       ][index % 5]} 
                     />
+                  
                   ))}
                 </Pie>
                 <Tooltip 
@@ -311,7 +310,7 @@ const Dashboard = () => {
                     color: Colortheme.text
                   }}
                 />
-                <Legend />
+                <Legend  />
               </PieChart>
             </ResponsiveContainer>
           </Paper>

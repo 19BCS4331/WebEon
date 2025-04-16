@@ -1,0 +1,128 @@
+2025-03-24 14:21:06,027 - INFO - Database connections established successfully
+2025-03-24 14:21:06,130 - INFO - Found 249 tables in MSSQL database
+2025-03-24 14:21:06,130 - INFO - Starting migration of 1 tables
+2025-03-24 14:21:06,187 - INFO - Total rows to migrate: 239
+2025-03-24 14:21:06,281 - INFO - Found identity column: nbalcntcId
+2025-03-24 14:21:06,281 - INFO - Column details: type=numeric, is_primary=False, nullable=False
+2025-03-24 14:21:06,309 - INFO - Extracted branch code: AHMD from database: WAPR24AHMDUAT
+2025-03-24 14:21:06,992 - INFO - Found branch information: ID=1, Code=AHMD
+2025-03-24 14:21:07,043 - INFO - Table balcntc has 239 rows to migrate
+2025-03-24 14:21:07,044 - INFO - [1/1] Creating table structure for balcntc
+2025-03-24 14:21:07,221 - INFO - Found identity column: nbalcntcId
+2025-03-24 14:21:07,221 - INFO - Column details: type=numeric, is_primary=False, nullable=False
+2025-03-24 14:21:07,413 - INFO - Found constraints for table balcntc:
+2025-03-24 14:21:07,451 - INFO - Adding branch columns to table balcntc
+2025-03-24 14:21:07,454 - INFO - Found identity column: nbalcntcId
+2025-03-24 14:21:07,454 - INFO - Column details: type=numeric, is_primary=False, nullable=False
+2025-03-24 14:21:07,454 - INFO - Mapping identity column type: numeric
+2025-03-24 14:21:07,454 - INFO - Column info: {'name': 'nbalcntcId', 'type': 'numeric', 'length': 9, 'precision': 18, 'scale': 0, 'nullable': False, 'is_identity': True, 'is_primary_key': False, 'default': None}
+2025-03-24 14:21:07,454 - WARNING - Unknown type numeric - defaulting to TEXT
+2025-03-24 14:21:07,454 - WARNING - Unknown type varchar(10) - defaulting to TEXT
+2025-03-24 14:21:07,454 - INFO - Table creation SQL:
+CREATE TABLE public."balcntc" (
+    "date" TIMESTAMP NULL,
+    "counter" VARCHAR(5) NULL,
+    "shiftID" INTEGER NULL,
+    "cncode" VARCHAR(5) NULL,
+    "isscode" VARCHAR(18) NULL,
+    "exchtype" VARCHAR(2) NULL,
+    "opbal" DECIMAL(28,5) NULL,
+    "opbalrs" DECIMAL(28,5) NULL,
+    "purpub" DECIMAL(28,5) NULL,
+    "purpubrs" DECIMAL(28,5) NULL,
+    "purAD" DECIMAL(28,5) NULL,
+    "purADrs" DECIMAL(28,5) NULL,
+    "purFFMC" DECIMAL(28,5) NULL,
+    "purFFMCrs" DECIMAL(28,5) NULL,
+    "purFranchisee" DECIMAL(28,5) NULL,
+    "purFranchiseers" DECIMAL(28,5) NULL,
+    "purBranch" DECIMAL(28,5) NULL,
+    "purBranchrs" DECIMAL(28,5) NULL,
+    "purImport" DECIMAL(28,5) NULL,
+    "purImportrs" DECIMAL(28,5) NULL,
+    "purCounter" DECIMAL(28,5) NULL,
+    "purConterrs" DECIMAL(28,5) NULL,
+    "salCanc" DECIMAL(28,5) NULL,
+    "salCancrs" DECIMAL(28,5) NULL,
+    "purShift" DECIMAL(28,5) NULL,
+    "purshiftrs" DECIMAL(28,5) NULL,
+    "purmc" DECIMAL(28,5) NULL,
+    "purmcrs" DECIMAL(28,5) NULL,
+    "purbrn" DECIMAL(28,5) NULL,
+    "purbrnrs" DECIMAL(28,5) NULL,
+    "purctr" DECIMAL(28,5) NULL,
+    "purctrrs" DECIMAL(28,5) NULL,
+    "puroth" DECIMAL(28,5) NULL,
+    "purothrs" DECIMAL(28,5) NULL,
+    "salpub" DECIMAL(28,5) NULL,
+    "salpubrs" DECIMAL(28,5) NULL,
+    "salAD" DECIMAL(28,5) NULL,
+    "salADrs" DECIMAL(28,5) NULL,
+    "salFFMC" DECIMAL(28,5) NULL,
+    "salFFMCrs" DECIMAL(28,5) NULL,
+    "salBranch" DECIMAL(28,5) NULL,
+    "salBranchrs" DECIMAL(28,5) NULL,
+    "salExport" DECIMAL(28,5) NULL,
+    "salExportrs" DECIMAL(28,5) NULL,
+    "salCounter" DECIMAL(28,5) NULL,
+    "salConterrs" DECIMAL(28,5) NULL,
+    "purCanc" DECIMAL(28,5) NULL,
+    "purCancrs" DECIMAL(28,5) NULL,
+    "salShiftOut" DECIMAL(28,5) NULL,
+    "salshiftOutrs" DECIMAL(28,5) NULL,
+    "salmc" DECIMAL(28,5) NULL,
+    "salmcrs" DECIMAL(28,5) NULL,
+    "salbrn" DECIMAL(28,5) NULL,
+    "salbrnrs" DECIMAL(28,5) NULL,
+    "salctr" DECIMAL(28,5) NULL,
+    "salctrrs" DECIMAL(28,5) NULL,
+    "saloth" DECIMAL(28,5) NULL,
+    "salothrs" DECIMAL(28,5) NULL,
+    "fake" DECIMAL(28,5) NULL,
+    "fakers" DECIMAL(28,5) NULL,
+    "clbal" DECIMAL(28,5) NULL,
+    "clbalrs" DECIMAL(28,5) NULL,
+    "stlmt" DECIMAL(28,5) NULL,
+    "stlmtrs" DECIMAL(28,5) NULL,
+    "surr" DECIMAL(28,5) NULL,
+    "surrs" DECIMAL(28,5) NULL,
+    "purexp" DECIMAL(28,5) NULL,
+    "purexprs" DECIMAL(28,5) NULL,
+    "salexp" DECIMAL(28,5) NULL,
+    "salexprs" DECIMAL(28,5) NULL,
+    "tpurbrn" DECIMAL(28,5) NULL,
+    "tsalbrn" DECIMAL(28,5) NULL,
+    "transit" DECIMAL(28,5) NULL,
+    "opntrn" DECIMAL(28,5) NULL,
+    "cltrn" DECIMAL(28,5) NULL,
+    "PURRM" DECIMAL(28,5) NULL,
+    "PURRMRS" DECIMAL(28,5) NULL,
+    "SALRM" DECIMAL(28,5) NULL,
+    "SALRMRS" DECIMAL(28,5) NULL,
+    "CLBAL2" DECIMAL(28,5) NULL,
+    "CLBAL2RS" DECIMAL(28,5) NULL,
+    "OPBAL2" DECIMAL(28,5) NULL,
+    "OPBAL2RS" DECIMAL(28,5) NULL,
+    "UnstlMt" DECIMAL(28,5) NULL,
+    "UnstlMtRs" DECIMAL(28,5) NULL,
+    "nbalcntcId" TEXT NOT NULL,
+    "clbalCommRS" DECIMAL(28,5) NULL,
+    "nBranchID" INTEGER NULL,
+    "vBranchCode" TEXT NULL
+);
+2025-03-24 14:21:07,459 - INFO - Dropping existing table balcntc
+2025-03-24 14:21:07,469 - INFO - Creating table balcntc
+2025-03-24 14:21:10,913 - INFO - Starting data migration for table balcntc
+2025-03-24 14:21:11,554 - INFO - Setting up sequences for 1 identity columns
+2025-03-24 14:21:11,555 - ERROR - Error migrating table balcntc: (psycopg2.errors.DatatypeMismatch) COALESCE types text and integer cannot be matched
+LINE 1: SELECT COALESCE(MAX("nbalcntcId"), 0) FROM public."balcntc";
+                                           ^
+
+[SQL: SELECT COALESCE(MAX("nbalcntcId"), 0) FROM public."balcntc";]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-03-24 14:21:11,555 - ERROR - Migration failed: (psycopg2.errors.DatatypeMismatch) COALESCE types text and integer cannot be matched
+LINE 1: SELECT COALESCE(MAX("nbalcntcId"), 0) FROM public."balcntc";
+                                           ^
+
+[SQL: SELECT COALESCE(MAX("nbalcntcId"), 0) FROM public."balcntc";]
+(Background on this error at: https://sqlalche.me/e/20/f405)

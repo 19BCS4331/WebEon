@@ -25,7 +25,7 @@ export const ToastProvider = ({ children }) => {
     dialogMsg: "",
   });
 
-  const showToast = useCallback((message, type) => {
+  const showToast = useCallback((message, type, timeout = 3000) => {
     const id = Date.now();
     const newToast = { id, message, type };
     
@@ -37,12 +37,12 @@ export const ToastProvider = ({ children }) => {
       return [...updatedToasts, newToast];
     });
 
-    // Automatically remove the toast after 3 seconds
+    // Automatically remove the toast after the specified timeout
     setTimeout(() => {
       setToasts((currentToasts) =>
         currentToasts.filter((toast) => toast.id !== id)
       );
-    }, 3000);
+    }, timeout);
   }, []);
 
   const hideToast = useCallback((id) => {

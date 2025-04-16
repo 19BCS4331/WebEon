@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Drawer,
@@ -17,15 +17,14 @@ import {
   Paper,
   Divider,
 } from "@mui/material";
-import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
-import { AuthContext } from "../../contexts/AuthContext";
 import ThemeContext from "../../contexts/ThemeContext";
 import CloseIcon from "@mui/icons-material/Close";
 import * as MaterialIcons from "@mui/icons-material";
 import { fetchNavigationItems } from "../../services/routeServices/navbarService";
 
-const SubItem = ({
+// Memoized SubItem component to prevent unnecessary re-renders
+const SubItem = React.memo(({
   subItem,
   openItems,
   setOpenItems,
@@ -39,7 +38,6 @@ const SubItem = ({
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const { Colortheme } = useContext(ThemeContext);
-  const theme = useTheme();
 
   useEffect(() => {
     if (openItems.includes(subItem.id)) {
@@ -47,11 +45,12 @@ const SubItem = ({
     }
   }, [openItems, subItem.id]);
 
-  const toggleSubItems = () => {
-    setOpen(!open);
-  };
+  // Use useCallback to memoize event handlers
+  const toggleSubItems = useCallback(() => {
+    setOpen((prevOpen) => !prevOpen);
+  }, []);
 
-  const handleLinkClick = () => {
+  const handleLinkClick = useCallback(() => {
     if (subItem.subItems.length > 0) {
       toggleSubItems();
     } else {
@@ -67,75 +66,88 @@ const SubItem = ({
         }
       }
     }
-  };
+  }, [subItem, toggleSubItems, toggleDrawer, setSearchQuery, setFilteredItems, items, location.pathname, navigate]);
 
-  const isActive = location.pathname === subItem.link;
+  // Memoize the isActive calculation
+  const isActive = useMemo(() => location.pathname === subItem.link, [location.pathname, subItem.link]);
+
+  // Memoize styles to prevent recalculations
+  const listItemButtonStyles = useMemo(() => ({
+    position: "relative",
+    pl: depth > 1 ? 6 : 3,
+    pr: 2,
+    py: 1.75,
+    my: 0.5,
+    borderRadius: 2,
+    backgroundColor: isActive ? `${Colortheme.text}15` : "transparent",
+    // Use will-change to hint the browser about properties that will change
+    willChange: "background-color, transform",
+    // Use hardware acceleration for animations
+    transform: "translateZ(0)",
+    "&:before": {
+      content: '""',
+      position: "absolute",
+      left: depth > 1 ? "24px" : "12px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      width: "4px",
+      height: "4px",
+      borderRadius: "50%",
+      backgroundColor: isActive ? Colortheme.text : "transparent",
+      transition: "all 0.2s ease",
+    },
+    "&:hover": {
+      backgroundColor: `${Colortheme.text}10`,
+      "&:before": {
+        backgroundColor: Colortheme.text,
+        width: isActive ? "4px" : "6px",
+      },
+    },
+  }), [depth, isActive, Colortheme.text]);
+
+  const listItemTextStyles = useMemo(() => ({
+    m: 0,
+    "& .MuiTypography-root": {
+      fontSize: depth > 1 ? "0.875rem" : "0.925rem",
+      fontWeight: isActive ? 600 : 400,
+      color: isActive ? Colortheme.text : `${Colortheme.text}cc`,
+      transition: "all 0.2s ease",
+    },
+  }), [depth, isActive, Colortheme.text]);
+
+  const expandIconStyles = useMemo(() => ({
+    display: "flex",
+    alignItems: "center",
+    transition: "transform 0.2s ease",
+    transform: open ? "rotate(-180deg)" : "none",
+    color: `${Colortheme.text}99`,
+    // Use hardware acceleration for animations
+    willChange: "transform",
+  }), [open, Colortheme.text]);
 
   return (
     <>
       <ListItemButton
         onClick={handleLinkClick}
-        sx={{
-          position: "relative",
-          pl: depth > 1 ? 6 : 3,
-          pr: 2,
-          py: 1.75,
-          my: 0.5,
-          borderRadius: 2,
-          backgroundColor: isActive ? `${Colortheme.text}15` : "transparent",
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          "&:before": {
-            content: '""',
-            position: "absolute",
-            left: depth > 1 ? "24px" : "12px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "4px",
-            height: "4px",
-            borderRadius: "50%",
-            backgroundColor: isActive ? Colortheme.text : "transparent",
-            transition: "all 0.3s ease",
-          },
-          "&:hover": {
-            backgroundColor: `${Colortheme.text}10`,
-            "&:before": {
-              backgroundColor: Colortheme.text,
-              width: isActive ? "4px" : "6px",
-            },
-          },
-        }}
+        sx={listItemButtonStyles}
       >
         <ListItemText
           primary={subItem.name}
-          sx={{
-            m: 0,
-            "& .MuiTypography-root": {
-              fontSize: depth > 1 ? "0.875rem" : "0.925rem",
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? Colortheme.text : `${Colortheme.text}cc`,
-              transition: "all 0.3s ease",
-            },
-          }}
+          sx={listItemTextStyles}
         />
         {subItem.subItems.length > 0 && (
           <Box
             component="span"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-              transform: open ? "rotate(-180deg)" : "none",
-              color: `${Colortheme.text}99`,
-            }}
+            sx={expandIconStyles}
           >
             <ExpandMore fontSize="small" />
           </Box>
         )}
       </ListItemButton>
-      <Divider sx={{ opacity: 0.5,backgroundColor: Colortheme.text }}/>
+      <Divider sx={{ opacity: 0.5, backgroundColor: Colortheme.text }} />
       <Collapse
         in={open || openItems.includes(subItem.id)}
-        timeout="auto"
+        timeout={200}
         unmountOnExit
       >
         <List component="div" disablePadding>
@@ -151,14 +163,30 @@ const SubItem = ({
                 items={items}
                 depth={depth + 1}
               />
-              <Divider sx={{ opacity: 0.5,backgroundColor: Colortheme.text }} />
+              <Divider sx={{ opacity: 0.5, backgroundColor: Colortheme.text }} />
             </Box>
           ))}
         </List>
       </Collapse>
     </>
   );
-};
+});
+
+// Memoized DynamicIcon component
+const DynamicIcon = React.memo(({ iconName, color }) => {
+  const IconComponent = MaterialIcons[iconName];
+  if (!IconComponent) return null;
+  return (
+    <IconComponent
+      sx={{
+        width: 20,
+        height: 20,
+        color: color,
+        opacity: 0.9,
+      }}
+    />
+  );
+});
 
 const NewSidebar = () => {
   const location = useLocation();
@@ -193,7 +221,8 @@ const NewSidebar = () => {
     }
   }, [isLoginPage]);
 
-  const toggleSubItems = (itemId) => {
+  // Memoize event handlers with useCallback
+  const toggleSubItems = useCallback((itemId) => {
     setOpenItems((prevOpenItems) => {
       if (prevOpenItems.includes(itemId)) {
         return prevOpenItems.filter((id) => id !== itemId);
@@ -201,24 +230,10 @@ const NewSidebar = () => {
         return [itemId];
       }
     });
-  };
+  }, [setOpenItems]);
 
-  const handleSearchChange = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-
-    if (query) {
-      const filtered = filterItems(items, query);
-      const expandedIds = getExpandedIds(filtered, query);
-      setFilteredItems(filtered);
-      setOpenItems(expandedIds);
-    } else {
-      setFilteredItems(items);
-      setOpenItems([]);
-    }
-  };
-
-  const filterItems = (items, query) => {
+  // Memoize filter functions
+  const filterItems = useCallback((items, query) => {
     return items
       .map((item) => {
         if (item.name.toLowerCase().includes(query)) {
@@ -233,9 +248,9 @@ const NewSidebar = () => {
         return null;
       })
       .filter((item) => item !== null);
-  };
+  }, []);
 
-  const getExpandedIds = (items, query) => {
+  const getExpandedIds = useCallback((items, query) => {
     let ids = [];
     items.forEach((item) => {
       if (item.name.toLowerCase().includes(query)) {
@@ -250,25 +265,56 @@ const NewSidebar = () => {
       }
     });
     return ids;
-  };
+  }, []);
+
+  const handleSearchChange = useCallback((e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    if (query) {
+      const filtered = filterItems(items, query);
+      const expandedIds = getExpandedIds(filtered, query);
+      setFilteredItems(filtered);
+      setOpenItems(expandedIds);
+    } else {
+      setFilteredItems(items);
+      setOpenItems([]);
+    }
+  }, [items, filterItems, getExpandedIds, setOpenItems]);
 
   if (isLoginPage) {
     return null;
   }
 
-  const DynamicIcon = ({ iconName }) => {
-    const IconComponent = MaterialIcons[iconName];
-    if (!IconComponent) return null;
-    return (
-      <IconComponent
-        sx={{
-          width: 20,
-          height: 20,
-          color: Colortheme.text,
-          opacity: 0.9,
-        }}
-      />
-    );
+  // Memoize styles
+  const drawerPaperStyles = {
+    width: isMobile ? "280px" : "300px",
+    height: "100vh",
+    background: isDarkMode
+      ? `linear-gradient(165deg, ${Colortheme.secondaryBG}, ${Colortheme.secondaryBG}ee)`
+      : "linear-gradient(165deg, #ffffff, #fafafa)",
+    borderRight: `1px solid ${Colortheme.text}15`,
+    backdropFilter: "blur(8px)",
+    // Use hardware acceleration
+    transform: "translateZ(0)",
+    willChange: "transform",
+  };
+
+  const scrollbarStyles = {
+    "&::-webkit-scrollbar": {
+      width: "5px",
+      height: "5px",
+    },
+    "&::-webkit-scrollbar-track": {
+      background: "transparent",
+    },
+    "&::-webkit-scrollbar-thumb": {
+      background: `${Colortheme.text}22`,
+      borderRadius: "24px",
+    },
+    "&::-webkit-scrollbar-thumb:hover": {
+      background: `${Colortheme.text}44`,
+    },
   };
 
   return (
@@ -277,31 +323,8 @@ const NewSidebar = () => {
       open={open}
       onClose={toggleDrawer}
       PaperProps={{
-        style: {
-          width: isMobile ? "280px" : "300px",
-          height: "100vh",
-          background: isDarkMode
-            ? `linear-gradient(165deg, ${Colortheme.secondaryBG}, ${Colortheme.secondaryBG}ee)`
-            : "linear-gradient(165deg, #ffffff, #fafafa)",
-          borderRight: `1px solid ${Colortheme.text}15`,
-          backdropFilter: "blur(8px)",
-        },
-        sx: {
-          "&::-webkit-scrollbar": {
-            width: "5px",
-            height: "5px",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: `${Colortheme.text}22`,
-            borderRadius: "24px",
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            background: `${Colortheme.text}44`,
-          },
-        },
+        style: drawerPaperStyles,
+        sx: scrollbarStyles,
       }}
     >
       <Box
@@ -342,7 +365,7 @@ const NewSidebar = () => {
               borderRadius: "12px",
               width: 32,
               height: 32,
-              transition: "all 0.3s ease",
+              transition: "all 0.2s ease",
               "&:hover": {
                 backgroundColor: `${Colortheme.text}20`,
                 transform: "scale(1.05)",
@@ -363,7 +386,7 @@ const NewSidebar = () => {
               backgroundColor: isDarkMode ? `${Colortheme.text}08` : "#f5f5f5",
               borderRadius: 2,
               overflow: "hidden",
-              transition: "all 0.3s ease",
+              transition: "all 0.2s ease",
               "&:hover": {
                 backgroundColor: isDarkMode
                   ? `${Colortheme.text}10`
@@ -415,6 +438,9 @@ const NewSidebar = () => {
             px: 2,
             flex: 1,
             overflow: "auto",
+            // Optimize scrolling performance
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {filteredItems.length > 0 ? (
@@ -442,7 +468,10 @@ const NewSidebar = () => {
                       location.pathname === item.link
                         ? `${Colortheme.text}15`
                         : "transparent",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    // Use hardware acceleration and optimize transitions
+                    transform: "translateZ(0)",
+                    willChange: "background-color, transform",
+                    transition: "all 0.2s ease",
                     "&:before": {
                       content: '""',
                       position: "absolute",
@@ -456,7 +485,7 @@ const NewSidebar = () => {
                         location.pathname === item.link
                           ? Colortheme.text
                           : "transparent",
-                      transition: "all 0.3s ease",
+                      transition: "all 0.2s ease",
                     },
                     "&:hover": {
                       backgroundColor: `${Colortheme.text}10`,
@@ -473,7 +502,7 @@ const NewSidebar = () => {
                 >
                   {item.icon_name && (
                     <ListItemIcon sx={{ minWidth: 36 }}>
-                      <DynamicIcon iconName={item.icon_name} />
+                      <DynamicIcon iconName={item.icon_name} color={Colortheme.text} />
                     </ListItemIcon>
                   )}
                   <ListItemText
@@ -487,7 +516,7 @@ const NewSidebar = () => {
                           location.pathname === item.link
                             ? Colortheme.text
                             : `${Colortheme.text}cc`,
-                        transition: "all 0.3s ease",
+                        transition: "all 0.2s ease",
                       },
                     }}
                   />
@@ -497,8 +526,9 @@ const NewSidebar = () => {
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        transition:
-                          "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        // Optimize animations
+                        willChange: "transform",
+                        transition: "transform 0.2s ease",
                         transform: openItems.includes(item.id)
                           ? "rotate(-180deg)"
                           : "none",
@@ -511,7 +541,7 @@ const NewSidebar = () => {
                 </ListItemButton>
                 <Collapse
                   in={openItems.includes(item.id)}
-                  timeout="auto"
+                  timeout={200}
                   unmountOnExit
                 >
                   <List component="div" disablePadding>
@@ -549,45 +579,20 @@ const NewSidebar = () => {
                   color: Colortheme.text,
                   mb: 2,
                   opacity: 0.5,
-                  animation: "fadeIn 0.5s ease",
                 }}
               />
               <Typography
-                variant="body2"
-                sx={{
-                  color: Colortheme.text,
-                  fontSize: "0.875rem",
-                  animation: "fadeIn 0.5s ease 0.2s both",
-                }}
+                variant="body1"
+                sx={{ color: Colortheme.text, textAlign: "center" }}
               >
-                No items found
+                No results found
               </Typography>
             </Box>
           )}
         </List>
-
-        <Box
-          sx={{
-            p: 3,
-            mt: "auto",
-            borderTop: `1px solid ${Colortheme.text}10`,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              color: `${Colortheme.text}88`,
-              fontSize: "0.75rem",
-              display: "block",
-              textAlign: "center",
-            }}
-          >
-            Maraekat Infotech Ltd.
-          </Typography>
-        </Box>
       </Box>
     </Drawer>
   );
 };
 
-export default NewSidebar;
+export default React.memo(NewSidebar);

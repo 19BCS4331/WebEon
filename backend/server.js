@@ -11,6 +11,7 @@ const PartyProfileRoutes = require("./routes/pages/Master/PartyProfiles/indexRou
 const SystemSetupRoutes = require("./routes/pages/Master/SystemSetup/indexRoutesSystemSetup");
 const MasterMiscellaneousRoutes = require("./routes/pages/Master/Miscellaneous/index");
 const TransactionsRoutes = require("./routes/pages/Transactions/index");
+const OpeningBalancesRoutes = require("./routes/pages/Miscellaneous/Opening Balances/currencyOpeningBalance");
 const DashboardRoutes = require("./routes/pages/Dashboard/index");
 const aiRoutes = require('./routes/aiRoutes');
 const { csrfMiddleware, getCsrfToken, getCsrfMetrics } = require('./middleware/csrfMiddleware');
@@ -78,6 +79,7 @@ app.use("/pages/Master/PartyProfiles", PartyProfileRoutes);
 app.use("/pages/Master/SystemSetup", SystemSetupRoutes);
 app.use("/pages/Master/Miscellaneous", MasterMiscellaneousRoutes);
 app.use("/pages/Transactions", TransactionsRoutes);
+app.use("/pages/Miscellaneous/OpeningBalances", OpeningBalancesRoutes);
 app.use("/api/dashboard", DashboardRoutes);
 
 app.use(rateLimitMiddleware);

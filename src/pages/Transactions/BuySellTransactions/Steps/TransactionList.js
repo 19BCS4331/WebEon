@@ -10,7 +10,7 @@ import CustomDatePicker from "../../../../components/global/CustomDatePicker";
 import { AuthContext } from "../../../../contexts/AuthContext";
 
 const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
-  const { branch } = useContext(AuthContext);
+  const { branch,counter } = useContext(AuthContext);
   const { Colortheme } = useContext(ThemeContext);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
   );
   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const branchId = branch.nBranchID;
+  const counterID = counter.nCounterID;
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -33,6 +34,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
           fromDate,
           toDate,
           branchId,
+          counterID: counterID.toString(), 
         },
       });
       setTransactions(response.data);
@@ -65,7 +67,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
     if (fromDate && toDate && branchId) {
       fetchTransactions();
     }
-  }, [fromDate, toDate, branchId, vTrnwith, vTrntype]);
+  }, [fromDate, toDate, branchId, vTrnwith, vTrntype, counterID]);
 
   const getColumns = () => {
     const baseColumns = [

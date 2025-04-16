@@ -7,7 +7,7 @@ database = 'WAPR24AHMDUAT'
 # database = 'WTRNTREASURYUAT'
 username = 'mil'
 password = 'mil@1234#'
-search_string = 'ADRENT'
+search_string = '400300'
 
 # Establish connection
 conn = pyodbc.connect(

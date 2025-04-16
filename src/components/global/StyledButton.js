@@ -5,6 +5,8 @@ import ThemeContext from "../../contexts/ThemeContext";
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import DoneIcon from '@mui/icons-material/Done';
+import DownloadIcon from '@mui/icons-material/Download';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const Button = styled.button`
   border: none;
@@ -46,9 +48,13 @@ const StyledButton = ({
   SearchIconColorOnHover,
   AddIconColorOnHover,
   DoneIconColorOnHover,
+  DownloadIconColorOnHover,
+  RefreshIconColorOnHover,
   searchIcon=false,
   addIcon = false,
   doneIcon = false,
+  downloadIcon = false,
+  refreshIcon = false,
   ...props
 }) => {
   const { Colortheme } = useContext(ThemeContext);
@@ -63,14 +69,19 @@ const StyledButton = ({
       SearchIconColorOnHover={SearchIconColorOnHover}
       AddIconColorOnHover={AddIconColorOnHover}
       DoneIconColorOnHover={DoneIconColorOnHover}
-      DoneIcon={DoneIcon}
+      DownloadIconColorOnHover={DownloadIconColorOnHover}
+      RefreshIconColorOnHover={RefreshIconColorOnHover}
       searchIcon={searchIcon}
-      addIcon={addIcon}
+      addIcon={addIcon} 
+      downloadIcon={downloadIcon}
+      refreshIcon={refreshIcon}
       {...props}
     >
       {searchIcon && <SearchIcon sx={{color: SearchIconColorOnHover}}/>}
       {addIcon && <AddIcon sx={{color: AddIconColorOnHover}}/>}
       {doneIcon && <DoneIcon sx={{color: DoneIconColorOnHover}}/>}
+      {downloadIcon && <DownloadIcon sx={{color: DownloadIconColorOnHover}}/>}
+      {refreshIcon && <RefreshIcon sx={{color: RefreshIconColorOnHover}}/>}
       {children}
     </Button>
   );

@@ -3,12 +3,31 @@ import { Box } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import DoneIcon from "@mui/icons-material/Done";
 import CloseIcon from "@mui/icons-material/Close";
+import InfoIcon from "@mui/icons-material/Info";
+import WarningIcon from "@mui/icons-material/Warning";
 import { useToast } from "../../contexts/ToastContext";
 import ThemeContext from "../../contexts/ThemeContext";
 
 const Toast = () => {
   const { toasts } = useToast();
   const { Colortheme } = useContext(ThemeContext);
+
+  // Function to get the appropriate icon based on toast type
+  const getToastIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <DoneIcon style={{ color: Colortheme.background || "green" }} />;
+      case "error":
+      case "fail":
+        return <CloseIcon style={{ color: Colortheme.background || "red" }} />;
+      case "info":
+        return <InfoIcon style={{ color: Colortheme.background || "blue" }} />;
+      case "warning":
+        return <WarningIcon style={{ color: Colortheme.background || "orange" }} />;
+      default:
+        return <InfoIcon style={{ color: Colortheme.background || "blue" }} />;
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -23,10 +42,12 @@ const Toast = () => {
           alignItems={"center"}
           justifyContent={"center"}
           position={"absolute"}
-          top={30 + index * 80} // Stack toasts with 60px spacing
+          top={30 + index * 80} // Stack toasts with 80px spacing
           right={20}
-          height={40}
+          height={"auto"}
+          minHeight={40}
           width={"auto"}
+          maxWidth={"400px"}
           borderRadius={20}
           sx={{
             backgroundColor: Colortheme.text,
@@ -38,11 +59,7 @@ const Toast = () => {
           gap={2}
           zIndex={999999 - index} // Ensure proper stacking order
         >
-          {toast.type === "success" ? (
-            <DoneIcon style={{ color: "green" }} />
-          ) : (
-            <CloseIcon style={{ color: "red" }} />
-          )}
+          {getToastIcon(toast.type)}
           {toast.message}
         </Box>
       ))}

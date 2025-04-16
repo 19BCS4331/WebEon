@@ -108,6 +108,7 @@ class DashboardModel extends BaseModel {
       // Format numeric values in results
       const formattedTodayTransactions = todayTransactions.map(t => ({
         ...t,
+        type: t.currency,
         value: parseInt(t.value),
         volume: parseFloat(t.volume)
       }));
