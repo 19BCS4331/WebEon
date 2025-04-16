@@ -31,7 +31,8 @@ app.use(cors({
             'http://192.168.1.107:3000',
             'http://127.0.0.1:3000',
             'http://127.0.0.1:15101',
-            'https://webeon.onrender.com'
+            'https://webeon.onrender.com',
+            'https://web-eon.vercel.app'
         ];
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
