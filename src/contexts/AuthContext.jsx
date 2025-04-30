@@ -299,7 +299,6 @@ const AuthProvider = ({ children }) => {
         remaining,
         loginData,
         setLoginData,
-        token,
         setToken,
       }}
     >

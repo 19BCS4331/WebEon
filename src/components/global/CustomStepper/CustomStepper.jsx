@@ -108,21 +108,7 @@ const CustomStepper = ({ activeStep, steps, onStepClick }) => {
           cursor: 'pointer',
           padding: { xs: '0 8px', sm: '0 16px' },
         },
-        '& .MuiStepLabel-label': {
-          fontFamily: 'Poppins',
-          marginTop: '8px',
-          color: 'gray',
-          fontSize: { xs: '0.75rem', sm: '0.875rem' },
-          whiteSpace: 'nowrap',
-          '&.Mui-active': {
-            fontFamily: 'Poppins',
-            color: Colortheme.text,
-            fontWeight: 'bold',
-          },
-          '&.Mui-completed': {
-            color: Colortheme.text,
-          }
-        },
+
         '& .MuiStep-root': {
           padding: { xs: '0', sm: '0 16px' },
           minWidth: { xs: 'auto', sm: '160px' },
