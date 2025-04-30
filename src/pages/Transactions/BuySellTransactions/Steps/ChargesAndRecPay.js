@@ -109,8 +109,10 @@ const ChargesAndRecPay = ({ data, onUpdate, isEditMode }) => {
   useEffect(() => {
     const fetchCodeOptions = async () => {
       try {
-        const response = await apiClient.get(
-          "/pages/Transactions/getPaymentCodes"
+        const response = vTrntype === "S" ? await apiClient.get(
+          "/pages/Transactions/getPaymentCodesSell"
+        ) : await apiClient.get(
+          "/pages/Transactions/getPaymentCodesBuy"
         );
         // Format the options to have label and value properties
         const formattedOptions = response.data.map((option) => ({

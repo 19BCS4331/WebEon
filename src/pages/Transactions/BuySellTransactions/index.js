@@ -1,12 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Box,
-  Paper,
-  Typography,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+import { Box, Paper, Typography, IconButton, Tooltip, CircularProgress } from "@mui/material";
 import CustomStepper from "../../../components/global/CustomStepper/CustomStepper";
 import MainContainerCompilation from "../../../components/global/MainContainerCompilation";
 import ThemeContext from "../../../contexts/ThemeContext";
@@ -27,6 +21,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
+
 
 const steps = [
   {
@@ -75,6 +70,7 @@ const BuySellTransactionsContent = () => {
   const [showStepper, setShowStepper] = useState(true);
   const { showToast, hideToast } = useToast();
   const { branch } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // Reset form and show list when transaction parameters change
@@ -122,7 +118,11 @@ const BuySellTransactionsContent = () => {
 
   const fetchExchangeData = async (vNo) => {
     try {
-      const response = await transactionsApi.getExchangeData(vNo, vTrnwith, vTrntype);
+      const response = await transactionsApi.getExchangeData(
+        vNo,
+        vTrnwith,
+        vTrntype
+      );
 
       if (response.data.success) {
         const {
@@ -220,7 +220,11 @@ const BuySellTransactionsContent = () => {
 
   const handleNewTransaction = async () => {
     try {
-      const response = await transactionsApi.getNextTransactionNumber(vTrnwith, vTrntype, branch.nBranchID);
+      const response = await transactionsApi.getNextTransactionNumber(
+        vTrnwith,
+        vTrntype,
+        branch.nBranchID
+      );
 
       initializeTransaction({
         vTrnwith,
@@ -256,10 +260,11 @@ const BuySellTransactionsContent = () => {
   const handleNext = async () => {
     if (validateStep(activeStep)) {
       if (activeStep === steps.length - 1) {
+        setIsSaving(true);
         // Submit the transaction
         try {
-          const method = isEditMode ? 'PUT' : 'POST';
-          
+          const method = isEditMode ? "PUT" : "POST";
+
           const response = await transactionsApi.submitTransaction({
             method,
             data: {
@@ -268,26 +273,30 @@ const BuySellTransactionsContent = () => {
               exchangeData: formData.exchangeData || [],
               Charges: formData.Charges || [],
               Taxes: formData.Taxes || [],
-              RecPay: formData.RecPay || []
-            }
+              RecPay: formData.RecPay || [],
+            },
           });
 
           if (response.data.success) {
             showToast(
-              `Transaction ${isEditMode ? 'updated' : 'saved'} successfully!`,
-              'success'
+              `Transaction ${isEditMode ? "updated" : "saved"} successfully!`,
+              "success"
             );
             resetForm();
             setShowList(true);
+            setIsSaving(false);
           } else {
-            throw new Error('Failed to save transaction');
+            throw new Error("Failed to save transaction");
           }
         } catch (error) {
-          console.error('Error saving transaction:', error);
+          console.error("Error saving transaction:", error);
           showToast(
-            `Error ${isEditMode ? 'updating' : 'saving'} transaction: ${error.message}`,
-            'error'
+            `Error ${isEditMode ? "updating" : "saving"} transaction: ${
+              error.message
+            }`,
+            "error"
           );
+          setIsSaving(false);
         }
       } else {
         setActiveStep(activeStep + 1);
@@ -304,7 +313,8 @@ const BuySellTransactionsContent = () => {
   const getValidationMessage = (step) => {
     switch (step) {
       case 0:
-        if (vTrnwith === "P" && !formData.TRNWITHIC) return "Entity Type is required";
+        if (vTrnwith === "P" && !formData.TRNWITHIC)
+          return "Entity Type is required";
         if (!formData.vNo) return "Transaction Number is required";
         if (vTrnwith === "P" && !formData.Purpose) return "Purpose is required";
         if (!formData.Category) return "Category is required";
@@ -315,12 +325,12 @@ const BuySellTransactionsContent = () => {
       case 1:
         if (!formData.PartyID) return "Party Selection is required";
         if (!formData.PartyType) return "Party Type is required";
-        if (vTrnwith === "P" &&!formData.PaxCode) return "Please Select A PAX";
-        if (vTrnwith === "P" &&!formData.PaxName) return "Pax Name is required";
+        if (vTrnwith === "P" && !formData.PaxCode) return "Please Select A PAX";
+        if (vTrnwith === "P" && !formData.PaxName)
+          return "Pax Name is required";
         return "";
 
       case 2:
-        
         return "";
 
       case 3:
@@ -417,7 +427,7 @@ const BuySellTransactionsContent = () => {
           H: "NON-FRANCHISEE",
           K: "BANK",
           E: "FOREIGN CORRESPONDENT",
-          D: "FAKE CURRENCY"
+          D: "FAKE CURRENCY",
         }[formData.vTrnwith] || ""
       }`}
     >
@@ -480,8 +490,10 @@ const BuySellTransactionsContent = () => {
             <Box
               sx={{
                 display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
                 justifyContent: "space-between",
-                mb: 3,
+                alignItems: "center",
+                mb: 2,
                 flexShrink: 0, // Prevent header from shrinking
               }}
             >
@@ -489,7 +501,7 @@ const BuySellTransactionsContent = () => {
                 <Typography
                   variant="h6"
                   color={Colortheme.text}
-                  sx={{ mb: 3, flexShrink: 0 }} // Prevent title from shrinking
+                  sx={{ flexShrink: 0 }} // Prevent title from shrinking
                   fontFamily={"Poppins"}
                 >
                   {isEditMode ? "Edit Transaction" : "New Transaction"}
@@ -508,25 +520,22 @@ const BuySellTransactionsContent = () => {
                       transform: showStepper ? "rotate(180deg)" : "none",
                     }}
                   >
-                    {showStepper ? (
-                      <KeyboardArrowUpIcon
-                        sx={{ color: Colortheme.text, fontSize: "1.2rem" }}
-                      />
-                    ) : (
-                      <KeyboardArrowDownIcon
-                        sx={{ color: Colortheme.text, fontSize: "1.2rem" }}
-                      />
-                    )}
+                    <KeyboardArrowDownIcon
+                      sx={{ color: Colortheme.text, fontSize: "1.2rem" }}
+                    />
                   </IconButton>
                 </Tooltip>
               </Box>
-              <Box display="flex" gap={2}>
+              <Box display="flex" gap={2} 
+              sx={{ width:{ xs: 1, sm: 1 }, marginTop:{ xs: 1,sm:0 }, justifyContent:{ xs: 'center', sm: 'flex-end' }}}
+              >
                 {isEditMode && (
                   <StyledButton
                     onClick={() => {
-                      setActiveStep(0);  // First change the step
-                      setEditMode(false);  // Then disable edit mode
-                      setTimeout(() => {  // Then reset form after view has changed
+                      setActiveStep(0); // First change the step
+                      setEditMode(false); // Then disable edit mode
+                      setTimeout(() => {
+                        // Then reset form after view has changed
                         resetForm();
                         handleNewTransaction();
                       }, 0);
@@ -659,10 +668,22 @@ const BuySellTransactionsContent = () => {
                   </StyledButton>
                   <StyledButton
                     onClick={handleNext}
-                    // disabled={activeStep === steps.length - 1}
+                    disabled={isSaving}
                     style={{ width: 250 }}
                   >
-                    {activeStep === steps.length - 1 ? "Submit" : "Next"}
+                    {activeStep === steps.length - 1 
+                      ? (isSaving 
+                          ? <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Typography sx={{ mr: 1,fontFamily: 'Poppins' }}>Saving</Typography>
+                              <CircularProgress 
+                                size={20} 
+                                sx={{ 
+                                  color: Colortheme.text,
+                                }} 
+                              />
+                            </Box>
+                          : "Submit") 
+                      : "Next"}
                   </StyledButton>
                 </Box>
               </Paper>

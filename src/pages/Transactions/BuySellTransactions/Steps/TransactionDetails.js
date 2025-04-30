@@ -32,6 +32,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
   const [loading, setLoading] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState(null);
   const [rows, setRows] = useState([]);
+  const [isAddingRow, setIsAddingRow] = useState(false);
   const [currentRow, setCurrentRow] = useState({
     currencyCode: "",
     type: "",
@@ -51,6 +52,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     { value: "P", label: "Percent" },
     { value: "F", label: "Paise" },
   ];
+
+  // #region API calls
 
   useEffect(() => {
     fetchCurrencies();
@@ -84,7 +87,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       );
       console.log("Balance API response:", response.data);
       setBalanceInfo(response.data);
-      
+
       // Show balance information as a toast
       if (response.data.success) {
         const balanceAmount = response.data.balance.toLocaleString(undefined, {
@@ -201,6 +204,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     }
   }, [currentRow.currencyCode, currentRow.type, currentRow.issuer]);
 
+  // #endregion API calls
+
   useEffect(() => {
     if (currentRow.rate && currentRow.feAmount) {
       setCurrentRow((prev) => ({
@@ -248,9 +253,11 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       Per: "1",
       Amount: parseFloat(row.amount).toFixed(2),
       Round: parseFloat(row.roundOff).toFixed(2),
-      CommType: row.commissionType || "F",
+      CommType: row.commissionType || null,
       CommRate: (parseFloat(row.commissionValue) || 0).toFixed(2),
       CommAmt: (parseFloat(row.commissionAmount) || 0).toFixed(2),
+      HoldCost: parseFloat(row.holdCost).toFixed(2),
+      Profit: parseFloat(row.profit).toFixed(2),
     }));
 
     const totalAmount = exchangeFormat?.reduce(
@@ -307,7 +314,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       }
 
       if (field === "feAmount" && vTrntype === "S") {
-        console.log(updated)
+        console.log(updated);
         const numValue = parseFloat(value) || 0;
         const availableBalance = parseFloat(balanceInfo?.balance) || 0;
 
@@ -360,7 +367,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     });
   };
 
-  const handleAddRow = () => {
+  const handleAddRow = async () => {
     // Validation
     if (!currentRow.currencyCode?.value) {
       showToast("Please select a currency", "fail");
@@ -426,6 +433,40 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
 
     clearError();
 
+    let holdCost = 0,
+      profit = 0,
+      warningMessage = "";
+
+    if(vTrntype === "S" && currentRow.type === "CN"){
+      setIsAddingRow(true)
+    // Prepare parameters for backend calculation
+    const params = {
+      cncode: currentRow.currencyCode.value,
+      exchtype: currentRow.type,
+      issuer: currentRow.issuer || "",
+      date: data.date || new Date().toISOString().slice(0, 10), // fallback to today if not set
+      counter: counter.nCounterID , // replace with your counter variable
+      rate: currentRow.rate || 0, // or however you capture rate
+      // add other params if needed
+    };
+
+    // Call backend API for calculation
+    
+    try {
+      const res = await apiClient.post("/pages/Transactions/calcHoldCostCN", params);
+      holdCost = res.data.holdCost;
+      profit = res.data.profit;
+      warningMessage = res.data.warningMessage;
+      setIsAddingRow(false)
+    } catch (e) {
+      showToast("Error calculating Hold Cost/Profit", "fail");
+      setTimeout(() => hideToast(), 2000);
+      setIsAddingRow(false)
+      return;
+    }
+
+  }
+
     const newRow = {
       id: Date.now(),
       currencyCode: currentRow.currencyCode?.value || "",
@@ -440,6 +481,8 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
       amount: parseFloat(currentRow.amount) || 0,
       roundOff: parseFloat(currentRow.roundOff) || 0,
       srNo: editIndex >= 0 ? editIndex + 1 : rows.length + 1,
+      holdCost,
+      profit,
     };
 
     let updatedRows;
@@ -451,6 +494,10 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
     } else {
       updatedRows = [...rows, newRow];
       setRows(updatedRows);
+    }
+
+    if (warningMessage) {
+      showToast(warningMessage, "warning");
     }
 
     // Update context with exchange data
@@ -706,7 +753,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
             type="number"
             value={currentRow.rate}
             onChange={(e) => handleInputChange("rate", e.target.value)}
-            disabled
+            // disabled
             required
           />
         </Grid>
@@ -773,6 +820,7 @@ const TransactionDetails = ({ data, onUpdate, Colortheme }) => {
         <Grid item xs={12} md={2}>
           <StyledButton
             onClick={handleAddRow}
+            disabled={isAddingRow}
             addIcon={editIndex >= 0 ? false : true}
             doneIcon={editIndex >= 0 ? true : false}
             style={{ width: "90%", height: "56px", gap: "10px" }}

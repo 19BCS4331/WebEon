@@ -205,6 +205,7 @@ const NewSidebar = () => {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     if (!isLoginPage) {
@@ -267,10 +268,16 @@ const NewSidebar = () => {
     return ids;
   }, []);
 
-  const handleSearchChange = useCallback((e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
+  // Debounced search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchInput.toLowerCase());
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
+  useEffect(() => {
+    const query = searchQuery;
     if (query) {
       const filtered = filterItems(items, query);
       const expandedIds = getExpandedIds(filtered, query);
@@ -280,7 +287,11 @@ const NewSidebar = () => {
       setFilteredItems(items);
       setOpenItems([]);
     }
-  }, [items, filterItems, getExpandedIds, setOpenItems]);
+  }, [searchQuery, items, filterItems, getExpandedIds, setOpenItems]);
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchInput(e.target.value);
+  }, []);
 
   if (isLoginPage) {
     return null;
@@ -396,7 +407,7 @@ const NewSidebar = () => {
           >
             <TextField
               placeholder="Search..."
-              value={searchQuery}
+              value={searchInput}
               onChange={handleSearchChange}
               fullWidth
               size="small"

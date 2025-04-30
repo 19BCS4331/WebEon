@@ -23,8 +23,10 @@ const BasicDetails = ({ data, onUpdate }) => {
     if (field === "TRNWITHIC") {
       onUpdate({
         [field]: value,
-        Purpose: value === "I" ? "8" : "30",
-        PurposeDescription: value === "I" ? "ENCASHMENT" : "ENCASHMENT",
+        // Purpose: value === "I" ? "8" : "30",
+        Purpose: "",
+        // PurposeDescription: value === "I" ? "ENCASHMENT" : "ENCASHMENT",
+        PurposeDescription: "",
       });
       clearError(field);
     } else {

@@ -1244,8 +1244,8 @@ ORDER BY "vCode"
     }
   }
 
-  // Get payment codes for transaction
-  static async getPaymentCodes() {
+  // Get payment codes for transaction (BUY)
+  static async getPaymentCodesBuy() {
     try {
       const query = `
         SELECT "vCode", "vName", "vNature", "vBankType", 
@@ -1254,6 +1254,23 @@ ORDER BY "vCode"
         WHERE "bDoPurchase" = true 
           AND "vNature" NOT IN ('P') 
           AND ("vCode" = 'ICICI' OR "vCode" = 'CASH')
+      `;
+
+      return await this.executeQuery(query);
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch payment codes", error);
+    }
+  }
+
+  // Get payment codes for transaction (Sell)
+  static async getPaymentCodesSell() {
+    try {
+      const query = `
+       SELECT "vCode", "vName", "vNature", "vBankType", 
+               "nCurrencyID", "nDivisionID", "vFinType", "vFinCode" 
+        FROM "AccountsProfile" 
+        WHERE "vNature" NOT IN ('P') 
+          AND ("vCode" = 'AFC' OR "vCode" = 'CASH')
       `;
 
       return await this.executeQuery(query);
@@ -1351,6 +1368,119 @@ ORDER BY "vCode"
         success: false,
         message: `Error checking balance: ${error.message}`,
         balance: 0,
+      };
+    }
+  }
+
+  // Calculate Hold Cost for CN product
+  static async calcHoldCostCN(data) {
+    try {
+      // Extract parameters from data
+      const {
+        cncode, // Currency code
+        exchtype, // Exchange type
+        issuer, // Issuer code (can be empty string)
+        date, // Date string (ISO or yyyy-mm-dd)
+        counter, // Counter ID
+        rate, // Entered rate
+        // bExchangeGridMode = false,
+        // moldCnCode = "",
+        // moldExchtype = "",
+        // moldIssuer = "",
+        // nOldFE = 0,
+        // nOldINR = 0
+      } = data;
+
+      // 1. Query for clbal and clbalrs as of the given date
+      const clbalQuery = `
+        SELECT "clbal", "clbalrs"
+        FROM "balcntc" 
+        WHERE "cncode" = $1 
+        AND "exchtype" = $2 
+        AND "counter" = $3
+        AND "date" <= $4
+        ORDER BY "nbalcntcId" DESC
+        LIMIT 1
+      `;
+      const clbalParams = [cncode, exchtype, counter, date];
+      const clbalResult = await BaseModel.executeQuery(clbalQuery, clbalParams);
+      let MClBal = 0,
+        MClBalRs = 0;
+      if (clbalResult && clbalResult.length > 0) {
+        MClBal = parseFloat(clbalResult[0].clbal) || 0;
+        MClBalRs = parseFloat(clbalResult[0].clbalrs) || 0;
+      }
+
+      // 2. Query for rateper from mCurrencies
+      let rateper = 1;
+      const rateperQuery = `SELECT "nRatePer" FROM "mCurrency" WHERE "vCncode" = $1 LIMIT 1`;
+      const rateperResult = await BaseModel.executeQuery(rateperQuery, [
+        cncode,
+      ]);
+      if (
+        rateperResult &&
+        rateperResult.length > 0 &&
+        rateperResult[0].nRatePer
+      ) {
+        rateper = parseInt(rateperResult[0].nRatePer) || 1;
+      }
+
+      // // 3. Adjust for old values if editing same CN/exchtype/issuer
+      // if (
+      //   !bExchangeGridMode &&
+      //   cncode === moldCnCode &&
+      //   exchtype === moldExchtype &&
+      //   (issuer || '') === (moldIssuer || '')
+      // ) {
+      //   MClBal += parseFloat(nOldFE) || 0;
+      //   MClBalRs += parseFloat(nOldINR) || 0;
+      // }
+
+      // 4. Calculate holdCost and profit
+      let holdCost =
+        MClBal !== 0
+          ? (Math.round((MClBalRs / MClBal) * 100000) / 100000) * rateper
+          : 0;
+      let profit = (parseFloat(rate) || 0) - holdCost;
+      let warningMessage = "";
+
+      // 5. If holdCost == 0, fallback to latest daily HoldCost from Exchange table
+      if (holdCost === 0) {
+        warningMessage = `AWP Rate for the currency [${cncode}] could not be calculated, Picking up the latest rate from daily rates`;
+        const fallbackQuery = `
+          SELECT "HoldCost" FROM "Exchange"
+          WHERE "ExchType" = 'CN' AND "CNCodeID" = $1 AND "vTrntype" = 'S'
+          ORDER BY "nExchID" DESC
+          LIMIT 1
+        `;
+        const fallbackResult = await BaseModel.executeQuery(fallbackQuery, [
+          cncode,
+        ]);
+        let nCurrRate = 0;
+        if (
+          fallbackResult &&
+          fallbackResult.length > 0 &&
+          fallbackResult[0].HoldCost
+        ) {
+          nCurrRate = parseFloat(fallbackResult[0].HoldCost) || 0;
+        }
+        holdCost = nCurrRate * rateper;
+        profit = (parseFloat(rate) || 0) - holdCost;
+      }
+
+      return {
+        success: true,
+        holdCost,
+        profit,
+        warningMessage,
+      };
+    } catch (error) {
+      console.error("Error in calcHoldCostCN:", error);
+      return {
+        success: false,
+        message: `Error calculating hold cost: ${error.message}`,
+        holdCost: 0,
+        profit: 0,
       };
     }
   }
@@ -2169,7 +2299,6 @@ ORDER BY "vCode"
         await this.postAccountingEntries(
           {
             ...data,
-            vNo: transactId,
           },
           client
         );
@@ -2785,7 +2914,7 @@ ORDER BY "vCode"
                 anacode: "XXX",
                 sign: vTrntype === "S" ? "C" : "D",
                 amount: costAmount.toFixed(2),
-                vno: vNo,
+
                 CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
                   vTrntype === "S"
                     ? productDetails?.vSaleAccountCode || "SALCN"
@@ -2829,7 +2958,7 @@ ORDER BY "vCode"
                     anacode: "XXX",
                     sign: profitSign,
                     amount: Math.abs(profitAmount).toFixed(2),
-                    vno: vNo,
+
                     nBranchID: nBranchID,
                     vBranchCode: vBranchCode,
                     CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -2871,7 +3000,7 @@ ORDER BY "vCode"
                             parseFloat(exchange.HoldCost)) /
                           parseFloat(exchange.Per)
                         ).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -2906,7 +3035,7 @@ ORDER BY "vCode"
                             parseFloat(exchange.HoldCost)) /
                           parseFloat(exchange.Per)
                         ).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -2945,7 +3074,7 @@ ORDER BY "vCode"
                       anacode: "XXX",
                       sign: "C", // Credit for profit in sell transactions
                       amount: Math.abs(profitAmount).toFixed(2),
-                      vno: vNo,
+
                       nBranchID: nBranchID,
                       vBranchCode: vBranchCode,
                       CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -2978,7 +3107,7 @@ ORDER BY "vCode"
                             parseFloat(exchange.HoldCost)) /
                           parseFloat(exchange.Per)
                         ).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3010,7 +3139,7 @@ ORDER BY "vCode"
                             parseFloat(exchange.HoldCost)) /
                           parseFloat(exchange.Per)
                         ).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3049,7 +3178,7 @@ ORDER BY "vCode"
                       anacode: "XXX",
                       sign: "D", // Debit for profit in buy transactions for settlement products
                       amount: Math.abs(profitAmount).toFixed(2),
-                      vno: vNo,
+
                       nBranchID: nBranchID,
                       vBranchCode: vBranchCode,
                       CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3098,7 +3227,7 @@ ORDER BY "vCode"
                   anacode: "XXX",
                   sign: vTrntype === "B" ? "D" : "C",
                   amount: Math.abs(purchaseSaleAmount).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3119,7 +3248,7 @@ ORDER BY "vCode"
               anacode: "XXX",
               sign: vTrntype === "S" ? "D" : "C",
               amount: parseFloat(exchange.Amount).toFixed(2),
-              vno: vNo,
+
               nBranchID: nBranchID,
               vBranchCode: vBranchCode,
               SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3171,7 +3300,7 @@ ORDER BY "vCode"
                       ? "D"
                       : "C",
                   amount: Math.abs(taxAmount).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3239,7 +3368,7 @@ ORDER BY "vCode"
                   anacode: "TAX",
                   sign: vTrntype === "S" ? "D" : "C",
                   amount: Math.abs(totalGstAmount).toFixed(2),
-                  vno: vNo,
+
                   nBranchID: nBranchID,
                   vBranchCode: vBranchCode,
                   rno: stateCode,
@@ -3272,7 +3401,7 @@ ORDER BY "vCode"
               anacode: "TAX",
               sign: vTrntype === "B" ? "D" : "C",
               amount: Math.abs(totalTaxAmount).toFixed(2),
-              vno: vNo,
+
               nBranchID: nBranchID,
               vBranchCode: vBranchCode,
               SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3310,7 +3439,7 @@ ORDER BY "vCode"
                 amount: parseFloat(payment.amount).toFixed(2),
                 rno: payment.code || "",
                 rnoId: rnoId,
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3334,7 +3463,7 @@ ORDER BY "vCode"
                 amount: parseFloat(payment.amount).toFixed(2),
                 rno: "",
                 rnoId: rnoId,
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3359,7 +3488,7 @@ ORDER BY "vCode"
                 amount: parseFloat(payment.amount).toFixed(2),
                 rno: payment.code || "",
                 rnoId: rnoId,
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3381,8 +3510,13 @@ ORDER BY "vCode"
                 sign: paymentDirection === "R" ? "D" : "C",
                 amount: parseFloat(payment.amount).toFixed(2),
                 rno: payment.code !== "CASH" ? payment.chequeNo : "",
-                rnoId: payment.code !== "CASH" ? await AdvancedSettingsUtil.getAccountIdByCode(payment.chequeNo || "") : "0",
-                vno: vNo,
+                rnoId:
+                  payment.code !== "CASH"
+                    ? await AdvancedSettingsUtil.getAccountIdByCode(
+                        payment.chequeNo || ""
+                      )
+                    : "0",
+
                 CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
                   payment.code || ""
                 ),
@@ -3426,7 +3560,7 @@ ORDER BY "vCode"
                 anacode: "XXX",
                 sign: chargeSign,
                 amount: absAmount.toFixed(2),
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3454,7 +3588,7 @@ ORDER BY "vCode"
                 anacode: "XXX",
                 sign: balanceSign,
                 amount: absAmount.toFixed(2),
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3480,7 +3614,7 @@ ORDER BY "vCode"
                     anacode: "TAX",
                     sign: vTrntype === "S" ? "C" : "D",
                     amount: Math.abs(cgstAmount).toFixed(2),
-                    vno: vNo,
+
                     nBranchID: nBranchID,
                     vBranchCode: vBranchCode,
                     CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3503,7 +3637,7 @@ ORDER BY "vCode"
                     anacode: "TAX",
                     sign: vTrntype === "S" ? "C" : "D",
                     amount: Math.abs(sgstAmount).toFixed(2),
-                    vno: vNo,
+
                     nBranchID: nBranchID,
                     vBranchCode: vBranchCode,
                     CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3526,7 +3660,7 @@ ORDER BY "vCode"
                     anacode: "TAX",
                     sign: vTrntype === "S" ? "C" : "D",
                     amount: Math.abs(igstAmount).toFixed(2),
-                    vno: vNo,
+
                     nBranchID: nBranchID,
                     vBranchCode: vBranchCode,
                     CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3553,7 +3687,7 @@ ORDER BY "vCode"
                     anacode: "TAX",
                     sign: vTrntype === "S" ? "D" : "C",
                     amount: Math.abs(totalGstAmount).toFixed(2),
-                    vno: vNo,
+
                     nBranchID: nBranchID,
                     vBranchCode: vBranchCode,
                     SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3619,7 +3753,7 @@ ORDER BY "vCode"
                 anacode: "XXX",
                 sign: chargeSign,
                 amount: absAmount.toFixed(2),
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 CodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3648,7 +3782,7 @@ ORDER BY "vCode"
                 anacode: "XXX",
                 sign: balanceSign,
                 amount: absAmount.toFixed(2),
-                vno: vNo,
+
                 nBranchID: nBranchID,
                 vBranchCode: vBranchCode,
                 SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3674,7 +3808,7 @@ ORDER BY "vCode"
             anacode: "XXX",
             sign: vTrntype === "S" ? "C" : "D",
             amount: Math.abs(parseFloat(TCSAMT)).toFixed(2),
-            vno: vNo,
+
             nBranchID: nBranchID,
             vBranchCode: vBranchCode,
             SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3696,7 +3830,7 @@ ORDER BY "vCode"
             anacode: "XXX",
             sign: vTrntype === "S" ? "D" : "C",
             amount: Math.abs(parseFloat(TCSAMT)).toFixed(2),
-            vno: vNo,
+
             nBranchID: nBranchID,
             vBranchCode: vBranchCode,
             SlCodeId: await AdvancedSettingsUtil.getAccountIdByCode(
@@ -3744,7 +3878,7 @@ ORDER BY "vCode"
                   entry.amount,
                   entry.rno || "",
                   entry.bnktag || "",
-                  entry.vno,
+                  vNo,
                   entry.CodeId || "0",
                   entry.SlCodeId || "0",
                   entry.AnaCodeId || "0",

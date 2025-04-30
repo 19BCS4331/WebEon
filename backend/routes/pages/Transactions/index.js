@@ -401,10 +401,10 @@ router.get("/getTaxData", authMiddleware, async (req, res) => {
   }
 });
 
-// Get payment codes for transaction
-router.get('/getPaymentCodes', authMiddleware, async (req, res) => {
+// Get payment codes for transaction (BUY)
+router.get('/getPaymentCodesBuy', authMiddleware, async (req, res) => {
   try {
-    const codes = await TransactionModel.getPaymentCodes();
+    const codes = await TransactionModel.getPaymentCodesBuy();
     res.json(codes);
   } catch (error) {
     console.error('Error fetching payment codes:', error);
@@ -412,6 +412,16 @@ router.get('/getPaymentCodes', authMiddleware, async (req, res) => {
   }
 });
 
+// Get payment codes for transaction (SELL)
+router.get('/getPaymentCodesSell', authMiddleware, async (req, res) => {
+  try {
+    const codes = await TransactionModel.getPaymentCodesSell();
+    res.json(codes);
+  } catch (error) {
+    console.error('Error fetching payment codes:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch payment codes' });
+  }
+});
 
 // Get Cheque Options
 router.get('/cheque-options/:bankCode', async (req, res) => {
@@ -443,6 +453,16 @@ router.get('/cheque-options/:bankCode', async (req, res) => {
       message: 'Error fetching cheque options',
       error: error.message
     });
+  }
+});
+
+// Calculate Hold Cost for CN product
+router.post('/calcHoldCostCN', async (req, res) => {
+  try {
+    const result = await TransactionModel.calcHoldCostCN(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
