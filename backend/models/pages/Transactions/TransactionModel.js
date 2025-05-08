@@ -86,9 +86,10 @@ class TransactionModel extends BaseModel {
         if (currentStoredYear.toString() !== yearDigit) {
           console.log(`Financial year changed. Updating year from ${currentStoredYear} to ${yearDigit} in document number tables.`);
           
-          // First, get the starting numbers from TemplateDoc_no for each code
+          // Get the starting numbers from TemplateDoc_no for each code (ignoring branch)
           const getTemplateQuery = `
             SELECT "code", "og_no" FROM "TemplateDoc_no"
+            GROUP BY "code", "og_no"
           `;
           
           const templateResults = await this.executeQuery(getTemplateQuery);
@@ -97,32 +98,36 @@ class TransactionModel extends BaseModel {
           const startingNumbers = {};
           if (templateResults && templateResults.length > 0) {
             for (const template of templateResults) {
+              // Use just the code as the key
               startingNumbers[template.code] = template.og_no;
             }
           }
           
-          // Get all codes from Doc_no table
+          // Get all codes and branches from Doc_no table
           const getDocNoCodesQuery = `
-            SELECT "code" FROM "Doc_no"
+            SELECT "code", "branch_id" FROM "Doc_no"
           `;
           
           const docNoCodes = await this.executeQuery(getDocNoCodesQuery);
           
-          // Update each code in Doc_no with its starting number and new year
+          // Update each code+branch combination in Doc_no with its starting number and new year
           if (docNoCodes && docNoCodes.length > 0) {
             for (const docNoCode of docNoCodes) {
               const code = docNoCode.code;
+              const branchId = docNoCode.branch_id;
+              
               // Use the starting number from template if available, otherwise use a default
+              // Look up by code only, ignoring branch
               const startingNo = startingNumbers[code] || '100000';
               
               const updateDocNoQuery = `
                 UPDATE "Doc_no" 
                 SET "year" = $1, "no" = $2
-                WHERE "code" = $3
+                WHERE "code" = $3 AND "branch_id" = $4
               `;
               
-              await this.executeQuery(updateDocNoQuery, [yearDigit, startingNo, code]);
-              console.log(`Reset document number for code ${code} to ${startingNo} for new financial year.`);
+              await this.executeQuery(updateDocNoQuery, [yearDigit, startingNo, code, branchId]);
+              console.log(`Reset document number for code ${code}, branch ${branchId} to ${startingNo} for new financial year.`);
             }
           } else {
             // If no codes found, just update the year
@@ -155,8 +160,11 @@ class TransactionModel extends BaseModel {
   // Get next transaction number
   static async getNextTransactionNumber(vTrnwith, vTrntype, nBranchID = null) {
     try {
+      // Default branch ID to 1 if not provided
+      const branchId = nBranchID || 1;
+      
       console.log(
-        `Getting next transaction number for vTrnwith=${vTrnwith}, vTrntype=${vTrntype}, nBranchID=${nBranchID}`
+        `Getting next transaction number for vTrnwith=${vTrnwith}, vTrntype=${vTrntype}, nBranchID=${branchId}`
       );
       
       // Check and update financial year if needed
@@ -166,20 +174,20 @@ class TransactionModel extends BaseModel {
       const code = `${vTrnwith}${vTrntype}`;
       const name = `${vTrnwith} ${vTrntype}`;
       
-      // Check if we have an existing document number in Doc_no table
+      // Check if we have an existing document number in Doc_no table for this branch
       const checkDocNoQuery = `
-        SELECT "code", "name", "year", "no", "DOCID" 
+        SELECT "code", "name", "year", "no", "DOCID", "branch_id" 
         FROM "Doc_no" 
-        WHERE "code" = $1
+        WHERE "code" = $1 AND "branch_id" = $2
       `;
       
-      const docNoResult = await this.executeQuery(checkDocNoQuery, [code]);
+      const docNoResult = await this.executeQuery(checkDocNoQuery, [code, branchId]);
       
       // Get current date for reference
       const currentDate = new Date();
       
       if (docNoResult && docNoResult.length > 0) {
-        // We found an existing document number record
+        // We found an existing document number record for this branch
         const existingRecord = docNoResult[0];
         const existingNo = existingRecord.no;
         const existingYear = existingRecord.year;
@@ -205,17 +213,18 @@ class TransactionModel extends BaseModel {
         // Return the full document number
         return fullDocNo;
       } else {
-        // We need to check if there's a template document number
+        // We need to check if there's a template document number (ignoring branch)
         const checkTemplateQuery = `
-          SELECT "code", "name", "year", "no" 
+          SELECT "code", "name", "year", "no", "og_no" 
           FROM "TemplateDoc_no" 
           WHERE "code" = $1
+          LIMIT 1
         `;
         
         const templateResult = await this.executeQuery(checkTemplateQuery, [code]);
         
         if (templateResult && templateResult.length > 0) {
-          // We have a template, use it
+          // We have a template for this transaction type, use it
           const templateRecord = templateResult[0];
           const templateNo = templateRecord.no;
           const templateYear = templateRecord.year;
@@ -240,21 +249,23 @@ class TransactionModel extends BaseModel {
           
           // Get the year from the template records in the database
           // Query to get the default year value from existing templates
-          const yearQuery = `
-            SELECT "year" 
-            FROM "TemplateDoc_no" 
-            LIMIT 1
-          `;
           
-          const yearResult = await this.executeQuery(yearQuery);
-          const defaultYear = yearResult && yearResult.length > 0 ? yearResult[0].year : 4; // Use 4 as fallback if no templates exist
+          // Get current date
+          const currentDate = new Date();
+          const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
+          const currentDay = currentDate.getDate();
+          const currentYear = currentDate.getFullYear();
           
-          // Don't insert into Doc_no or TemplateDoc_no here - it will be done in saveTransaction
-          // Just store the values for generating the document number
+          // Determine financial year
+          let financialYear;
+          if (currentMonth < 4 || (currentMonth === 4 && currentDay === 1)) {
+            financialYear = currentYear - 1;
+          } else {
+            financialYear = currentYear;
+          }
           
-          // Get the year digit for the document number
-          // If year is 0, use 5 as per the original code logic
-          const yearDigit = defaultYear === 0 ? '5' : defaultYear.toString();
+          // Get the last digit of the financial year
+          const yearDigit = financialYear.toString().slice(-1);
           
           // Combine year and number for the full document number
           const fullDocNo = yearDigit + startingNo;
@@ -1633,27 +1644,30 @@ ORDER BY "vCode"
             // Get the document code from transaction type
             const code = `${data.vTrnwith}${data.vTrntype}`;
             
-            // Check if the document code exists in Doc_no
+            // Get the branch ID from the transaction data
+            const branchId = data.nBranchID || 1;
+            
+            // Check if the document code exists in Doc_no for this branch
             const checkDocNoQuery = `
-              SELECT "code", "year", "no" 
+              SELECT "code", "year", "no", "branch_id" 
               FROM "Doc_no" 
-              WHERE "code" = $1
+              WHERE "code" = $1 AND "branch_id" = $2
             `;
             
-            const docNoResult = await this.executeQuery(checkDocNoQuery, [code]);
+            const docNoResult = await this.executeQuery(checkDocNoQuery, [code, branchId]);
             
             if (docNoResult && docNoResult.length > 0) {
-              // Update existing record
+              // Update existing record for this branch
               const updateQuery = `
                 UPDATE "Doc_no" 
                 SET "no" = $1 
-                WHERE "code" = $2
+                WHERE "code" = $2 AND "branch_id" = $3
               `;
               
-              await this.executeQuery(updateQuery, [sequenceNumber, code]);
-              console.log(`Updated Doc_no for code ${code} with number ${sequenceNumber}`);
+              await this.executeQuery(updateQuery, [sequenceNumber, code, branchId]);
+              console.log(`Updated Doc_no for code ${code}, branch ${branchId} with number ${sequenceNumber}`);
             } else {
-              // Insert new record
+              // Insert new record for this branch
               // Get the financial year based on the transaction date
               let financialYear;
               const transactionDate = data.dDate ? new Date(data.dDate) : new Date();
@@ -1674,31 +1688,45 @@ ORDER BY "vCode"
               const yearCode = financialYear.toString().slice(-1);
               
               const insertQuery = `
-                INSERT INTO "Doc_no" ("code", "name", "year", "no")
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO "Doc_no" ("code", "name", "year", "no", "branch_id")
+                VALUES ($1, $2, $3, $4, $5)
               `;
               
               const name = `${data.vTrnwith} ${data.vTrntype}`;
-              await this.executeQuery(insertQuery, [code, name, yearCode, sequenceNumber]);
-              console.log(`Inserted new Doc_no for code ${code} with number ${sequenceNumber}`);
+              await this.executeQuery(insertQuery, [code, name, yearCode, sequenceNumber, branchId]);
+              console.log(`Inserted new Doc_no for code ${code}, branch ${branchId} with number ${sequenceNumber}`);
               
-              // Also create a template if it doesn't exist
+              // Also create a template if it doesn't exist for this branch
               const checkTemplateQuery = `
                 SELECT "code" 
                 FROM "TemplateDoc_no" 
-                WHERE "code" = $1
+                WHERE "code" = $1 AND "branch_id" = $2
               `;
               
-              const templateResult = await this.executeQuery(checkTemplateQuery, [code]);
+              const templateResult = await this.executeQuery(checkTemplateQuery, [code, branchId]);
               
               if (!templateResult || templateResult.length === 0) {
-                const insertTemplateQuery = `
-                  INSERT INTO "TemplateDoc_no" ("code", "name", "year", "no")
-                  VALUES ($1, $2, $3, $4)
+                // Check if a template exists for this code (ignoring branch)
+                const checkTemplateOgNoQuery = `
+                  SELECT "code", "og_no" 
+                  FROM "TemplateDoc_no" 
+                  WHERE "code" = $1
+                  LIMIT 1
                 `;
                 
-                await this.executeQuery(insertTemplateQuery, [code, name, yearCode, sequenceNumber]);
-                console.log(`Created template for code ${code}`);
+                const templateOgNoResult = await this.executeQuery(checkTemplateOgNoQuery, [code]);
+                
+                // Use the og_no from template if it exists, otherwise use sequenceNumber
+                const ogNo = templateOgNoResult && templateOgNoResult.length > 0 ? 
+                  templateOgNoResult[0].og_no : sequenceNumber;
+                
+                const insertTemplateQuery = `
+                  INSERT INTO "TemplateDoc_no" ("code", "name", "year", "no", "og_no", "branch_id")
+                  VALUES ($1, $2, $3, $4, $5, $6)
+                `;
+                
+                await this.executeQuery(insertTemplateQuery, [code, name, yearCode, sequenceNumber, ogNo, branchId]);
+                console.log(`Created template for code ${code}, branch ${branchId}`);
               }
             }
           } catch (error) {

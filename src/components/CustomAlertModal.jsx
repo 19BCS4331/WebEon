@@ -97,6 +97,7 @@ export default function CustomAlertModal() {
               variant={isMobile ? "h6" : "h5"}
               component="h2"
               sx={{
+                fontFamily: "Poppins",
                 color: Colortheme.text,
                 fontWeight: 600,
                 mb: dialogMsg ? 2 : 3,
@@ -113,6 +114,7 @@ export default function CustomAlertModal() {
               <Typography
                 variant="body1"
                 sx={{
+                  fontFamily: "Poppins",
                   color: Colortheme.text,
                   mb: 4,
                   flex: 1
@@ -134,6 +136,7 @@ export default function CustomAlertModal() {
                 textColor={Colortheme.text}
                 onClick={hideAlertDialog}
                 style={{
+                  fontFamily: "Poppins",
                   width: dialogMsg ? (isMobile ? 100 : 120) : (isMobile ? 120 : 140),
                   fontWeight: 500
                 }}
@@ -150,6 +153,7 @@ export default function CustomAlertModal() {
                   hideAlertDialog();
                 }}
                 style={{
+                  fontFamily: "Poppins",
                   width: dialogMsg ? (isMobile ? 100 : 120) : (isMobile ? 120 : 140),
                   fontWeight: 500
                 }}
