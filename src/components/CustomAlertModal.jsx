@@ -80,6 +80,19 @@ export default function CustomAlertModal() {
               <CloseIcon fontSize="small" />
             </IconButton>
 
+            {!dialogMsg && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <WarningAmberIcon 
+                  sx={{ 
+                    fontSize: 40, 
+                    color: 'orange',
+                    opacity: 0.8
+                  }} 
+                />
+              </Box>
+            )}
+
+
             <Typography
               variant={isMobile ? "h6" : "h5"}
               component="h2"
@@ -95,18 +108,7 @@ export default function CustomAlertModal() {
               {title} ?
             </Typography>
 
-            {!dialogMsg && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                <WarningAmberIcon 
-                  sx={{ 
-                    fontSize: 40, 
-                    color: Colortheme.text,
-                    opacity: 0.8
-                  }} 
-                />
-              </Box>
-            )}
-
+           
             {dialogMsg && (
               <Typography
                 variant="body1"

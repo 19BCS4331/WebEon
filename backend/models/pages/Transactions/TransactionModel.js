@@ -47,98 +47,229 @@ class TransactionModel extends BaseModel {
     }
   }
 
+  // Check and update financial year in document number tables
+  static async checkAndUpdateFinancialYear() {
+    try {
+      // Get current date
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
+      const currentDay = currentDate.getDate();
+      const currentYear = currentDate.getFullYear();
+      
+      // Determine financial year
+      // In India, financial year runs from April 1 to March 31
+      let financialYear;
+      if (currentMonth < 4 || (currentMonth === 4 && currentDay === 1)) {
+        // Jan 1 to April 1 is previous year's financial year
+        financialYear = currentYear - 1;
+      } else {
+        // April 2 to Dec 31 is current year's financial year
+        financialYear = currentYear;
+      }
+      
+      // Get the last digit of the financial year
+      const yearDigit = financialYear.toString().slice(-1);
+      
+      // Check if we need to update the year in Doc_no and TemplateDoc_no tables
+      // First, get a sample record to check the current year value
+      const checkYearQuery = `
+        SELECT "year" FROM "Doc_no" LIMIT 1
+      `;
+      
+      const yearResult = await this.executeQuery(checkYearQuery);
+      
+      if (yearResult && yearResult.length > 0) {
+        const currentStoredYear = yearResult[0].year;
+        
+        // If the stored year is different from the current financial year's last digit,
+        // update all records in both tables and reset document numbers
+        if (currentStoredYear.toString() !== yearDigit) {
+          console.log(`Financial year changed. Updating year from ${currentStoredYear} to ${yearDigit} in document number tables.`);
+          
+          // First, get the starting numbers from TemplateDoc_no for each code
+          const getTemplateQuery = `
+            SELECT "code", "og_no" FROM "TemplateDoc_no"
+          `;
+          
+          const templateResults = await this.executeQuery(getTemplateQuery);
+          
+          // Create a map of code to starting number
+          const startingNumbers = {};
+          if (templateResults && templateResults.length > 0) {
+            for (const template of templateResults) {
+              startingNumbers[template.code] = template.og_no;
+            }
+          }
+          
+          // Get all codes from Doc_no table
+          const getDocNoCodesQuery = `
+            SELECT "code" FROM "Doc_no"
+          `;
+          
+          const docNoCodes = await this.executeQuery(getDocNoCodesQuery);
+          
+          // Update each code in Doc_no with its starting number and new year
+          if (docNoCodes && docNoCodes.length > 0) {
+            for (const docNoCode of docNoCodes) {
+              const code = docNoCode.code;
+              // Use the starting number from template if available, otherwise use a default
+              const startingNo = startingNumbers[code] || '100000';
+              
+              const updateDocNoQuery = `
+                UPDATE "Doc_no" 
+                SET "year" = $1, "no" = $2
+                WHERE "code" = $3
+              `;
+              
+              await this.executeQuery(updateDocNoQuery, [yearDigit, startingNo, code]);
+              console.log(`Reset document number for code ${code} to ${startingNo} for new financial year.`);
+            }
+          } else {
+            // If no codes found, just update the year
+            const updateDocNoQuery = `
+              UPDATE "Doc_no" SET "year" = $1
+            `;
+            
+            await this.executeQuery(updateDocNoQuery, [yearDigit]);
+          }
+          
+          // Update TemplateDoc_no table year (keep the starting numbers as they are)
+          const updateTemplateQuery = `
+            UPDATE "TemplateDoc_no" SET "year" = $1
+          `;
+          
+          await this.executeQuery(updateTemplateQuery, [yearDigit]);
+          
+          console.log('Document number tables updated with new financial year and numbers reset.');
+        }
+      }
+      
+      return yearDigit;
+    } catch (error) {
+      console.error('Error checking/updating financial year:', error);
+      // Return current year's last digit as fallback
+      return new Date().getFullYear().toString().slice(-1);
+    }
+  }
+  
   // Get next transaction number
   static async getNextTransactionNumber(vTrnwith, vTrntype, nBranchID = null) {
     try {
       console.log(
         `Getting next transaction number for vTrnwith=${vTrnwith}, vTrntype=${vTrntype}, nBranchID=${nBranchID}`
       );
+      
+      // Check and update financial year if needed
+      await this.checkAndUpdateFinancialYear();
 
-      // First, get the maximum vNo across ALL transactions to ensure global uniqueness
-      const globalMaxQuery = `
-        SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
-        FROM "Transact"
+      // Combine vTrnwith and vTrntype to form the document code
+      const code = `${vTrnwith}${vTrntype}`;
+      const name = `${vTrnwith} ${vTrntype}`;
+      
+      // Check if we have an existing document number in Doc_no table
+      const checkDocNoQuery = `
+        SELECT "code", "name", "year", "no", "DOCID" 
+        FROM "Doc_no" 
+        WHERE "code" = $1
       `;
-      const globalMaxResult = await this.executeQuery(globalMaxQuery);
-      let nextNo = globalMaxResult[0]?.nextNo || 1;
-
-      // Then, get the maximum for the specific parameters
-      let specificQuery = `
-        SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
-        FROM "Transact"
-        WHERE "vTrnwith" = $1 AND "vTrntype" = $2
-      `;
-
-      const queryParams = [vTrnwith, vTrntype];
-
-      // Add branch filter if provided
-      if (nBranchID) {
-        specificQuery = `
-          SELECT COALESCE(MAX(CAST("vNo" AS INTEGER)), 0) + 1 as "nextNo"
-          FROM "Transact"
-          WHERE "vTrnwith" = $1 AND "vTrntype" = $2 AND "nBranchID" = $3
+      
+      const docNoResult = await this.executeQuery(checkDocNoQuery, [code]);
+      
+      // Get current date for reference
+      const currentDate = new Date();
+      
+      if (docNoResult && docNoResult.length > 0) {
+        // We found an existing document number record
+        const existingRecord = docNoResult[0];
+        const existingNo = existingRecord.no;
+        const existingYear = existingRecord.year;
+        
+        // Convert to number for calculation
+        const existingNoInt = parseInt(existingNo, 10);
+        const nextNoInt = existingNoInt + 1;
+        
+        // Format with leading zeros to match your existing format
+        // Adjust padding based on your number format
+        const nextNoFormatted = nextNoInt.toString().padStart(existingNo.length, '0');
+        
+        // Don't update the Doc_no table here - it will be updated in saveTransaction
+        // Just generate and return the next number
+        
+        // Get the year digit for the document number
+        // If year is 0, use 5 as per the original code logic
+        const yearDigit = existingYear === 0 ? '5' : existingYear.toString();
+        
+        // Combine year and number for the full document number
+        const fullDocNo = yearDigit + nextNoFormatted;
+        
+        // Return the full document number
+        return fullDocNo;
+      } else {
+        // We need to check if there's a template document number
+        const checkTemplateQuery = `
+          SELECT "code", "name", "year", "no" 
+          FROM "TemplateDoc_no" 
+          WHERE "code" = $1
         `;
-        queryParams.push(nBranchID);
+        
+        const templateResult = await this.executeQuery(checkTemplateQuery, [code]);
+        
+        if (templateResult && templateResult.length > 0) {
+          // We have a template, use it
+          const templateRecord = templateResult[0];
+          const templateNo = templateRecord.no;
+          const templateYear = templateRecord.year;
+          
+          // Don't insert into Doc_no here - it will be done in saveTransaction
+          // Just store the values for generating the document number
+          
+          // Get the year digit for the document number
+          // If year is 0, use 5 as per the original code logic
+          const yearDigit = templateYear === 0 ? '5' : templateYear.toString();
+          
+          // Combine year and number for the full document number
+          const fullDocNo = yearDigit + templateNo;
+          
+          // Return the full document number
+          return fullDocNo;
+        } else {
+          // No template exists, create a new document number
+          // Generate a starting number based on your business logic
+          // This is just an example, adjust according to your numbering system
+          const startingNo = '100000'; // Example starting number
+          
+          // Get the year from the template records in the database
+          // Query to get the default year value from existing templates
+          const yearQuery = `
+            SELECT "year" 
+            FROM "TemplateDoc_no" 
+            LIMIT 1
+          `;
+          
+          const yearResult = await this.executeQuery(yearQuery);
+          const defaultYear = yearResult && yearResult.length > 0 ? yearResult[0].year : 4; // Use 4 as fallback if no templates exist
+          
+          // Don't insert into Doc_no or TemplateDoc_no here - it will be done in saveTransaction
+          // Just store the values for generating the document number
+          
+          // Get the year digit for the document number
+          // If year is 0, use 5 as per the original code logic
+          const yearDigit = defaultYear === 0 ? '5' : defaultYear.toString();
+          
+          // Combine year and number for the full document number
+          const fullDocNo = yearDigit + startingNo;
+          
+          // Return the full document number
+          return fullDocNo;
+        }
       }
-
-      const specificResult = await this.executeQuery(
-        specificQuery,
-        queryParams
-      );
-      const specificNextNo = specificResult[0]?.nextNo || 1;
-
-      // Use the maximum of the two to ensure both global and specific uniqueness
-      nextNo = Math.max(nextNo, specificNextNo);
-
-      // Verify the generated number is unique across ALL transactions
-      const checkQuery = `
-        SELECT COUNT(*) as count
-        FROM "Transact"
-        WHERE "vNo" = $1
-      `;
-
-      const checkResult = await this.executeQuery(checkQuery, [
-        nextNo.toString(),
-      ]);
-
-      // If the number already exists anywhere, increment it and check again
-      if (checkResult[0]?.count > 0) {
-        console.log(
-          `Transaction number ${nextNo} already exists globally, incrementing...`
-        );
-        // Get the next available number by incrementing and checking again
-        return this.findNextAvailableNumber(nextNo);
-      }
-
-      console.log(`Generated next transaction number: ${nextNo}`);
-      return nextNo;
     } catch (error) {
+      console.error('Error generating transaction number:', error);
       throw new DatabaseError("Failed to get next transaction number", error);
     }
   }
+  
 
-  // Helper method to find the next available transaction number
-  static async findNextAvailableNumber(startingNumber) {
-    let candidate = startingNumber;
-    let isUnique = false;
-
-    while (!isUnique) {
-      candidate++;
-      const checkQuery = `
-        SELECT COUNT(*) as count
-        FROM "Transact"
-        WHERE "vNo" = $1
-      `;
-
-      const checkResult = await this.executeQuery(checkQuery, [
-        candidate.toString(),
-      ]);
-      isUnique = checkResult[0]?.count === 0;
-    }
-
-    console.log(`Found next available transaction number: ${candidate}`);
-    return candidate;
-  }
 
   // Validate transaction before save
   // static async validateTransaction(data) {
@@ -1491,6 +1622,90 @@ ORDER BY "vCode"
       return await this.executeTransactionQuery(async (client) => {
         console.log("\n=== Starting Transaction Save ===");
         console.log("Incoming Data:", JSON.stringify(data, null, 2));
+        
+        // Update the Doc_no table with the transaction number after saving
+        // The vNo in the data contains the full document number (year + sequence)
+        if (data.vNo) {
+          try {
+            // Extract the sequence part (remove the first digit which is the year)
+            const sequenceNumber = data.vNo.substring(1);
+            
+            // Get the document code from transaction type
+            const code = `${data.vTrnwith}${data.vTrntype}`;
+            
+            // Check if the document code exists in Doc_no
+            const checkDocNoQuery = `
+              SELECT "code", "year", "no" 
+              FROM "Doc_no" 
+              WHERE "code" = $1
+            `;
+            
+            const docNoResult = await this.executeQuery(checkDocNoQuery, [code]);
+            
+            if (docNoResult && docNoResult.length > 0) {
+              // Update existing record
+              const updateQuery = `
+                UPDATE "Doc_no" 
+                SET "no" = $1 
+                WHERE "code" = $2
+              `;
+              
+              await this.executeQuery(updateQuery, [sequenceNumber, code]);
+              console.log(`Updated Doc_no for code ${code} with number ${sequenceNumber}`);
+            } else {
+              // Insert new record
+              // Get the financial year based on the transaction date
+              let financialYear;
+              const transactionDate = data.dDate ? new Date(data.dDate) : new Date();
+              const transactionMonth = transactionDate.getMonth() + 1; // JavaScript months are 0-based
+              const transactionDay = transactionDate.getDate();
+              const transactionYear = transactionDate.getFullYear();
+              
+              // Determine financial year (April 1 to March 31)
+              if (transactionMonth < 4 || (transactionMonth === 4 && transactionDay === 1)) {
+                // Jan 1 to April 1 is previous year's financial year
+                financialYear = transactionYear - 1;
+              } else {
+                // April 2 to Dec 31 is current year's financial year
+                financialYear = transactionYear;
+              }
+              
+              // Get the last digit of the financial year
+              const yearCode = financialYear.toString().slice(-1);
+              
+              const insertQuery = `
+                INSERT INTO "Doc_no" ("code", "name", "year", "no")
+                VALUES ($1, $2, $3, $4)
+              `;
+              
+              const name = `${data.vTrnwith} ${data.vTrntype}`;
+              await this.executeQuery(insertQuery, [code, name, yearCode, sequenceNumber]);
+              console.log(`Inserted new Doc_no for code ${code} with number ${sequenceNumber}`);
+              
+              // Also create a template if it doesn't exist
+              const checkTemplateQuery = `
+                SELECT "code" 
+                FROM "TemplateDoc_no" 
+                WHERE "code" = $1
+              `;
+              
+              const templateResult = await this.executeQuery(checkTemplateQuery, [code]);
+              
+              if (!templateResult || templateResult.length === 0) {
+                const insertTemplateQuery = `
+                  INSERT INTO "TemplateDoc_no" ("code", "name", "year", "no")
+                  VALUES ($1, $2, $3, $4)
+                `;
+                
+                await this.executeQuery(insertTemplateQuery, [code, name, yearCode, sequenceNumber]);
+                console.log(`Created template for code ${code}`);
+              }
+            }
+          } catch (error) {
+            console.error("Error updating document number:", error);
+            // Continue with transaction save even if document number update fails
+          }
+        }
 
         // Check balance for each row in exchangeData array (for sell transactions)
         if (

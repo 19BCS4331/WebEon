@@ -20,7 +20,7 @@ postgres_params = {
     'password': 'J1c2m@raekat',
     'host': 'localhost',
     'port': 5432,
-    'database': 'mil'
+    'database': 'mil_UAT'
 }
 
 # Create engines
@@ -28,7 +28,7 @@ mssql_engine = create_engine(URL.create(**mssql_params))
 postgres_engine = create_engine(URL.create(**postgres_params))
 
 # List of tables to migrate
-tables = ['OtherChargeAcc']
+tables = ['TemplateDoc_no']
 
 for table in tables:
     # Read data from MSSQL
