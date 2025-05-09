@@ -1,16 +1,25 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Box, IconButton, InputAdornment, Typography } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  InputAdornment,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
+import ViewIcon from "@mui/icons-material/Visibility";
 import ThemeContext from "../../../../contexts/ThemeContext";
 import { apiClient } from "../../../../services/apiClient";
 import CustomTextField from "../../../../components/global/CustomTextField";
 import CustomDataGrid from "../../../../components/global/CustomDataGrid";
 import CustomDatePicker from "../../../../components/global/CustomDatePicker";
 import { AuthContext } from "../../../../contexts/AuthContext";
+import { usePermissions } from "../../../../services/permissionService";
 
 const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
-  const { branch,counter } = useContext(AuthContext);
+  const { canEdit, canView } = usePermissions();
+  const { branch, counter } = useContext(AuthContext);
   const { Colortheme } = useContext(ThemeContext);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,7 +43,7 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
           fromDate,
           toDate,
           branchId,
-          counterID: counterID.toString(), 
+          counterID: counterID.toString(),
         },
       });
       setTransactions(response.data);
@@ -47,11 +56,13 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
 
   useEffect(() => {
     const initializeDates = () => {
-      const sixMonthsAgo = new Date(new Date().setMonth(new Date().getMonth() - 6))
+      const sixMonthsAgo = new Date(
+        new Date().setMonth(new Date().getMonth() - 6)
+      )
         .toISOString()
         .split("T")[0];
       const today = new Date().toISOString().split("T")[0];
-      
+
       setFromDate(sixMonthsAgo);
       setToDate(today);
     };
@@ -103,17 +114,38 @@ const TransactionList = ({ vTrnwith, vTrntype, onEdit }) => {
         headerName: "Actions",
         width: 100,
         renderCell: (params) => (
-          <IconButton
-            onClick={() => onEdit(params.row)}
-            sx={{
-              color: Colortheme.text,
-              "&:hover": {
-                backgroundColor: Colortheme.secondaryBG,
-              },
-            }}
-          >
-            <EditIcon />
-          </IconButton>
+          <>
+            {canEdit && (
+              <Tooltip title="Edit" placement="left">
+                <IconButton
+                  onClick={() => onEdit(params.row)}
+                  sx={{
+                    color: Colortheme.text,
+                    "&:hover": {
+                      backgroundColor: Colortheme.secondaryBG,
+                    },
+                  }}
+                >
+                  <EditIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canView && !canEdit && (
+              <Tooltip title="View" placement="left">
+                <IconButton
+                  onClick={() => onEdit(params.row)}
+                  sx={{
+                    color: Colortheme.text,
+                    "&:hover": {
+                      backgroundColor: Colortheme.secondaryBG,
+                    },
+                  }}
+                >
+                  <ViewIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
         ),
       }
     );

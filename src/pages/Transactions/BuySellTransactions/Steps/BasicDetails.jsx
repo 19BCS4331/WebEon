@@ -149,6 +149,7 @@ const BasicDetails = ({ data, onUpdate }) => {
         <CustomDatePicker
           label="Date"
           value={data.date}
+          // onChange={(e) => handleChange("date", e)}
           disabled={true}
           styleTF={{ width: "100%" }}
         />

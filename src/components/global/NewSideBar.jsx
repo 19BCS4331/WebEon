@@ -54,6 +54,7 @@ const SubItem = React.memo(({
     if (subItem.subItems.length > 0) {
       toggleSubItems();
     } else {
+      console.log("subitem", subItem);
       if (subItem.link) {
         toggleDrawer();
         setSearchQuery("");

@@ -21,6 +21,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
+import { usePermissions } from '../../../services/permissionService';
 
 
 const steps = [
@@ -51,6 +52,7 @@ const steps = [
 ];
 
 const BuySellTransactionsContent = () => {
+  const { canView, canAdd, canEdit, loading } = usePermissions();
   const {
     formData,
     activeStep,
@@ -69,7 +71,7 @@ const BuySellTransactionsContent = () => {
   const [paxDetails, setPaxDetails] = useState(null);
   const [showStepper, setShowStepper] = useState(true);
   const { showToast, hideToast } = useToast();
-  const { branch } = useAuth();
+  const { branch,finyear } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -219,6 +221,10 @@ const BuySellTransactionsContent = () => {
   };
 
   const handleNewTransaction = async () => {
+    if (!canAdd) {
+      showToast("You do not have permission to add a new transaction", "warning");
+      return;
+    }
     try {
       const response = await transactionsApi.getNextTransactionNumber(
         vTrnwith,
@@ -260,6 +266,10 @@ const BuySellTransactionsContent = () => {
   const handleNext = async () => {
     if (validateStep(activeStep)) {
       if (activeStep === steps.length - 1) {
+        if (!canAdd) {
+          showToast("You do not have permission to save a transaction", "warning");
+          return;
+        }
         setIsSaving(true);
         // Submit the transaction
         try {
@@ -320,6 +330,26 @@ const BuySellTransactionsContent = () => {
         if (!formData.Category) return "Category is required";
         if (!formData.vBranchCode) return "Branch is required";
         if (!formData.date) return "Date is required";
+        
+        // Validate that date is within financial year
+        if (formData.date && finyear) {
+          const transactionDate = new Date(formData.date);
+          
+          // Parse financial year dates (format: "01/04/2025 - 31/03/2026")
+          const [startDateStr, endDateStr] = finyear.split(' - ');
+          const [startDay, startMonth, startYear] = startDateStr.split('/').map(Number);
+          const [endDay, endMonth, endYear] = endDateStr.split('/').map(Number);
+          
+          // Create Date objects (months are 0-indexed in JavaScript)
+          const finYearStart = new Date(startYear, startMonth - 1, startDay);
+          const finYearEnd = new Date(endYear, endMonth - 1, endDay);
+          
+          // Check if transaction date is within financial year
+          if (transactionDate < finYearStart || transactionDate > finYearEnd) {
+            return `Transaction date must be within the current financial year (${finyear})`;
+          }
+        }
+        
         return "";
 
       case 1:
@@ -529,7 +559,7 @@ const BuySellTransactionsContent = () => {
               <Box display="flex" gap={2} 
               sx={{ width:{ xs: 1, sm: 1 }, marginTop:{ xs: 1,sm:0 }, justifyContent:{ xs: 'center', sm: 'flex-end' }}}
               >
-                {isEditMode && (
+                {isEditMode && canAdd &&(
                   <StyledButton
                     onClick={() => {
                       setActiveStep(0); // First change the step

@@ -13,6 +13,7 @@ const MasterMiscellaneousRoutes = require("./routes/pages/Master/Miscellaneous/i
 const TransactionsRoutes = require("./routes/pages/Transactions/index");
 const OpeningBalancesRoutes = require("./routes/pages/Miscellaneous/Opening Balances/currencyOpeningBalance");
 const DashboardRoutes = require("./routes/pages/Dashboard/index");
+const permissionRoutes = require('./routes/permissionRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const { csrfMiddleware, getCsrfToken, getCsrfMetrics } = require('./middleware/csrfMiddleware');
 const rateLimitMiddleware = require('./middleware/rateLimitMiddleware');
@@ -43,7 +44,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Frontend-Path'],
     exposedHeaders: ['X-CSRF-Token']
 }));
 
@@ -83,6 +84,7 @@ app.use("/pages/Master/Miscellaneous", MasterMiscellaneousRoutes);
 app.use("/pages/Transactions", TransactionsRoutes);
 app.use("/pages/Miscellaneous/OpeningBalances", OpeningBalancesRoutes);
 app.use("/api/dashboard", DashboardRoutes);
+app.use("/api/permissions", permissionRoutes);
 
 app.use(rateLimitMiddleware);
 

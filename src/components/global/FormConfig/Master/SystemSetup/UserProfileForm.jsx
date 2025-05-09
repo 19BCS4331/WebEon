@@ -38,7 +38,6 @@ import { apiClient } from "../../../../../services/apiClient";
 
 const BoxButton = styled.div`
   ${(props) => {
-    console.log("Props:", props);
     return `
       width: ${props.width || (props.isMobile ? "50vw" : "12vw")};
       display: flex;
@@ -378,9 +377,13 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
       if (!selectedGroup) return;
 
       try {
+        // The backend requires parentId (which is the navigation parent ID) and userID/groupId
+        // Default to 0 as the parent ID to fetch all rights
+        const parentId = 0;
+        
         const endpoint = isGroupBool
-          ? `/pages/Master/SystemSetup/UserProfile/group-rights?groupId=${selectedGroup}`
-          : `/pages/Master/SystemSetup/UserProfile/user-rights?userId=${selectedGroup}`;
+          ? `/pages/Master/SystemSetup/UserProfile/group-rights?groupId=${selectedGroup}&parentId=${parentId}`
+          : `/pages/Master/SystemSetup/UserProfile/user-rights?userID=${selectedGroup}&parentId=${parentId}`;
 
         const response = await apiClient.get(endpoint, {});
 
@@ -2215,7 +2218,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
             marginBottom: 2, // Add some margin to ensure proper spacing
           }}
         >
-          <StyledButton onClick={handleDialogClose}>Cancel</StyledButton>
+          <StyledButton onClick={handleDialogClose}>Close</StyledButton>
           {openSectionDialog === "Control Setup" && (
             <StyledButton
               onClick={handleSaveControlDetails}

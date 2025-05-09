@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../../../middleware/authMiddleware");
+const { requirePermission, attachPermissions } = require("../../../middleware/permissionMiddleware");
+const { getFrontendPathForEndpoint } = require("../../../utils/requestUtils");
 const TransactionModel = require("../../../models/pages/Transactions/TransactionModel");
 
 // Get transactions
-router.get("/transactions", authMiddleware, async (req, res) => {
+router.get("/transactions", authMiddleware, requirePermission((req) => getFrontendPathForEndpoint(req), 'view'), async (req, res) => {
   try {
     const { vTrnwith, vTrntype, fromDate, toDate, branchId,counterID } = req.query;
     const result = await TransactionModel.getTransactions({
@@ -498,7 +500,7 @@ router.get("/check-balance", authMiddleware, async (req, res) => {
 });
 
 // Save new transaction with all related data
-router.post("/save-transaction", authMiddleware, async (req, res) => {
+router.post("/save-transaction", authMiddleware, requirePermission((req) => getFrontendPathForEndpoint(req), 'add'), async (req, res) => {
   try {
     const result = await TransactionModel.saveTransaction(req.body);
     res.json(result);
@@ -512,7 +514,7 @@ router.post("/save-transaction", authMiddleware, async (req, res) => {
 });
 
 // Update existing transaction
-router.put("/update-transaction/:id", authMiddleware, async (req, res) => {
+router.put("/update-transaction/:id", authMiddleware, requirePermission((req) => getFrontendPathForEndpoint(req), 'edit'), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await TransactionModel.updateTransaction(id, req.body);

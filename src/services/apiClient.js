@@ -48,6 +48,13 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add current path as a custom header for permission checking
+    // This allows the backend to know which frontend route the request is coming from
+    const currentPath = window.location.pathname;
+    if (currentPath) {
+      config.headers['X-Frontend-Path'] = currentPath;
+    }
 
     // Skip CSRF for authentication routes
     const authRoutes = [
