@@ -7,6 +7,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DoneIcon from '@mui/icons-material/Done';
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const Button = styled.button`
   border: none;
@@ -18,7 +19,7 @@ const Button = styled.button`
   cursor: pointer;
   transition: 0.3s;
   display: flex;
-  gap: ${(props)=> props.searchIcon ? "5px" : "0px"};
+  gap: ${(props)=> props.searchIcon || props.addIcon || props.doneIcon || props.downloadIcon || props.refreshIcon || props.loading ? "5px" : "0px"};
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -55,6 +56,8 @@ const StyledButton = ({
   doneIcon = false,
   downloadIcon = false,
   refreshIcon = false,
+  loading = false,
+  spinnerSize = 24,
   ...props
 }) => {
   const { Colortheme } = useContext(ThemeContext);
@@ -75,14 +78,28 @@ const StyledButton = ({
       addIcon={addIcon} 
       downloadIcon={downloadIcon}
       refreshIcon={refreshIcon}
+      disabled={loading || props.disabled}
       {...props}
     >
-      {searchIcon && <SearchIcon sx={{color: SearchIconColorOnHover}}/>}
-      {addIcon && <AddIcon sx={{color: AddIconColorOnHover}}/>}
-      {doneIcon && <DoneIcon sx={{color: DoneIconColorOnHover}}/>}
-      {downloadIcon && <DownloadIcon sx={{color: DownloadIconColorOnHover}}/>}
-      {refreshIcon && <RefreshIcon sx={{color: RefreshIconColorOnHover}}/>}
-      {children}
+      {loading ? (
+        <CircularProgress 
+          size={spinnerSize} 
+          sx={{ 
+            color: Colortheme.text,
+            
+          }} 
+        />
+      ) : (
+        <>
+          {searchIcon && <SearchIcon sx={{color: SearchIconColorOnHover}}/>}
+          {addIcon && <AddIcon sx={{color: AddIconColorOnHover}}/>}
+          {doneIcon && <DoneIcon sx={{color: DoneIconColorOnHover}}/>}
+          {downloadIcon && <DownloadIcon sx={{color: DownloadIconColorOnHover}}/>}
+          {refreshIcon && <RefreshIcon sx={{color: RefreshIconColorOnHover}}/>}
+          {children}
+        </>
+      )}
+      
     </Button>
   );
 };

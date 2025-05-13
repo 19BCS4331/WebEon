@@ -108,6 +108,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [isRightsLoading, setIsRightsLoading] = useState(false);
   //   Fetch Options for BranchList and GroupList from API
   const [branchList, setBranchList] = useState([]);
   const [groupList, setGroupList] = useState([]);
@@ -591,6 +592,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
   };
 
   const handleSaveRights = async () => {
+    setIsRightsLoading(true);
     if (!selectedParent || !selectedGroup) return;
 
     try {
@@ -617,12 +619,14 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
       setTimeout(() => {
         hideToast();
       }, 2000);
+      setIsRightsLoading(false);
     } catch (error) {
       console.error("Error updating rights:", error);
       showToast("Error updating rights!", "fail");
       setTimeout(() => {
         hideToast();
       }, 2000);
+      setIsRightsLoading(false);
     }
   };
 
@@ -855,8 +859,7 @@ const UserProfileForm = ({ initialData, onSubmit, onCancel }) => {
               Close
             </StyledButton>
           )}
-
-          <StyledButton color="primary" onClick={handleSaveRights}>
+          <StyledButton color="primary" onClick={handleSaveRights} loading={isRightsLoading}>
             Save
           </StyledButton>
         </CustomScrollbarBox>

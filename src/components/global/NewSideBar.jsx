@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Drawer,
@@ -24,154 +30,178 @@ import * as MaterialIcons from "@mui/icons-material";
 import { fetchNavigationItems } from "../../services/routeServices/navbarService";
 
 // Memoized SubItem component to prevent unnecessary re-renders
-const SubItem = React.memo(({
-  subItem,
-  openItems,
-  setOpenItems,
-  toggleDrawer,
-  depth,
-  setSearchQuery,
-  setFilteredItems,
-  items,
-}) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [open, setOpen] = useState(false);
-  const { Colortheme } = useContext(ThemeContext);
+const SubItem = React.memo(
+  ({
+    subItem,
+    openItems,
+    setOpenItems,
+    toggleDrawer,
+    depth,
+    setSearchQuery,
+    setSearchInput,
+    setFilteredItems,
+    items,
+  }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [open, setOpen] = useState(false);
+    const { Colortheme } = useContext(ThemeContext);
 
-  useEffect(() => {
-    if (openItems.includes(subItem.id)) {
-      setOpen(true);
-    }
-  }, [openItems, subItem.id]);
+    useEffect(() => {
+      if (openItems.includes(subItem.id)) {
+        setOpen(true);
+      }
+    }, [openItems, subItem.id]);
 
-  // Use useCallback to memoize event handlers
-  const toggleSubItems = useCallback(() => {
-    setOpen((prevOpen) => !prevOpen);
-  }, []);
+    // Use useCallback to memoize event handlers
+    const toggleSubItems = useCallback(() => {
+      setOpen((prevOpen) => !prevOpen);
+    }, []);
 
-  const handleLinkClick = useCallback(() => {
-    if (subItem.subItems.length > 0) {
-      toggleSubItems();
-    } else {
-      console.log("subitem", subItem);
-      if (subItem.link) {
-        toggleDrawer();
-        setSearchQuery("");
-        setFilteredItems(items);
+    const handleLinkClick = useCallback(() => {
+      if (subItem.subItems.length > 0) {
+        toggleSubItems();
+      } else {
+        console.log("subitem", subItem);
 
-        if (location.pathname === subItem.link) {
-          navigate(subItem.link, { replace: true });
-        } else {
-          navigate(subItem.link);
+        if (subItem.link) {
+          // Clear search state first before navigation
+          setSearchInput("");
+          setSearchQuery("");
+          setFilteredItems(items);
+
+          // Then handle navigation and drawer
+          toggleDrawer();
+
+          if (location.pathname === subItem.link) {
+            navigate(subItem.link, { replace: true });
+          } else {
+            navigate(subItem.link);
+          }
         }
       }
-    }
-  }, [subItem, toggleSubItems, toggleDrawer, setSearchQuery, setFilteredItems, items, location.pathname, navigate]);
+    }, [
+      subItem,
+      toggleSubItems,
+      toggleDrawer,
+      setSearchQuery,
+      setFilteredItems,
+      items,
+      location.pathname,
+      navigate,
+      setSearchInput,
+    ]);
 
-  // Memoize the isActive calculation
-  const isActive = useMemo(() => location.pathname === subItem.link, [location.pathname, subItem.link]);
+    // Memoize the isActive calculation
+    const isActive = useMemo(
+      () => location.pathname === subItem.link,
+      [location.pathname, subItem.link]
+    );
 
-  // Memoize styles to prevent recalculations
-  const listItemButtonStyles = useMemo(() => ({
-    position: "relative",
-    pl: depth > 1 ? 6 : 3,
-    pr: 2,
-    py: 1.75,
-    my: 0.5,
-    borderRadius: 2,
-    backgroundColor: isActive ? `${Colortheme.text}15` : "transparent",
-    // Use will-change to hint the browser about properties that will change
-    willChange: "background-color, transform",
-    // Use hardware acceleration for animations
-    transform: "translateZ(0)",
-    "&:before": {
-      content: '""',
-      position: "absolute",
-      left: depth > 1 ? "24px" : "12px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      width: "4px",
-      height: "4px",
-      borderRadius: "50%",
-      backgroundColor: isActive ? Colortheme.text : "transparent",
-      transition: "all 0.2s ease",
-    },
-    "&:hover": {
-      backgroundColor: `${Colortheme.text}10`,
-      "&:before": {
-        backgroundColor: Colortheme.text,
-        width: isActive ? "4px" : "6px",
-      },
-    },
-  }), [depth, isActive, Colortheme.text]);
+    // Memoize styles to prevent recalculations
+    const listItemButtonStyles = useMemo(
+      () => ({
+        position: "relative",
+        pl: depth > 1 ? 6 : 3,
+        pr: 2,
+        py: 1.75,
+        my: 0.5,
+        borderRadius: 2,
+        backgroundColor: isActive ? `${Colortheme.text}15` : "transparent",
+        // Use will-change to hint the browser about properties that will change
+        willChange: "background-color, transform",
+        // Use hardware acceleration for animations
+        transform: "translateZ(0)",
+        "&:before": {
+          content: '""',
+          position: "absolute",
+          left: depth > 1 ? "24px" : "12px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "4px",
+          height: "4px",
+          borderRadius: "50%",
+          backgroundColor: isActive ? Colortheme.text : "transparent",
+          transition: "all 0.2s ease",
+        },
+        "&:hover": {
+          backgroundColor: `${Colortheme.text}10`,
+          "&:before": {
+            backgroundColor: Colortheme.text,
+            width: isActive ? "4px" : "6px",
+          },
+        },
+      }),
+      [depth, isActive, Colortheme.text]
+    );
 
-  const listItemTextStyles = useMemo(() => ({
-    m: 0,
-    "& .MuiTypography-root": {
-      fontSize: depth > 1 ? "0.875rem" : "0.925rem",
-      fontWeight: isActive ? 600 : 400,
-      color: isActive ? Colortheme.text : `${Colortheme.text}cc`,
-      transition: "all 0.2s ease",
-    },
-  }), [depth, isActive, Colortheme.text]);
+    const listItemTextStyles = useMemo(
+      () => ({
+        m: 0,
+        "& .MuiTypography-root": {
+          fontSize: depth > 1 ? "0.875rem" : "0.925rem",
+          fontWeight: isActive ? 600 : 400,
+          color: isActive ? Colortheme.text : `${Colortheme.text}cc`,
+          transition: "all 0.2s ease",
+        },
+      }),
+      [depth, isActive, Colortheme.text]
+    );
 
-  const expandIconStyles = useMemo(() => ({
-    display: "flex",
-    alignItems: "center",
-    transition: "transform 0.2s ease",
-    transform: open ? "rotate(-180deg)" : "none",
-    color: `${Colortheme.text}99`,
-    // Use hardware acceleration for animations
-    willChange: "transform",
-  }), [open, Colortheme.text]);
+    const expandIconStyles = useMemo(
+      () => ({
+        display: "flex",
+        alignItems: "center",
+        transition: "transform 0.2s ease",
+        transform: open ? "rotate(-180deg)" : "none",
+        color: `${Colortheme.text}99`,
+        // Use hardware acceleration for animations
+        willChange: "transform",
+      }),
+      [open, Colortheme.text]
+    );
 
-  return (
-    <>
-      <ListItemButton
-        onClick={handleLinkClick}
-        sx={listItemButtonStyles}
-      >
-        <ListItemText
-          primary={subItem.name}
-          sx={listItemTextStyles}
-        />
-        {subItem.subItems.length > 0 && (
-          <Box
-            component="span"
-            sx={expandIconStyles}
-          >
-            <ExpandMore fontSize="small" />
-          </Box>
-        )}
-      </ListItemButton>
-      <Divider sx={{ opacity: 0.5, backgroundColor: Colortheme.text }} />
-      <Collapse
-        in={open || openItems.includes(subItem.id)}
-        timeout={200}
-        unmountOnExit
-      >
-        <List component="div" disablePadding>
-          {subItem.subItems.map((item) => (
-            <Box key={item.id}>
-              <SubItem
-                subItem={item}
-                openItems={openItems}
-                setOpenItems={setOpenItems}
-                toggleDrawer={toggleDrawer}
-                setSearchQuery={setSearchQuery}
-                setFilteredItems={setFilteredItems}
-                items={items}
-                depth={depth + 1}
-              />
-              <Divider sx={{ opacity: 0.5, backgroundColor: Colortheme.text }} />
+    return (
+      <>
+        <ListItemButton onClick={handleLinkClick} sx={listItemButtonStyles}>
+          <ListItemText primary={subItem.name} sx={listItemTextStyles} />
+          {subItem.subItems.length > 0 && (
+            <Box component="span" sx={expandIconStyles}>
+              <ExpandMore fontSize="small" />
             </Box>
-          ))}
-        </List>
-      </Collapse>
-    </>
-  );
-});
+          )}
+        </ListItemButton>
+        <Divider sx={{ opacity: 0.5, backgroundColor: Colortheme.text }} />
+        <Collapse
+          in={open || openItems.includes(subItem.id)}
+          timeout={200}
+          unmountOnExit
+        >
+          <List component="div" disablePadding>
+            {subItem.subItems.map((item) => (
+              <Box key={item.id}>
+                <SubItem
+                  subItem={item}
+                  openItems={openItems}
+                  setOpenItems={setOpenItems}
+                  toggleDrawer={toggleDrawer}
+                  setSearchQuery={setSearchQuery}
+                  setSearchInput={setSearchInput}
+                  setFilteredItems={setFilteredItems}
+                  items={items}
+                  depth={depth + 1}
+                />
+                <Divider
+                  sx={{ opacity: 0.5, backgroundColor: Colortheme.text }}
+                />
+              </Box>
+            ))}
+          </List>
+        </Collapse>
+      </>
+    );
+  }
+);
 
 // Memoized DynamicIcon component
 const DynamicIcon = React.memo(({ iconName, color }) => {
@@ -224,15 +254,18 @@ const NewSidebar = () => {
   }, [isLoginPage]);
 
   // Memoize event handlers with useCallback
-  const toggleSubItems = useCallback((itemId) => {
-    setOpenItems((prevOpenItems) => {
-      if (prevOpenItems.includes(itemId)) {
-        return prevOpenItems.filter((id) => id !== itemId);
-      } else {
-        return [itemId];
-      }
-    });
-  }, [setOpenItems]);
+  const toggleSubItems = useCallback(
+    (itemId) => {
+      setOpenItems((prevOpenItems) => {
+        if (prevOpenItems.includes(itemId)) {
+          return prevOpenItems.filter((id) => id !== itemId);
+        } else {
+          return [itemId];
+        }
+      });
+    },
+    [setOpenItems]
+  );
 
   // Memoize filter functions
   const filterItems = useCallback((items, query) => {
@@ -514,7 +547,10 @@ const NewSidebar = () => {
                 >
                   {item.icon_name && (
                     <ListItemIcon sx={{ minWidth: 36 }}>
-                      <DynamicIcon iconName={item.icon_name} color={Colortheme.text} />
+                      <DynamicIcon
+                        iconName={item.icon_name}
+                        color={Colortheme.text}
+                      />
                     </ListItemIcon>
                   )}
                   <ListItemText
@@ -565,6 +601,7 @@ const NewSidebar = () => {
                         setOpenItems={setOpenItems}
                         toggleDrawer={toggleDrawer}
                         setSearchQuery={setSearchQuery}
+                        setSearchInput={setSearchInput}
                         setFilteredItems={setFilteredItems}
                         items={items}
                         depth={1}

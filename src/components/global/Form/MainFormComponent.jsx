@@ -17,6 +17,7 @@ import CustomDatePicker from "../CustomDatePicker";
 import { apiClient } from "../../../services/apiClient";
 import CustomDataGrid from "../CustomDataGrid";
 import ButtonGrid from "../ButtonGrid";
+import {usePermissions} from "../../../services/permissionService"
 
 const MainFormComponent = ({ 
   formConfig, 
@@ -25,6 +26,7 @@ const MainFormComponent = ({
   actionButtons,
   onRefresh
 }) => {
+  const {canAdd,canDelete,canEdit} = usePermissions()
   const { token, branch,counter } = useContext(AuthContext);
   const theme = useTheme();
   const { Colortheme } = useContext(ThemeContext);
@@ -595,8 +597,21 @@ const MainFormComponent = ({
   }, [onRefresh]);
 
   const handleSubmit = async (e) => {
+    
     setIsLoading(true);
     e.preventDefault();
+
+    if(!canAdd && !formData[formDataID]){
+      showToast("You don't have permission to add", "warning");
+      setIsLoading(false);
+      return;
+    }
+
+    if(!canEdit && formData[formDataID]){
+      showToast("You don't have permission to Edit", "warning");
+      setIsLoading(false);
+      return;
+    }
     const method = formData[formDataID] ? "PUT" : "POST";
     const endpoint = formConfig.endpoint;
 
@@ -736,6 +751,10 @@ const MainFormComponent = ({
   };
 
   const handleDeleteClick = (row) => {
+    if(!canDelete){
+      showToast("You don't have permission to delete", "warning");
+      return;
+    }
     console.log("Delete button clicked for ID:", row);
     showAlertDialog(`Delete the record`, "", () =>
       handleDelete(row)
