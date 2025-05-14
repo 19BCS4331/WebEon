@@ -58,7 +58,7 @@ const extractJsonFromText = (text) => {
         try {
             return JSON.parse(jsonMatch[0]);
         } catch (e) {
-            console.warn('Failed to parse JSON from match:', e);
+            console.warn('Failed to parse JSON from mat:', e);
         }
     }
     
