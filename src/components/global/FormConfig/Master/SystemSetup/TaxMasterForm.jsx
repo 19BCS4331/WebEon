@@ -18,19 +18,12 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import CustomTextField from "../../../CustomTextField";
-import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import CustomDatePicker from "../../../CustomDatePicker";
 import CustomCheckbox from "../../../CustomCheckbox";
-import { useParams } from "react-router-dom";
-import axios from "axios";
 import ThemeContext from "../../../../../contexts/ThemeContext";
 import styled from "styled-components";
 import StyledButton from "../../../StyledButton";
 import { useToast } from "../../../../../contexts/ToastContext";
-import { useBaseUrl } from "../../../../../contexts/BaseUrl";
-import { DataGrid } from "@mui/x-data-grid";
-import CircularProgress from "@mui/material/CircularProgress";
-import { AuthContext } from "../../../../../contexts/AuthContext";
 import CustomAutocomplete from "../../../CustomAutocomplete";
 import { apiClient } from "../../../../../services/apiClient";
 
@@ -101,8 +94,6 @@ const TaxMasterForm = ({ initialData, onSubmit, onCancel,setTaxSlabs,taxSlabs })
   const isSmallDesktop = useMediaQuery(theme.breakpoints.between("md", "lg"));
   const isLargeDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const { showToast, hideToast } = useToast();
-  const { baseUrl } = useBaseUrl();
-  const { token } = useContext(AuthContext);
   const [postingAcOptions ,setPostingAcOptions] = useState([]);
 
   // const [taxSlabs, setTaxSlabs] = useState([]);

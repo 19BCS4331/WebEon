@@ -48,6 +48,7 @@ const LoginNew = () => {
   const [branches, setBranches] = useState([]);
   const [counters, setCounters] = useState([]);
   const [finYearOptions, setFinYearOptions] = useState([]);
+  const [finYearLoading, setFinYearLoading] = useState(true);
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +90,7 @@ const LoginNew = () => {
 
   useEffect(() => {
     const fetchFinYearDataAsync = async () => {
+      setFinYearLoading(true);
       try {
         const data = await fetchFinYearData();
         const currentDate = new Date();
@@ -107,13 +109,21 @@ const LoginNew = () => {
 
         console.log("Current financial year:", currentFinYear);
         setFinYearOptions(currentFinYear);
+        
+        // If we have a current financial year and no year is selected yet, set the first one as default
+        if (currentFinYear.length > 0 && !finyear) {
+          setFinyear(currentFinYear[0]);
+        }
       } catch (error) {
         console.error("Error fetching financial years:", error);
+        showToast("Failed to load financial years", "fail");
+      } finally {
+        setFinYearLoading(false);
       }
     };
 
     fetchFinYearDataAsync();
-  }, []);
+  }, [finyear, setFinyear, showToast]);
 
   const formatDate = (dateString) => {
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
@@ -467,6 +477,9 @@ const LoginNew = () => {
                     style={{ width: "100%" }}
                     styleTF={{width: "100%"}}
                     label="Financial Year"
+                    loading={finYearLoading}
+                    loadingText="Loading financial years..."
+                    noOptionsText={finYearLoading ? "Loading..." : "No financial years available"}
                   />
                 </Box>
 
