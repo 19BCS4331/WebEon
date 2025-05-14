@@ -40,7 +40,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "vite build --output public",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "dev": "vite"
