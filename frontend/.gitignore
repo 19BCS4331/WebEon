@@ -15,6 +15,7 @@
 .DS_Store
 /NewEonPgServer/.env
 /NewServer/.env
+/backend/.env
 .env
 .env.local
 .env.development.local
