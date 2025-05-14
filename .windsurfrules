@@ -1,0 +1,3 @@
+1. Always keep the codebase in context while providing a response
+2. When Creating APIs, always use the functions from @BaseModel.js, like executeQuery, executeTransactionQuery etc.
+3. Whenever creating or editing a component, remember to use the Colortheme correctly.
