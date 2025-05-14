@@ -1,27 +1,28 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.js
 
 # testing
-/coverage
+coverage/
 
 # production
-/build
+build/
+dist/
 
 # misc
 .DS_Store
-/NewEonPgServer/.env
-/NewServer/.env
-/backend/.env
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
